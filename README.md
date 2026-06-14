@@ -1,3 +1,6 @@
+# About
+A frontend design for fetching data from wordpress CMS to serve to the user. Designed for my music blog journaling website
+
 # Next.js template
 
 This is a Next.js template with shadcn/ui.
