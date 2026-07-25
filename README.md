@@ -1,24 +1,28 @@
-# About
-A frontend design for fetching data from wordpress CMS to serve to the user. Designed for my music blog journaling website
+# Music Journal Frontend
 
-# Next.js template
+A clean Next.js starting point for a WordPress-powered music journal. The
+current page is intentionally small: it is a foundation smoke test for the
+Astryx design system and does not include the previous prototype UI.
 
-This is a Next.js template with shadcn/ui.
-
-## Adding components
-
-To add components to your app, run the following command:
+## Development
 
 ```bash
-npx shadcn@latest add button
+pnpm install
+pnpm dev
 ```
 
-This will place the ui components in the `components` directory.
+Open [http://localhost:3000](http://localhost:3000).
 
-## Using components
+## Astryx
 
-To use the components in your app, import them as follows:
+Astryx is installed with the neutral theme and wrapped at the application root.
+Use its CLI to discover components before adding UI:
 
-```tsx
-import { Button } from "@/components/ui/button";
+```bash
+pnpm exec astryx build "music journal page"
+pnpm exec astryx component Button
+pnpm exec astryx doctor
 ```
+
+The CSS cascade order starts in `app/layers.css`; Astryx reset, component, and
+theme styles are imported from `app/globals.css`.
