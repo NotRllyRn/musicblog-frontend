@@ -1,0 +1,3 @@
+## Review
+- **Note (medium — accessibility):** `app/_catalog-prototype/record-lane.tsx:27-59` places roughly 163 individually focusable album links inside each lane. A keyboard user must traverse every album in lane A before reaching lane B, with no skip or lane-navigation mechanism. This makes the five independently browsable lanes impractical for keyboard use.
+- **Note (medium — interaction predictability):** `app/_catalog-prototype/prototype-switcher.tsx:41-59` installs global Left/Right shortcuts before hiding the switcher in production. Consequently, production users can unknowingly change the active prototype and URL using undocumented, invisible controls—even while interacting with album links or a focused lane.

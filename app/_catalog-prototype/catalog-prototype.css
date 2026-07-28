@@ -1,0 +1,694 @@
+.variant-shell {
+  --catalog-ink: oklch(0.2 0.01 70);
+  --catalog-paper: oklch(0.95 0.015 80);
+  box-sizing: border-box;
+  height: 100dvh;
+  min-width: 64rem;
+  overflow: hidden;
+  color: var(--catalog-ink);
+}
+
+.variant-shell *,
+.variant-shell *::before,
+.variant-shell *::after {
+  box-sizing: border-box;
+}
+
+.album-lanes {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  height: 100%;
+  min-height: 0;
+}
+
+.catalog-lane {
+  position: relative;
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+  perspective: 70rem;
+}
+
+.lane-label {
+  position: absolute;
+  z-index: 3;
+  inset: 0.75rem 0.75rem auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  pointer-events: none;
+}
+
+.record-list {
+  height: 100%;
+  margin: 0;
+  padding: 20vh 0.75rem 38vh;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: none;
+  list-style: none;
+  scroll-snap-type: y mandatory;
+}
+
+.record-list::-webkit-scrollbar {
+  display: none;
+}
+
+.record-list:focus-visible {
+  outline: 0.15rem solid currentColor;
+  outline-offset: -0.2rem;
+}
+
+.record-item {
+  position: relative;
+  margin-block-start: -8.25rem;
+  scroll-snap-align: center;
+  transform-origin: center bottom;
+  animation: browse-record linear both;
+  animation-timeline: view(block);
+  animation-range: entry 5% exit 95%;
+}
+
+.record-item:first-child {
+  margin-block-start: 0;
+}
+
+.album-sleeve {
+  position: relative;
+  display: block;
+  color: inherit;
+  text-decoration: none;
+  transform-origin: center bottom;
+  transition:
+    transform 180ms cubic-bezier(0.16, 1, 0.3, 1),
+    filter 180ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.album-sleeve:hover,
+.album-sleeve:focus-visible {
+  z-index: 4;
+  transform: translateY(-0.65rem) scale(1.025);
+}
+
+.album-sleeve:focus-visible,
+.record-list:focus-visible .record-item[data-active="true"] .album-sleeve {
+  outline: 0.18rem solid currentColor;
+  outline-offset: 0.2rem;
+}
+
+.record-list:focus-visible .record-item[data-active="true"] .album-sleeve {
+  z-index: 4;
+  transform: translateY(-0.65rem) scale(1.025);
+}
+
+.album-figure {
+  position: relative;
+  aspect-ratio: 1;
+  margin: 0;
+  overflow: hidden;
+  background: var(--catalog-paper);
+}
+
+.album-art {
+  object-fit: cover;
+}
+
+.album-caption {
+  position: absolute;
+  inset: auto 0 0;
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 0.1rem 0.75rem;
+  padding: 0.7rem;
+  background: color-mix(in oklch, var(--catalog-ink) 88%, transparent);
+  color: var(--catalog-paper);
+  transform: translateY(105%);
+  transition: transform 180ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.album-caption > :nth-child(2) {
+  grid-column: 1;
+}
+
+.album-caption > :last-child {
+  grid-row: 1 / span 2;
+  grid-column: 2;
+  align-self: end;
+}
+
+.album-sleeve:hover .album-caption,
+.album-sleeve:focus-visible .album-caption {
+  transform: translateY(0);
+}
+
+.prototype-switcher {
+  position: fixed;
+  z-index: 30;
+  inset: auto auto 1rem 50%;
+  padding: 0.4rem;
+  border: 0.08rem solid oklch(0.22 0.01 260 / 0.32);
+  border-radius: 999rem;
+  background: oklch(0.96 0.008 260 / 0.96);
+  color: oklch(0.18 0.01 260);
+  box-shadow: 0 0.75rem 2.5rem oklch(0.02 0 0 / 0.35);
+  transform: translateX(-50%);
+  backdrop-filter: blur(1rem);
+}
+
+.prototype-switcher .astryx-button {
+  min-width: 4.5rem;
+  border-radius: 999rem;
+}
+
+.prototype-switcher .astryx-text {
+  white-space: nowrap;
+}
+
+.catalog-empty {
+  display: grid;
+  min-height: 100dvh;
+  place-content: center;
+  gap: 0.75rem;
+  padding: 2rem;
+  text-align: center;
+}
+
+/* A — a dim record shop with wooden bins and handwritten shelf logic. */
+.variant-a {
+  --catalog-ink: oklch(0.2 0.018 62);
+  --catalog-paper: oklch(0.93 0.035 78);
+  --shop-wood: oklch(0.43 0.075 55);
+  --shop-dark: oklch(0.19 0.025 55);
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  background:
+    linear-gradient(
+      90deg,
+      oklch(0.1 0.015 55 / 0.55),
+      transparent 18% 82%,
+      oklch(0.1 0.015 55 / 0.5)
+    ),
+    var(--shop-dark);
+  color: var(--catalog-paper);
+}
+
+.shop-header,
+.shop-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-inline: 1.5rem;
+  background: var(--shop-dark);
+}
+
+.shop-header {
+  min-height: 4.75rem;
+  border-bottom: 0.08rem solid oklch(0.75 0.06 70 / 0.24);
+}
+
+.shop-header .astryx-heading {
+  font-size: clamp(1.6rem, 2.2vw, 2.4rem);
+  letter-spacing: -0.035em;
+}
+
+.shop-footer {
+  min-height: 2.5rem;
+  border-top: 0.08rem solid oklch(0.75 0.06 70 / 0.24);
+}
+
+.variant-a .album-lanes {
+  gap: 0.5rem;
+  padding: 0.65rem 0.8rem 0;
+}
+
+.variant-a .catalog-lane {
+  border: 0.14rem solid oklch(0.18 0.03 48);
+  background: repeating-linear-gradient(
+    88deg,
+    oklch(0.39 0.07 55),
+    oklch(0.39 0.07 55) 1.5rem,
+    oklch(0.34 0.06 52) 1.6rem,
+    oklch(0.34 0.06 52) 2.8rem
+  );
+  box-shadow: inset 0 0 2rem oklch(0.1 0.02 55 / 0.65);
+}
+
+.variant-a .catalog-lane::after {
+  position: absolute;
+  z-index: 2;
+  inset: auto 0 0;
+  height: 17%;
+  border-top: 0.22rem solid oklch(0.57 0.08 60);
+  background: repeating-linear-gradient(
+    92deg,
+    var(--shop-wood),
+    var(--shop-wood) 2rem,
+    oklch(0.38 0.07 52) 2.1rem,
+    oklch(0.38 0.07 52) 3.7rem
+  );
+  box-shadow: 0 -0.8rem 1.5rem oklch(0.1 0.02 55 / 0.45);
+  content: "";
+  pointer-events: none;
+}
+
+.variant-a .lane-label {
+  padding: 0.35rem 0.55rem;
+  background: var(--catalog-paper);
+  color: var(--catalog-ink);
+  transform: rotate(-1deg);
+}
+
+.variant-a .album-figure {
+  border: 0.35rem solid oklch(0.9 0.02 75 / 0.5);
+  box-shadow: 0 0.7rem 1.1rem oklch(0.09 0.02 50 / 0.55);
+}
+
+.variant-a .album-caption {
+  background: var(--catalog-paper);
+  color: var(--catalog-ink);
+}
+
+/* B — a cold, glossy descendant of early digital cover-flow players. */
+.variant-b {
+  --catalog-ink: oklch(0.96 0.008 250);
+  --catalog-paper: oklch(0.18 0.012 250);
+  --player-line: oklch(0.76 0.025 240);
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  background:
+    radial-gradient(circle at 50% 45%, oklch(0.28 0.035 250), transparent 46%),
+    oklch(0.12 0.01 250);
+  color: var(--catalog-ink);
+}
+
+.player-header {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: end;
+  min-height: 5.4rem;
+  padding: 1rem 1.5rem;
+  border-bottom: 0.08rem solid oklch(0.85 0.02 240 / 0.18);
+}
+
+.player-header > :last-child {
+  justify-self: end;
+}
+
+.player-header .astryx-heading {
+  font-size: clamp(1.7rem, 2.5vw, 2.8rem);
+  font-weight: 500;
+  letter-spacing: -0.04em;
+}
+
+.player-stage {
+  display: grid;
+  grid-template-columns: 3.5rem minmax(0, 1fr);
+  min-height: 0;
+}
+
+.player-rail {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  border-right: 0.08rem solid oklch(0.85 0.02 240 / 0.18);
+  color: var(--player-line);
+  writing-mode: vertical-rl;
+}
+
+.variant-b .album-lanes {
+  gap: 0.15rem;
+  padding-inline: 0.7rem;
+}
+
+.variant-b .catalog-lane {
+  background: linear-gradient(
+    90deg,
+    transparent,
+    oklch(0.45 0.03 240 / 0.12) 50%,
+    transparent
+  );
+}
+
+.variant-b .catalog-lane::after {
+  position: absolute;
+  z-index: 2;
+  inset: auto 0 0;
+  height: 22%;
+  background: linear-gradient(transparent, oklch(0.1 0.01 250) 72%);
+  content: "";
+  pointer-events: none;
+}
+
+.variant-b .lane-label {
+  color: var(--player-line);
+}
+
+.variant-b .record-list {
+  padding-inline: 1rem;
+}
+
+.variant-b .album-figure {
+  border: 0.08rem solid oklch(0.92 0.02 250 / 0.2);
+  border-radius: 0.35rem;
+  box-shadow: 0 1.1rem 2.4rem oklch(0.02 0.01 250 / 0.78);
+}
+
+.variant-b .album-sleeve::after {
+  position: absolute;
+  inset: 0;
+  border-radius: 0.35rem;
+  background: linear-gradient(
+    120deg,
+    oklch(1 0 0 / 0.24),
+    transparent 24% 70%,
+    oklch(1 0 0 / 0.08)
+  );
+  content: "";
+  pointer-events: none;
+}
+
+.variant-b .album-caption {
+  background: oklch(0.11 0.012 250 / 0.92);
+}
+
+.player-footer {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  min-height: 3.5rem;
+  padding-inline: 1.5rem;
+  border-top: 0.08rem solid oklch(0.85 0.02 240 / 0.18);
+  background: oklch(0.1 0.008 250 / 0.86);
+}
+
+.player-footer > :last-child {
+  justify-self: end;
+}
+
+/* C — a strict editorial register that treats every review as an archive entry. */
+.variant-c {
+  --catalog-ink: oklch(0.2 0.015 35);
+  --catalog-paper: oklch(0.96 0.012 88);
+  --archive-accent: oklch(0.56 0.2 28);
+  display: grid;
+  grid-template-columns: 18rem minmax(0, 1fr);
+  background: var(--catalog-paper);
+  color: var(--catalog-ink);
+}
+
+.archive-sidebar {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  padding: 1.6rem;
+  border-right: 0.12rem solid var(--catalog-ink);
+}
+
+.archive-sidebar .astryx-heading {
+  font-size: clamp(2.2rem, 3.2vw, 3.6rem);
+  line-height: 0.94;
+  letter-spacing: -0.04em;
+}
+
+.archive-sidebar > footer {
+  margin-top: auto;
+  color: var(--archive-accent);
+}
+
+.archive-catalog {
+  display: grid;
+  grid-template-rows: 3.2rem minmax(0, 1fr);
+  min-width: 0;
+  min-height: 0;
+}
+
+.archive-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-inline: 1rem;
+  border-bottom: 0.08rem solid var(--catalog-ink);
+}
+
+.variant-c .album-lanes {
+  gap: 0;
+}
+
+.variant-c .catalog-lane {
+  border-right: 0.08rem solid var(--catalog-ink);
+}
+
+.variant-c .catalog-lane:last-child {
+  border-right: 0;
+}
+
+.variant-c .lane-label {
+  inset: 0 0 auto;
+  padding: 0.55rem 0.65rem;
+  border-bottom: 0.08rem solid var(--catalog-ink);
+  background: var(--catalog-paper);
+  color: var(--catalog-ink);
+}
+
+.variant-c .record-list {
+  padding: 18vh 0.55rem 34vh;
+}
+
+.variant-c .record-item {
+  margin-block-start: -7.5rem;
+}
+
+.variant-c .album-figure {
+  border: 0.08rem solid var(--catalog-ink);
+  box-shadow: 0.45rem 0.45rem 0 var(--archive-accent);
+}
+
+.variant-c .album-caption {
+  background: var(--catalog-paper);
+  color: var(--catalog-ink);
+}
+
+/* D — a high-density pirate broadcast console with five live channels. */
+.variant-d {
+  --catalog-ink: oklch(0.17 0.018 95);
+  --catalog-paper: oklch(0.92 0.18 101);
+  --radio-signal: oklch(0.71 0.22 36);
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  background: var(--catalog-paper);
+  color: var(--catalog-ink);
+}
+
+.radio-header,
+.radio-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-inline: 1rem;
+  border-color: var(--catalog-ink);
+  border-style: solid;
+  background: var(--catalog-paper);
+}
+
+.radio-header {
+  min-height: 4.6rem;
+  border-width: 0 0 0.18rem;
+}
+
+.radio-header .astryx-heading {
+  font-size: clamp(1.9rem, 3.2vw, 3.6rem);
+  font-weight: 800;
+  letter-spacing: -0.04em;
+  text-transform: uppercase;
+}
+
+.radio-stage {
+  position: relative;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.radio-stage > .astryx-text {
+  position: absolute;
+  z-index: 0;
+  inset: 50% auto auto 50%;
+  color: var(--radio-signal);
+  font-size: clamp(8rem, 20vw, 20rem);
+  font-weight: 800;
+  letter-spacing: -0.04em;
+  white-space: nowrap;
+  transform: translate(-50%, -50%) rotate(-5deg);
+}
+
+.variant-d .album-lanes {
+  position: relative;
+  z-index: 1;
+  gap: 0.3rem;
+  padding-inline: 0.35rem;
+}
+
+.variant-d .catalog-lane {
+  border-inline: 0.1rem solid var(--catalog-ink);
+  background: oklch(0.94 0.16 101 / 0.76);
+}
+
+.variant-d .lane-label {
+  inset: 0.45rem 0.45rem auto;
+  padding: 0.3rem 0.45rem;
+  border: 0.12rem solid var(--catalog-ink);
+  background: var(--catalog-ink);
+  color: var(--catalog-paper);
+}
+
+.variant-d .record-list {
+  padding-inline: 0.45rem;
+}
+
+.variant-d .album-figure {
+  border: 0.18rem solid var(--catalog-ink);
+  box-shadow: 0.45rem 0.45rem 0 var(--catalog-ink);
+  filter: saturate(0.82) contrast(1.08);
+}
+
+.variant-d .record-item:nth-child(odd) .album-sleeve {
+  rotate: -1.4deg;
+}
+
+.variant-d .record-item:nth-child(even) .album-sleeve {
+  rotate: 1.1deg;
+}
+
+.variant-d .album-caption {
+  background: var(--radio-signal);
+  color: var(--catalog-ink);
+}
+
+.radio-footer {
+  min-height: 3rem;
+  border-width: 0.18rem 0 0;
+}
+
+/* E — a quiet listening room: more air, fewer labels, the covers do the work. */
+.variant-e {
+  --catalog-ink: oklch(0.22 0.012 255);
+  --catalog-paper: oklch(0.94 0.01 250);
+  --gallery-line: oklch(0.72 0.02 250);
+  --gallery-accent: oklch(0.49 0.12 242);
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  background: var(--catalog-paper);
+  color: var(--catalog-ink);
+}
+
+.gallery-header {
+  display: grid;
+  grid-template-columns: minmax(20rem, 1fr) minmax(18rem, 28rem);
+  align-items: end;
+  gap: 3rem;
+  min-height: 7.5rem;
+  padding: 1.25rem 2rem;
+  border-bottom: 0.08rem solid var(--gallery-line);
+}
+
+.gallery-header .astryx-heading {
+  font-size: clamp(2.2rem, 4vw, 4.8rem);
+  font-weight: 500;
+  letter-spacing: -0.04em;
+}
+
+.gallery-stage {
+  display: grid;
+  grid-template-columns: 3.5rem minmax(0, 1fr);
+  min-height: 0;
+}
+
+.gallery-marker {
+  display: grid;
+  place-items: center;
+  border-right: 0.08rem solid var(--gallery-line);
+  color: var(--gallery-accent);
+  writing-mode: vertical-rl;
+}
+
+.variant-e .album-lanes {
+  gap: 1.8rem;
+  padding-inline: 2rem;
+}
+
+.variant-e .lane-label {
+  inset: 1rem 0 auto;
+  padding-bottom: 0.4rem;
+  border-bottom: 0.08rem solid var(--gallery-line);
+  color: var(--gallery-accent);
+}
+
+.variant-e .catalog-lane:nth-child(even) .record-list {
+  padding-top: 26vh;
+}
+
+.variant-e .record-list {
+  padding-inline: 0;
+}
+
+.variant-e .record-item {
+  margin-block-start: -5.5rem;
+}
+
+.variant-e .album-figure {
+  box-shadow: 0 1.2rem 2.5rem oklch(0.2 0.02 250 / 0.16);
+}
+
+.variant-e .album-caption {
+  background: oklch(0.94 0.01 250 / 0.94);
+  color: var(--catalog-ink);
+}
+
+.gallery-footer {
+  display: flex;
+  min-height: 2.8rem;
+  align-items: center;
+  justify-content: flex-end;
+  padding-inline: 2rem;
+  border-top: 0.08rem solid var(--gallery-line);
+}
+
+@keyframes browse-record {
+  0% {
+    opacity: 0.58;
+    filter: brightness(0.72);
+    transform: translateY(2.2rem) rotateX(-22deg) scale(0.94);
+  }
+
+  42%,
+  58% {
+    opacity: 1;
+    filter: brightness(1);
+    transform: translateY(0) rotateX(0) scale(1);
+  }
+
+  100% {
+    opacity: 0.64;
+    filter: brightness(0.8);
+    transform: translateY(-1.4rem) rotateX(18deg) scale(0.96);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .record-item {
+    animation: none;
+  }
+
+  .album-sleeve,
+  .album-caption {
+    transition: none;
+  }
+}
+
+@media (prefers-reduced-transparency: reduce) {
+  .prototype-switcher,
+  .album-caption {
+    backdrop-filter: none;
+  }
+}
