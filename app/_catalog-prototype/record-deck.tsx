@@ -1,6 +1,6 @@
 "use client"
 
-import { Text } from "@astryxdesign/core"
+import { Text, VisuallyHidden } from "@astryxdesign/core"
 import {
   motion,
   type MotionValue,
@@ -39,6 +39,7 @@ interface AnimatedRecordProps {
   isPreviewed: boolean
   mechanic: FlipMechanic
   position: MotionValue<number>
+  previewAbove: boolean
   reduceMotion: boolean
   visualIndex: number
 }
@@ -51,6 +52,7 @@ function AnimatedRecord({
   isPreviewed,
   mechanic,
   position,
+  previewAbove,
   reduceMotion,
   visualIndex,
 }: AnimatedRecordProps) {
@@ -89,6 +91,7 @@ function AnimatedRecord({
       data-active={isActive || undefined}
       data-album-index={albumIndex}
       data-hovered={isHovered || undefined}
+      data-preview-above={previewAbove || undefined}
       data-visual-index={visualIndex}
       data-preview={isPreviewed || undefined}
       onClick={() => window.location.assign(album.href)}
@@ -105,6 +108,17 @@ function AnimatedRecord({
           unoptimized
         />
       </figure>
+
+      {isPreviewed && (
+        <aside className="record-preview" aria-hidden="true">
+          <Text type="label" color="inherit" maxLines={2}>
+            {album.title}
+          </Text>
+          <Text type="supporting" color="inherit" maxLines={1}>
+            {album.artist}
+          </Text>
+        </aside>
+      )}
     </motion.li>
   )
 }
@@ -297,6 +311,7 @@ export function RecordDeck({ albums, index, mechanic }: RecordDeckProps) {
             key={`${album.id}-${visualIndex}`}
             mechanic={mechanic}
             position={position}
+            previewAbove={visualIndex > activeIndex}
             reduceMotion={reduceMotion}
             visualIndex={visualIndex}
           />
@@ -315,14 +330,9 @@ export function RecordDeck({ albums, index, mechanic }: RecordDeckProps) {
       </ol>
 
       {showPreview && previewAlbum && (
-        <aside className="record-preview" aria-live="polite">
-          <Text type="label" color="inherit" maxLines={2}>
-            {previewAlbum.title}
-          </Text>
-          <Text type="supporting" color="inherit" maxLines={1}>
-            {previewAlbum.artist}
-          </Text>
-        </aside>
+        <VisuallyHidden as="div" aria-live="polite">
+          {previewAlbum.title}, {previewAlbum.artist}
+        </VisuallyHidden>
       )}
     </section>
   )

@@ -152,10 +152,6 @@
   transform-origin: center top;
 }
 
-.deck-record[data-preview="true"] {
-  anchor-name: --record-hover;
-}
-
 .record-figure {
   position: relative;
   aspect-ratio: 1;
@@ -179,7 +175,7 @@
 .record-preview {
   position: absolute;
   z-index: 5;
-  top: calc(50% + 6rem);
+  top: calc(100% + 0.65rem);
   right: 0.1rem;
   left: 0.1rem;
   display: grid;
@@ -192,19 +188,13 @@
   box-shadow: 0 0.6rem 1.4rem oklch(0.03 0.01 255 / 0.22);
   color: var(--catalog-ink);
   pointer-events: none;
+  transform: translateZ(0.06rem);
   backdrop-filter: blur(0.65rem);
 }
 
-@supports (position-anchor: --record-hover) {
-  .record-preview {
-    position-anchor: --record-hover;
-    top: anchor(bottom);
-    right: auto;
-    left: anchor(center);
-    width: calc(100% - 0.2rem);
-    transform: translate(-50%, 0.65rem);
-    position-try-fallbacks: flip-block;
-  }
+.deck-record[data-preview-above="true"] .record-preview {
+  top: auto;
+  bottom: calc(100% + 0.65rem);
 }
 
 /* A — a sleeve hinged around its lower edge like a record handled by hand. */
@@ -273,13 +263,6 @@
 }
 
 .variant-c .record-preview {
-  position-anchor: auto;
-  z-index: 50;
-  top: calc(50% + 6rem);
-  right: 0.1rem;
-  left: 0.1rem;
-  width: auto;
-  transform: none;
   background: var(--catalog-paper);
 }
 
