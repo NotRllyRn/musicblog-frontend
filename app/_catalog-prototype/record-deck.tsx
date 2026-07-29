@@ -67,7 +67,6 @@ function AnimatedRecord({
   }, [isHovered, pullTarget])
 
   const distance = () => visualIndex - position.get()
-  const pullAmount = () => pull.get() * Math.min(1, Math.abs(distance()))
   const transform = useTransform(
     () =>
       getRecordVisual(
@@ -75,7 +74,7 @@ function AnimatedRecord({
         distance(),
         albumIndex,
         reduceMotion,
-        pullAmount()
+        pull.get()
       ).transform
   )
   const opacity = useTransform(

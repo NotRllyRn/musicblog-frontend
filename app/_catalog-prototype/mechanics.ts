@@ -101,14 +101,14 @@ export function getRecordVisual(
   }
 
   const pullLift = direction < 0 ? Math.max(-42, 68 - tail * 24) : 68
-  visual.z = mix(visual.z, 180, pull)
-  visual.rotateX = mix(visual.rotateX, 0, pull)
+  visual.z = mix(visual.z, mix(132, 180, focus), pull)
+  visual.rotateX = mix(visual.rotateX, mix(-18, 0, focus), pull)
   visual.rotateY = mix(visual.rotateY, 0, pull)
-  visual.scaleX = mix(visual.scaleX, 1, pull)
-  visual.scaleY = mix(visual.scaleY, 1, pull)
+  visual.scaleX = mix(visual.scaleX, mix(1.04, 1, focus), pull)
+  visual.scaleY = mix(visual.scaleY, mix(1.04, 1, focus), pull)
 
   const transform = [
-    `translate3d(${visual.x.toFixed(2)}px, calc(-50% + ${visual.y.toFixed(2)}px - ${(pull * pullLift).toFixed(2)}%), ${visual.z.toFixed(2)}px)`,
+    `translate3d(${visual.x.toFixed(2)}px, calc(-50% + ${visual.y.toFixed(2)}px - ${(pull * pullLift * focus).toFixed(2)}%), ${visual.z.toFixed(2)}px)`,
     `rotateX(${visual.rotateX.toFixed(2)}deg)`,
     `rotateY(${visual.rotateY.toFixed(2)}deg)`,
     `rotateZ(${visual.rotateZ.toFixed(2)}deg)`,
