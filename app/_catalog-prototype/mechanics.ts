@@ -14,7 +14,7 @@ interface RecordVisual {
 export const mechanicSettings: Record<FlipMechanic, MechanicSettings> = {
   hinge: { snap: "mandatory", step: 72, window: 19 },
   orbit: { snap: "proximity", step: 96, window: 19 },
-  shuffle: { snap: "none", step: 82, window: 19 },
+  shuffle: { snap: "mandatory", step: 82, window: 19 },
   push: { snap: "mandatory", step: 86, window: 19 },
   accordion: { snap: "mandatory", step: 54, window: 19 },
 }
@@ -43,7 +43,7 @@ export function getRecordVisual(
     x: 0,
     y: direction * (mix(0, 100, focus) + tail * 44),
     z: mix(82, stackedZ, focus),
-    rotateX: mix(14, -72, focus),
+    rotateX: mix(-78, -40, focus),
     rotateY: 0,
     rotateZ: mix(tilt * 0.25, tilt, focus),
     scaleX: mix(1, 0.92, focus),
@@ -100,16 +100,15 @@ export function getRecordVisual(
     visual.opacity = 1
   }
 
-  visual.y -= 82 * pull
+  const pullLift = direction < 0 ? Math.max(-42, 68 - tail * 24) : 68
   visual.z = mix(visual.z, 180, pull)
-  visual.rotateX = mix(visual.rotateX, visual.rotateX * 0.55, pull)
+  visual.rotateX = mix(visual.rotateX, 0, pull)
   visual.rotateY = mix(visual.rotateY, 0, pull)
   visual.scaleX = mix(visual.scaleX, 1, pull)
   visual.scaleY = mix(visual.scaleY, 1, pull)
-  visual.opacity = mix(visual.opacity, 1, pull)
 
   const transform = [
-    `translate3d(${visual.x.toFixed(2)}px, calc(-50% + ${visual.y.toFixed(2)}px), ${visual.z.toFixed(2)}px)`,
+    `translate3d(${visual.x.toFixed(2)}px, calc(-50% + ${visual.y.toFixed(2)}px - ${(pull * pullLift).toFixed(2)}%), ${visual.z.toFixed(2)}px)`,
     `rotateX(${visual.rotateX.toFixed(2)}deg)`,
     `rotateY(${visual.rotateY.toFixed(2)}deg)`,
     `rotateZ(${visual.rotateZ.toFixed(2)}deg)`,

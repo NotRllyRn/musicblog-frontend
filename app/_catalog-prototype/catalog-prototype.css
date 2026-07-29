@@ -273,7 +273,14 @@
 }
 
 .variant-c .record-preview {
-  background: oklch(0.98 0.004 255 / 0.82);
+  position-anchor: auto;
+  z-index: 50;
+  top: calc(50% + 6rem);
+  right: 0.1rem;
+  left: 0.1rem;
+  width: auto;
+  transform: none;
+  background: var(--catalog-paper);
 }
 
 /* D — records arrive from alternating sides and never sit perfectly straight. */

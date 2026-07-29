@@ -40,6 +40,7 @@ interface AnimatedRecordProps {
   mechanic: FlipMechanic
   position: MotionValue<number>
   reduceMotion: boolean
+  visualIndex: number
 }
 
 function AnimatedRecord({
@@ -51,6 +52,7 @@ function AnimatedRecord({
   mechanic,
   position,
   reduceMotion,
+  visualIndex,
 }: AnimatedRecordProps) {
   const pullTarget = useMotionValue(0)
   const pullSpring = useSpring(pullTarget, {
@@ -61,28 +63,24 @@ function AnimatedRecord({
   const pull = reduceMotion ? pullTarget : pullSpring
 
   useEffect(() => {
-    pullTarget.set(isHovered && !isActive ? 1 : 0)
-  }, [isActive, isHovered, pullTarget])
+    pullTarget.set(isHovered ? 1 : 0)
+  }, [isHovered, pullTarget])
 
+  const distance = () => visualIndex - position.get()
+  const pullAmount = () => pull.get() * Math.min(1, Math.abs(distance()))
   const transform = useTransform(
     () =>
       getRecordVisual(
         mechanic,
-        albumIndex - position.get(),
+        distance(),
         albumIndex,
         reduceMotion,
-        pull.get()
+        pullAmount()
       ).transform
   )
   const opacity = useTransform(
     () =>
-      getRecordVisual(
-        mechanic,
-        albumIndex - position.get(),
-        albumIndex,
-        reduceMotion,
-        pull.get()
-      ).opacity
+      getRecordVisual(mechanic, distance(), albumIndex, reduceMotion).opacity
   )
   const dynamicStyle = { opacity, transform }
 
@@ -92,6 +90,7 @@ function AnimatedRecord({
       data-active={isActive || undefined}
       data-album-index={albumIndex}
       data-hovered={isHovered || undefined}
+      data-visual-index={visualIndex}
       data-preview={isPreviewed || undefined}
       onClick={() => window.location.assign(album.href)}
       style={dynamicStyle}
@@ -114,9 +113,13 @@ function AnimatedRecord({
 export function RecordDeck({ albums, index, mechanic }: RecordDeckProps) {
   const settings = mechanicSettings[mechanic]
   const radius = Math.floor(settings.window / 2)
+  const albumIndexFor = (visualIndex: number) =>
+    ((visualIndex % albums.length) + albums.length) % albums.length
   const initialIndex = Math.min(albums.length - 1, radius + 2 + (index % 3))
   const [activeIndex, setActiveIndex] = useState(initialIndex)
-  const [hoveredIndex, setHoveredIndex] = useState<number | null>(null)
+  const [hoveredVisualIndex, setHoveredVisualIndex] = useState<number | null>(
+    null
+  )
   const [showPreview, setShowPreview] = useState(false)
   const activeRef = useRef(initialIndex)
   const deck = useRef<HTMLElement>(null)
@@ -135,8 +138,8 @@ export function RecordDeck({ albums, index, mechanic }: RecordDeckProps) {
   })
   const position = reduceMotion ? rawPosition : smoothPosition
   const activeAlbum = albums[activeIndex]
-  const previewIndex = hoveredIndex ?? activeIndex
-  const previewAlbum = albums[previewIndex]
+  const previewVisualIndex = hoveredVisualIndex ?? activeIndex
+  const previewAlbum = albums[albumIndexFor(previewVisualIndex)]
 
   const setScroll = useCallback(
     (node: HTMLOListElement | null) => {
@@ -166,23 +169,29 @@ export function RecordDeck({ albums, index, mechanic }: RecordDeckProps) {
   const albumIndexAt = (target: EventTarget | null) => {
     const record =
       target instanceof Element
-        ? target.closest<HTMLElement>("[data-album-index]")
+        ? target.closest<HTMLElement>("[data-visual-index]")
         : null
     if (record?.closest(".record-deck") !== deck.current) return null
-    const next = Number(record.dataset.albumIndex)
+    const next = Number(record.dataset.visualIndex)
     return Number.isFinite(next) ? next : null
   }
 
   const retargetPointer = () => {
     scrolling.current = false
-    setHoveredIndex(
-      albumIndexAt(document.elementFromPoint(pointer.current.x, pointer.current.y))
+    const target = document.elementFromPoint(
+      pointer.current.x,
+      pointer.current.y
     )
+    const next = albumIndexAt(target)
+    const isInside =
+      target instanceof Element &&
+      target.closest(".record-deck") === deck.current
+    setHoveredVisualIndex(next ?? (isInside ? activeRef.current : null))
   }
 
   const moveTo = (nextIndex: number) => {
     const next = Math.max(0, Math.min(albums.length - 1, nextIndex))
-    setHoveredIndex(null)
+    setHoveredVisualIndex(null)
     scroll.current?.scrollTo({
       top: next * settings.step,
       behavior: reduceMotion ? "auto" : "smooth",
@@ -209,34 +218,42 @@ export function RecordDeck({ albums, index, mechanic }: RecordDeckProps) {
 
   const onPointerMove = (event: PointerEvent<HTMLElement>) => {
     pointer.current = { x: event.clientX, y: event.clientY }
-    if (!scrolling.current) setHoveredIndex(albumIndexAt(event.target))
+    if (!scrolling.current) setHoveredVisualIndex(albumIndexAt(event.target))
   }
 
   const onWheel = (event: WheelEvent<HTMLElement>) => {
-    event.preventDefault()
     pointer.current = { x: event.clientX, y: event.clientY }
     scrolling.current = true
-    setHoveredIndex(null)
     if (scroll.current) {
       const multiplier = event.deltaMode === 1 ? 16 : 1
       scroll.current.scrollTop += event.deltaY * multiplier
     }
     if (settleTimer.current) clearTimeout(settleTimer.current)
-    settleTimer.current = setTimeout(retargetPointer, 180)
+    settleTimer.current = setTimeout(retargetPointer, 280)
   }
 
-  const start = Math.max(
-    0,
-    Math.min(albums.length - settings.window, activeIndex - radius)
+  const start = activeIndex - radius
+  const windowed = Array.from({ length: settings.window }, (_, offset) => {
+    const visualIndex = start + offset
+    const albumIndex = albumIndexFor(visualIndex)
+    return { album: albums[albumIndex], albumIndex, visualIndex }
+  })
+  const hovered =
+    hoveredVisualIndex !== null &&
+    !windowed.some(({ visualIndex }) => visualIndex === hoveredVisualIndex)
+      ? [
+          {
+            album: albums[albumIndexFor(hoveredVisualIndex)],
+            albumIndex: albumIndexFor(hoveredVisualIndex),
+            visualIndex: hoveredVisualIndex,
+          },
+        ]
+      : []
+  const visible = [...windowed, ...hovered].sort(
+    (first, second) =>
+      Math.abs(second.visualIndex - activeIndex) -
+      Math.abs(first.visualIndex - activeIndex)
   )
-  const visible = albums
-    .slice(start, start + settings.window)
-    .map((album, offset) => ({ album, albumIndex: start + offset }))
-    .sort(
-      (first, second) =>
-        Math.abs(second.albumIndex - activeIndex) -
-        Math.abs(first.albumIndex - activeIndex)
-    )
 
   return (
     <section
@@ -248,7 +265,7 @@ export function RecordDeck({ albums, index, mechanic }: RecordDeckProps) {
       onKeyDown={onKeyDown}
       onPointerEnter={() => setShowPreview(true)}
       onPointerLeave={() => {
-        setHoveredIndex(null)
+        setHoveredVisualIndex(null)
         setShowPreview(false)
       }}
       onPointerMove={onPointerMove}
@@ -258,17 +275,18 @@ export function RecordDeck({ albums, index, mechanic }: RecordDeckProps) {
       tabIndex={0}
     >
       <ol className="record-stage" aria-hidden="true">
-        {visible.map(({ album, albumIndex }) => (
+        {visible.map(({ album, albumIndex, visualIndex }) => (
           <AnimatedRecord
             album={album}
             albumIndex={albumIndex}
-            isActive={albumIndex === activeIndex}
-            isHovered={albumIndex === hoveredIndex}
-            isPreviewed={albumIndex === previewIndex && showPreview}
-            key={album.id}
+            isActive={visualIndex === activeIndex}
+            isHovered={visualIndex === hoveredVisualIndex}
+            isPreviewed={visualIndex === previewVisualIndex && showPreview}
+            key={`${album.id}-${visualIndex}`}
             mechanic={mechanic}
             position={position}
             reduceMotion={reduceMotion}
+            visualIndex={visualIndex}
           />
         ))}
       </ol>
