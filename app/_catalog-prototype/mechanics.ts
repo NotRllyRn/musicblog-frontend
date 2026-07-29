@@ -43,7 +43,7 @@ export function getRecordVisual(
     x: 0,
     y: direction * (mix(0, 100, focus) + tail * 44),
     z: mix(82, stackedZ, focus),
-    rotateX: mix(-78, -40, focus),
+    rotateX: mix(-24, -40, focus),
     rotateY: 0,
     rotateZ: mix(tilt * 0.25, tilt, focus),
     scaleX: mix(1, 0.92, focus),
