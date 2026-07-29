@@ -127,6 +127,7 @@ export function RecordDeck({ albums, index, mechanic }: RecordDeckProps) {
   const pointer = useRef({ x: 0, y: 0 })
   const scroll = useRef<HTMLOListElement>(null)
   const scrolling = useRef(false)
+  const wheelTarget = useRef(initialIndex * settings.step)
   const settleTimer = useRef<ReturnType<typeof setTimeout>>(null)
   const reduceMotion = Boolean(useReducedMotion())
   const { scrollY } = useScroll({ container: scroll })
@@ -145,7 +146,8 @@ export function RecordDeck({ albums, index, mechanic }: RecordDeckProps) {
     (node: HTMLOListElement | null) => {
       scroll.current = node
       if (node && !initialized.current) {
-        node.scrollTop = initialIndex * settings.step
+        wheelTarget.current = initialIndex * settings.step
+        node.scrollTop = wheelTarget.current
         initialized.current = true
       }
     },
@@ -178,6 +180,7 @@ export function RecordDeck({ albums, index, mechanic }: RecordDeckProps) {
 
   const retargetPointer = () => {
     scrolling.current = false
+    if (scroll.current) wheelTarget.current = scroll.current.scrollTop
     const target = document.elementFromPoint(
       pointer.current.x,
       pointer.current.y
@@ -191,9 +194,10 @@ export function RecordDeck({ albums, index, mechanic }: RecordDeckProps) {
 
   const moveTo = (nextIndex: number) => {
     const next = Math.max(0, Math.min(albums.length - 1, nextIndex))
+    wheelTarget.current = next * settings.step
     setHoveredVisualIndex(null)
     scroll.current?.scrollTo({
-      top: next * settings.step,
+      top: wheelTarget.current,
       behavior: reduceMotion ? "auto" : "smooth",
     })
   }
@@ -226,7 +230,13 @@ export function RecordDeck({ albums, index, mechanic }: RecordDeckProps) {
     scrolling.current = true
     if (scroll.current) {
       const multiplier = event.deltaMode === 1 ? 16 : 1
-      scroll.current.scrollTop += event.deltaY * multiplier
+      const sensitivity = mechanic === "hinge" ? 1.5 : 1
+      const max = (albums.length - 1) * settings.step
+      wheelTarget.current = Math.max(
+        0,
+        Math.min(max, wheelTarget.current + event.deltaY * multiplier * sensitivity)
+      )
+      scroll.current.scrollTop = wheelTarget.current
     }
     if (settleTimer.current) clearTimeout(settleTimer.current)
     settleTimer.current = setTimeout(retargetPointer, 280)
