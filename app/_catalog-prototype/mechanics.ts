@@ -42,12 +42,12 @@ export function getRecordVisual(
   const visual = {
     x: 0,
     y: direction * (mix(0, 124, focus) + tail * 38),
-    z: mix(82, stackedZ, focus),
-    rotateX: mix(-24, -40, focus),
+    z: mix(-24, stackedZ, focus),
+    rotateX: mix(-20, -40, focus),
     rotateY: 0,
-    rotateZ: mix(tilt * 0.25, tilt, focus),
-    scaleX: mix(1, 0.92, focus),
-    scaleY: mix(1, 0.92, focus),
+    rotateZ: mix(-0.6, tilt, focus),
+    scaleX: 0.92,
+    scaleY: 0.92,
     opacity: 1,
   }
 
@@ -107,8 +107,9 @@ export function getRecordVisual(
   visual.scaleX = mix(visual.scaleX, mix(1.04, 1, focus), pull)
   visual.scaleY = mix(visual.scaleY, mix(1.04, 1, focus), pull)
 
+  const anchor = mechanic === "hinge" ? mix(-72, -50, focus) : -50
   const transform = [
-    `translate3d(${visual.x.toFixed(2)}px, calc(-50% + ${visual.y.toFixed(2)}px - ${(pull * pullLift * focus).toFixed(2)}%), ${visual.z.toFixed(2)}px)`,
+    `translate3d(${visual.x.toFixed(2)}px, calc(${anchor.toFixed(2)}% + ${visual.y.toFixed(2)}px - ${(pull * pullLift * focus).toFixed(2)}%), ${visual.z.toFixed(2)}px)`,
     `rotateX(${visual.rotateX.toFixed(2)}deg)`,
     `rotateY(${visual.rotateY.toFixed(2)}deg)`,
     `rotateZ(${visual.rotateZ.toFixed(2)}deg)`,
