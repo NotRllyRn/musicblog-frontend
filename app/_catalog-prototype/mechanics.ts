@@ -41,7 +41,7 @@ export function getRecordVisual(
   const stackedZ = direction < 0 ? -82 - tail * 9 : -138 + tail * 10
   const visual = {
     x: 0,
-    y: direction * (mix(0, 100, focus) + tail * 44),
+    y: direction * (mix(0, 124, focus) + tail * 38),
     z: mix(82, stackedZ, focus),
     rotateX: mix(-24, -40, focus),
     rotateY: 0,
