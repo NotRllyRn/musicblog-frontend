@@ -233,7 +233,10 @@ export function RecordDeck({ albums, index, mechanic }: RecordDeckProps) {
       const max = (albums.length - 1) * settings.step
       wheelTarget.current = Math.max(
         0,
-        Math.min(max, wheelTarget.current + event.deltaY * multiplier * sensitivity)
+        Math.min(
+          max,
+          wheelTarget.current + event.deltaY * multiplier * sensitivity
+        )
       )
       scroll.current.scrollTop = wheelTarget.current
     }
