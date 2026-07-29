@@ -9,11 +9,11 @@ import { Text } from "@astryxdesign/core/Text"
 import type { VariantKey } from "./types"
 
 const variants: { key: VariantKey; name: string }[] = [
-  { key: "A", name: "Record shop" },
-  { key: "B", name: "Cover flow" },
-  { key: "C", name: "Archive index" },
-  { key: "D", name: "Pirate radio" },
-  { key: "E", name: "Listening gallery" },
+  { key: "A", name: "Hinge deck" },
+  { key: "B", name: "Deep coverflow" },
+  { key: "C", name: "Loose shuffle" },
+  { key: "D", name: "Push / pull" },
+  { key: "E", name: "Accordion" },
 ]
 
 interface PrototypeSwitcherProps {

@@ -10,3 +10,5 @@ export interface AlbumPost {
 }
 
 export type VariantKey = "A" | "B" | "C" | "D" | "E"
+
+export type FlipMechanic = "hinge" | "orbit" | "shuffle" | "push" | "accordion"

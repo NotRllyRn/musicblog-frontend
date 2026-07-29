@@ -8,7 +8,7 @@ import { PrototypeSwitcher } from "./prototype-switcher"
 import type { AlbumPost, VariantKey } from "./types"
 import { VariantA, VariantB, VariantC, VariantD, VariantE } from "./variants"
 
-// PROTOTYPE: Five catalog directions on `/?variant=`, to be reduced to one.
+// PROTOTYPE: Five record-flipping mechanics on `/?variant=`, to be reduced to one.
 const variants = {
   A: VariantA,
   B: VariantB,

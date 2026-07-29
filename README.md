@@ -1,16 +1,14 @@
 # After the Needle
 
-Five disposable catalog prototypes for browsing the music blog's WordPress
-archive like records in a shop bin.
+Five throwaway prototypes for the music blog’s record-flipping interaction.
 
 ```bash
-pnpm install
 pnpm dev
 ```
 
-Open `http://localhost:3000/?variant=A`. Variants `A` through `E` are also
-switchable with the bottom controls or the left and right arrow keys. Scroll
-inside any of the five lanes; select a cover to open its existing blog post.
+Open `http://localhost:3000/?variant=A`. Try variants `A` through `E` with the
+bottom controls. Each uses a different 3D scrolling mechanic across seven
+borderless groups of real WordPress album covers.
 
-WordPress access is server-only and read-only. After choosing a direction,
-delete the losing variants and promote the winner.
+Hover a record for its floating title and artist. Click it to open the existing
+post. WordPress access is server-only and read-only.

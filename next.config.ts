@@ -17,6 +17,7 @@ const nextConfig: NextConfig = {
         ]
       : [],
   },
+  allowedDevOrigins: ['10.17.11.4'],
 }
 
 export default nextConfig

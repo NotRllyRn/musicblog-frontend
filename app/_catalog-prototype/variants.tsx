@@ -1,7 +1,7 @@
 import { Heading } from "@astryxdesign/core/Heading"
 import { Text } from "@astryxdesign/core/Text"
 
-import { AlbumLanes } from "./album-lanes"
+import { RecordField } from "./record-field"
 import type { AlbumPost } from "./types"
 
 interface VariantProps {
@@ -11,20 +11,15 @@ interface VariantProps {
 export function VariantA({ albums }: VariantProps) {
   return (
     <main className="variant-shell variant-a">
-      <header className="shop-header">
+      <header className="catalog-header">
         <Heading level={1} color="inherit">
           After the Needle
         </Heading>
         <Text type="supporting" color="inherit">
-          Five bins. {albums.length} records. Scroll a lane, then pull a sleeve.
+          {albums.length} records · hinged by hand
         </Text>
       </header>
-      <AlbumLanes albums={albums} variant="A" />
-      <footer className="shop-footer">
-        <Text type="code" color="inherit">
-          New arrivals · Read the shelf from left to right
-        </Text>
-      </footer>
+      <RecordField albums={albums} mechanic="hinge" />
     </main>
   )
 }
@@ -32,39 +27,18 @@ export function VariantA({ albums }: VariantProps) {
 export function VariantB({ albums }: VariantProps) {
   return (
     <main className="variant-shell variant-b">
-      <header className="player-header">
+      <header className="catalog-header">
         <Text type="code" color="inherit">
-          LIBRARY / ALBUMS
+          PERSONAL LIBRARY
         </Text>
         <Heading level={1} color="inherit">
-          Coverflow 817
+          Memory Flow
         </Heading>
         <Text type="supporting" color="inherit">
-          Scroll any channel
+          {albums.length} album notes
         </Text>
       </header>
-      <section className="player-stage">
-        <aside className="player-rail">
-          <Text type="code" color="inherit">
-            SELECT
-          </Text>
-          <Text type="display-3" color="inherit">
-            ↓
-          </Text>
-        </aside>
-        <AlbumLanes albums={albums} variant="B" />
-      </section>
-      <footer className="player-footer">
-        <Text type="code" color="inherit">
-          MENU
-        </Text>
-        <Text type="supporting" color="inherit">
-          Album art is the interface
-        </Text>
-        <Text type="code" color="inherit">
-          ENTER
-        </Text>
-      </footer>
+      <RecordField albums={albums} mechanic="orbit" />
     </main>
   )
 }
@@ -72,33 +46,15 @@ export function VariantB({ albums }: VariantProps) {
 export function VariantC({ albums }: VariantProps) {
   return (
     <main className="variant-shell variant-c">
-      <aside className="archive-sidebar">
-        <Text type="code" color="inherit">
-          PERSONAL INDEX
-        </Text>
+      <header className="catalog-header">
         <Heading level={1} color="inherit">
-          Recorded listening
+          Listening index
         </Heading>
-        <Text as="p" type="body" color="inherit">
-          A visual register of albums heard, considered, and written about.
+        <Text type="supporting" color="inherit">
+          Records heard, considered, and written about · {albums.length}
         </Text>
-        <footer>
-          <Text type="code" color="inherit" hasTabularNumbers>
-            {albums.length} ENTRIES · 5 COLUMNS
-          </Text>
-        </footer>
-      </aside>
-      <section className="archive-catalog">
-        <header className="archive-header">
-          <Text type="code" color="inherit">
-            TITLE / ARTIST / YEAR
-          </Text>
-          <Text type="code" color="inherit">
-            SCROLL EACH COLUMN
-          </Text>
-        </header>
-        <AlbumLanes albums={albums} variant="C" />
-      </section>
+      </header>
+      <RecordField albums={albums} mechanic="shuffle" />
     </main>
   )
 }
@@ -106,28 +62,18 @@ export function VariantC({ albums }: VariantProps) {
 export function VariantD({ albums }: VariantProps) {
   return (
     <main className="variant-shell variant-d">
-      <header className="radio-header">
+      <header className="catalog-header">
         <Heading level={1} color="inherit">
-          Needle Drop Radio
+          Needle Drop
         </Heading>
         <Text type="code" color="inherit">
-          LIVE ARCHIVE · {albums.length} TRANSMISSIONS
+          UNSORTED BY NATURE · {albums.length}
         </Text>
       </header>
-      <section className="radio-stage">
-        <Text type="display-1" color="inherit">
-          ON AIR
-        </Text>
-        <AlbumLanes albums={albums} variant="D" />
-      </section>
-      <footer className="radio-footer">
-        <Text type="code" color="inherit">
-          TUNE VERTICALLY
-        </Text>
-        <Text type="supporting" color="inherit">
-          Five frequencies carrying one unruly record archive.
-        </Text>
-      </footer>
+      <Text type="display-1" color="inherit" aria-hidden="true">
+        PULL ONE
+      </Text>
+      <RecordField albums={albums} mechanic="push" />
     </main>
   )
 }
@@ -135,28 +81,15 @@ export function VariantD({ albums }: VariantProps) {
 export function VariantE({ albums }: VariantProps) {
   return (
     <main className="variant-shell variant-e">
-      <header className="gallery-header">
+      <header className="catalog-header">
         <Heading level={1} color="inherit">
-          Records worth living with
+          In rotation
         </Heading>
-        <Text as="p" type="body" color="inherit">
-          Move slowly. Each column is a shelf; each cover opens a listening
-          note.
+        <Text type="supporting" color="inherit">
+          An unfolding archive of {albums.length} records
         </Text>
       </header>
-      <section className="gallery-stage">
-        <aside className="gallery-marker" aria-hidden="true">
-          <Text type="code" color="inherit">
-            LISTEN / READ / RETURN
-          </Text>
-        </aside>
-        <AlbumLanes albums={albums} variant="E" />
-      </section>
-      <footer className="gallery-footer">
-        <Text type="supporting" color="inherit">
-          An index of {albums.length} album notes
-        </Text>
-      </footer>
+      <RecordField albums={albums} mechanic="accordion" />
     </main>
   )
 }

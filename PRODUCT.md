@@ -19,8 +19,8 @@ standard media grid.
 
 ## Positioning
 
-The primary interaction borrows from flipping vinyl sleeves in a record-shop
-bin: five independent vertical lanes reveal one cover after another.
+The primary interaction borrows from flipping vinyl sleeves by hand: seven
+borderless groups reveal one dimensional cover at a time.
 
 ## Operating Context
 
@@ -30,8 +30,9 @@ read-only from this frontend.
 
 ## Capabilities and Constraints
 
-- Laptop-first catalog with five lanes across the viewport.
-- Vertical browsing within each lane.
+- Laptop-first catalog with seven independently scrolling album groups.
+- No visible containers or separators between the free-floating records.
+- The centered record is fully visible; surrounding records collapse into depth.
 - Existing WordPress posts and featured images are the source of truth.
 - Album-detail pages and mobile layouts are outside the current prototype.
 - The current work is five disposable visual variants, not a production design.
