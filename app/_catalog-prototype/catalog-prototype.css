@@ -11,6 +11,21 @@
   color: var(--catalog-ink);
 }
 
+.variant-shell::before {
+  position: absolute;
+  z-index: 0;
+  inset: 0;
+  background: oklch(0.02 0.01 55 / 0.28);
+  content: "";
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 180ms ease;
+}
+
+.variant-shell:has(.deck-record[data-hovered="true"])::before {
+  opacity: 1;
+}
+
 .variant-shell *,
 .variant-shell *::before,
 .variant-shell *::after {
@@ -148,6 +163,22 @@
   will-change: transform, opacity;
 }
 
+.record-field:has(.deck-record[data-hovered="true"])
+  .deck-record:not([data-hovered="true"])
+  .record-figure {
+  filter: brightness(0.62) saturate(0.78);
+}
+
+.catalog-header,
+.prototype-switcher {
+  transition: filter 180ms ease;
+}
+
+.variant-shell:has(.deck-record[data-hovered="true"]) .catalog-header,
+body:has(.deck-record[data-hovered="true"]) .prototype-switcher {
+  filter: brightness(0.65);
+}
+
 .mechanic-orbit .deck-record,
 .mechanic-shuffle .deck-record {
   transform-origin: center center;
@@ -166,7 +197,9 @@
   background: color-mix(in oklch, var(--catalog-paper) 88%, var(--catalog-ink));
   box-shadow: 0 1.1rem 2.2rem oklch(0.03 0.01 255 / 0.42);
   backface-visibility: hidden;
-  transition: box-shadow 220ms cubic-bezier(0.16, 1, 0.3, 1);
+  transition:
+    box-shadow 220ms cubic-bezier(0.16, 1, 0.3, 1),
+    filter 180ms ease;
 }
 
 .deck-record[data-hovered="true"] .record-figure {
