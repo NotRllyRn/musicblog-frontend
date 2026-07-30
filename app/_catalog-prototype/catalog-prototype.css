@@ -115,6 +115,26 @@
   transform-style: preserve-3d;
 }
 
+.record-preview-stage {
+  position: absolute;
+  z-index: 20;
+  inset: 0;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  pointer-events: none;
+  transform-style: preserve-3d;
+}
+
+.record-preview-positioner {
+  position: absolute;
+  top: 50%;
+  left: 0;
+  width: 100%;
+  aspect-ratio: 1;
+  transform-origin: center bottom;
+}
+
 .record-scroll {
   z-index: 0;
   overflow-y: auto;

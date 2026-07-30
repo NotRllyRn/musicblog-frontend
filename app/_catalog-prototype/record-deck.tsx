@@ -38,7 +38,6 @@ interface AnimatedRecordProps {
   albumIndex: number
   isActive: boolean
   isHovered: boolean
-  isPreviewed: boolean
   mechanic: FlipMechanic
   position: MotionValue<number>
   reduceMotion: boolean
@@ -50,7 +49,6 @@ function AnimatedRecord({
   albumIndex,
   isActive,
   isHovered,
-  isPreviewed,
   mechanic,
   position,
   reduceMotion,
@@ -92,7 +90,6 @@ function AnimatedRecord({
       data-album-index={albumIndex}
       data-hovered={isHovered || undefined}
       data-visual-index={visualIndex}
-      data-preview={isPreviewed || undefined}
       style={dynamicStyle}
     >
       <figure className="record-figure">
@@ -106,17 +103,6 @@ function AnimatedRecord({
           unoptimized
         />
       </figure>
-
-      {isPreviewed && (
-        <aside className="record-preview" aria-hidden="true">
-          <Text type="label" color="inherit" maxLines={2}>
-            {album.title}
-          </Text>
-          <Text type="supporting" color="inherit" maxLines={1}>
-            {album.artist}
-          </Text>
-        </aside>
-      )}
     </motion.li>
   )
 }
@@ -150,6 +136,17 @@ export function RecordDeck({ albums, index, mechanic }: RecordDeckProps) {
   const activeAlbum = albums[activeIndex]
   const previewVisualIndex = hoveredVisualIndex ?? activeIndex
   const previewAlbum = albums[previewVisualIndex]
+  const previewTransform = useTransform(
+    () =>
+      getRecordVisual(
+        mechanic,
+        previewVisualIndex - position.get(),
+        previewVisualIndex,
+        reduceMotion,
+        hoveredVisualIndex === null ? 0 : 1
+      ).transform
+  )
+  const previewStyle = { transform: previewTransform }
 
   const setScroll = useCallback(
     (node: HTMLOListElement | null) => {
@@ -334,7 +331,6 @@ export function RecordDeck({ albums, index, mechanic }: RecordDeckProps) {
             albumIndex={albumIndex}
             isActive={visualIndex === activeIndex}
             isHovered={visualIndex === hoveredVisualIndex}
-            isPreviewed={visualIndex === previewVisualIndex && showPreview}
             key={`${album.id}-${visualIndex}`}
             mechanic={mechanic}
             position={position}
@@ -343,6 +339,24 @@ export function RecordDeck({ albums, index, mechanic }: RecordDeckProps) {
           />
         ))}
       </ol>
+
+      {showPreview && previewAlbum && (
+        <ol className="record-preview-stage" aria-hidden="true">
+          <motion.li
+            className="record-preview-positioner"
+            style={previewStyle}
+          >
+            <aside className="record-preview">
+              <Text type="label" color="inherit" maxLines={2}>
+                {previewAlbum.title}
+              </Text>
+              <Text type="supporting" color="inherit" maxLines={1}>
+                {previewAlbum.artist}
+              </Text>
+            </aside>
+          </motion.li>
+        </ol>
+      )}
 
       <ol
         className={`record-scroll snap-${settings.snap}`}
