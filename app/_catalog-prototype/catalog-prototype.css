@@ -79,6 +79,10 @@
   perspective-origin: center 52%;
 }
 
+.record-deck:has(.deck-record[data-hovered="true"]) {
+  z-index: 10;
+}
+
 .mechanic-orbit {
   --record-step: 6rem;
   perspective: 92rem;
