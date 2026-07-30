@@ -105,8 +105,8 @@ export function getRecordVisual(
   visual.rotateX = mix(visual.rotateX, mix(-18, 0, focus), pull)
   visual.rotateY = mix(visual.rotateY, 0, pull)
   visual.rotateZ = mix(visual.rotateZ, 0, pull)
-  visual.scaleX = mix(visual.scaleX, mix(1.04, 1, focus), pull)
-  visual.scaleY = mix(visual.scaleY, mix(1.04, 1, focus), pull)
+  visual.scaleX = mix(visual.scaleX, mix(1.092, 1.05, focus), pull)
+  visual.scaleY = mix(visual.scaleY, mix(1.092, 1.05, focus), pull)
 
   const anchor = mechanic === "hinge" ? mix(-72, -50, focus) : -50
   const transform = [
