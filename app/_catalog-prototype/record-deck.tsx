@@ -124,8 +124,6 @@ function AnimatedRecord({
 export function RecordDeck({ albums, index, mechanic }: RecordDeckProps) {
   const settings = mechanicSettings[mechanic]
   const radius = Math.floor(settings.window / 2)
-  const albumIndexFor = (visualIndex: number) =>
-    ((visualIndex % albums.length) + albums.length) % albums.length
   const initialIndex = Math.min(albums.length - 1, radius + 2 + (index % 3))
   const [activeIndex, setActiveIndex] = useState(initialIndex)
   const [hoveredVisualIndex, setHoveredVisualIndex] = useState<number | null>(
@@ -151,7 +149,7 @@ export function RecordDeck({ albums, index, mechanic }: RecordDeckProps) {
   const position = reduceMotion ? rawPosition : smoothPosition
   const activeAlbum = albums[activeIndex]
   const previewVisualIndex = hoveredVisualIndex ?? activeIndex
-  const previewAlbum = albums[albumIndexFor(previewVisualIndex)]
+  const previewAlbum = albums[previewVisualIndex]
 
   const setScroll = useCallback(
     (node: HTMLOListElement | null) => {
@@ -247,7 +245,7 @@ export function RecordDeck({ albums, index, mechanic }: RecordDeckProps) {
       return
     }
 
-    window.location.assign(albums[albumIndexFor(visualIndex)].href)
+    window.location.assign(albums[visualIndex].href)
   }
 
   const onPointerMove = (event: PointerEvent<HTMLElement>) => {
@@ -282,19 +280,23 @@ export function RecordDeck({ albums, index, mechanic }: RecordDeckProps) {
     settleTimer.current = setTimeout(finishScrolling, 280)
   }
 
-  const start = activeIndex - radius
-  const windowed = Array.from({ length: settings.window }, (_, offset) => {
+  const start = Math.max(0, activeIndex - radius)
+  const end = Math.min(albums.length, activeIndex + radius + 1)
+  const windowed = Array.from({ length: end - start }, (_, offset) => {
     const visualIndex = start + offset
-    const albumIndex = albumIndexFor(visualIndex)
-    return { album: albums[albumIndex], albumIndex, visualIndex }
+    return {
+      album: albums[visualIndex],
+      albumIndex: visualIndex,
+      visualIndex,
+    }
   })
   const hovered =
     hoveredVisualIndex !== null &&
     !windowed.some(({ visualIndex }) => visualIndex === hoveredVisualIndex)
       ? [
           {
-            album: albums[albumIndexFor(hoveredVisualIndex)],
-            albumIndex: albumIndexFor(hoveredVisualIndex),
+            album: albums[hoveredVisualIndex],
+            albumIndex: hoveredVisualIndex,
             visualIndex: hoveredVisualIndex,
           },
         ]
