@@ -1,3 +1,7 @@
+"use client"
+
+import { useMediaQuery } from "@astryxdesign/core"
+
 import { RecordDeck } from "./record-deck"
 import type { AlbumPost, FlipMechanic } from "./types"
 
@@ -7,16 +11,23 @@ interface RecordFieldProps {
 }
 
 export function RecordField({ albums, mechanic }: RecordFieldProps) {
-  const stacks = Array.from({ length: 7 }, () => [] as AlbumPost[])
+  const isMobile = useMediaQuery("(max-width: 47.99rem)")
+  const isMedium = useMediaQuery("(max-width: 69.99rem)")
+  const deckCount = isMobile ? 3 : isMedium ? 5 : 7
+  const stacks = Array.from({ length: deckCount }, () => [] as AlbumPost[])
   albums.forEach((album, index) => stacks[index % stacks.length].push(album))
 
   return (
-    <section className="record-field" aria-label="Scrollable album catalog">
+    <section
+      className="record-field"
+      aria-label={`Scrollable album catalog in ${deckCount} groups`}
+      data-deck-count={deckCount}
+    >
       {stacks.map((records, index) => (
         <RecordDeck
           albums={records}
           index={index}
-          key={`${mechanic}-${index}`}
+          key={`${mechanic}-${deckCount}-${index}`}
           mechanic={mechanic}
         />
       ))}

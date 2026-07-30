@@ -8,8 +8,9 @@ web
 
 ## Users
 
-Music readers browsing a large personal archive of album reviews on a laptop.
-They want to discover a record visually and open its existing blog post.
+Music readers browsing a large personal archive of album reviews across phones,
+tablets, laptops, and wide desktop displays. They want to discover a record
+visually and open its existing blog post.
 
 ## Product Purpose
 
@@ -19,8 +20,9 @@ standard media grid.
 
 ## Positioning
 
-The primary interaction borrows from flipping vinyl sleeves by hand: seven
-borderless groups reveal one dimensional cover at a time.
+The primary interaction borrows from flipping vinyl sleeves by hand. Three,
+five, or seven responsive borderless groups reveal one dimensional cover at a
+time.
 
 ## Operating Context
 
@@ -30,12 +32,16 @@ read-only from this frontend.
 
 ## Capabilities and Constraints
 
-- Laptop-first catalog with seven independently scrolling album groups.
+- Three independently scrolling album groups on phones, five at medium widths,
+  and seven on desktop displays.
+- Catalog content is capped and centered on ultrawide displays.
 - No visible containers or separators between the free-floating records.
 - The centered record is fully visible; surrounding records collapse into depth.
+- Mouse users hover to preview; touch users tap once to preview and again to open.
+- Starting another scroll dismisses the current preview.
 - Existing WordPress posts and featured images are the source of truth.
-- Album-detail pages and mobile layouts are outside the current prototype.
-- The current work is five disposable visual variants, not a production design.
+- Album-detail pages remain outside the current prototype.
+- The hinged record-shop interaction is the selected direction.
 
 ## Brand Commitments
 

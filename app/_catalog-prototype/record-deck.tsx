@@ -1,6 +1,6 @@
 "use client"
 
-import { Text, VisuallyHidden } from "@astryxdesign/core"
+import { Text, VisuallyHidden, useMediaQuery } from "@astryxdesign/core"
 import {
   motion,
   type MotionValue,
@@ -14,7 +14,9 @@ import {
 import Image from "next/image"
 import {
   type KeyboardEvent,
+  type MouseEvent,
   type PointerEvent,
+  type UIEvent,
   type WheelEvent,
   useCallback,
   useEffect,
@@ -94,7 +96,6 @@ function AnimatedRecord({
       data-preview-above={previewAbove || undefined}
       data-visual-index={visualIndex}
       data-preview={isPreviewed || undefined}
-      onClick={() => window.location.assign(album.href)}
       style={dynamicStyle}
     >
       <figure className="record-figure">
@@ -137,11 +138,11 @@ export function RecordDeck({ albums, index, mechanic }: RecordDeckProps) {
   const activeRef = useRef(initialIndex)
   const deck = useRef<HTMLElement>(null)
   const initialized = useRef(false)
-  const pointer = useRef({ x: 0, y: 0 })
   const scroll = useRef<HTMLOListElement>(null)
   const scrolling = useRef(false)
   const wheelTarget = useRef(initialIndex * settings.step)
   const settleTimer = useRef<ReturnType<typeof setTimeout>>(null)
+  const isTouch = useMediaQuery("(hover: none), (pointer: coarse)")
   const reduceMotion = Boolean(useReducedMotion())
   const { scrollY } = useScroll({ container: scroll })
   const rawPosition = useTransform(scrollY, (value) => value / settings.step)
@@ -181,34 +182,37 @@ export function RecordDeck({ albums, index, mechanic }: RecordDeckProps) {
     setActiveIndex(next)
   })
 
-  const albumIndexAt = (target: EventTarget | null) => {
-    const record =
-      target instanceof Element
-        ? target.closest<HTMLElement>("[data-visual-index]")
-        : null
-    if (record?.closest(".record-deck") !== deck.current) return null
-    const next = Number(record.dataset.visualIndex)
-    return Number.isFinite(next) ? next : null
+  const visualIndexAt = (
+    target: EventTarget | null,
+    point?: { x: number; y: number }
+  ) => {
+    const elements = target instanceof Element ? [target] : []
+    if (point) elements.push(...document.elementsFromPoint(point.x, point.y))
+
+    for (const element of elements) {
+      const record = element.closest<HTMLElement>("[data-visual-index]")
+      if (record?.closest(".record-deck") !== deck.current) continue
+      const next = Number(record.dataset.visualIndex)
+      if (Number.isFinite(next)) return next
+    }
+
+    return null
   }
 
-  const retargetPointer = () => {
+  const clearSelection = () => {
+    setHoveredVisualIndex(null)
+    setShowPreview(false)
+  }
+
+  const finishScrolling = () => {
     scrolling.current = false
     if (scroll.current) wheelTarget.current = scroll.current.scrollTop
-    const target = document.elementFromPoint(
-      pointer.current.x,
-      pointer.current.y
-    )
-    const next = albumIndexAt(target)
-    const isInside =
-      target instanceof Element &&
-      target.closest(".record-deck") === deck.current
-    setHoveredVisualIndex(next ?? (isInside ? activeRef.current : null))
   }
 
   const moveTo = (nextIndex: number) => {
     const next = Math.max(0, Math.min(albums.length - 1, nextIndex))
     wheelTarget.current = next * settings.step
-    setHoveredVisualIndex(null)
+    clearSelection()
     scroll.current?.scrollTo({
       top: wheelTarget.current,
       behavior: reduceMotion ? "auto" : "smooth",
@@ -233,13 +237,36 @@ export function RecordDeck({ albums, index, mechanic }: RecordDeckProps) {
     }
   }
 
+  const onClick = (event: MouseEvent<HTMLElement>) => {
+    const visualIndex = visualIndexAt(event.target, {
+      x: event.clientX,
+      y: event.clientY,
+    })
+    if (visualIndex === null) return
+
+    if (isTouch && visualIndex !== hoveredVisualIndex) {
+      setHoveredVisualIndex(visualIndex)
+      setShowPreview(true)
+      return
+    }
+
+    window.location.assign(albums[albumIndexFor(visualIndex)].href)
+  }
+
   const onPointerMove = (event: PointerEvent<HTMLElement>) => {
-    pointer.current = { x: event.clientX, y: event.clientY }
-    if (!scrolling.current) setHoveredVisualIndex(albumIndexAt(event.target))
+    if (isTouch || scrolling.current) return
+    const visualIndex = visualIndexAt(event.target)
+    setHoveredVisualIndex(visualIndex)
+    setShowPreview(visualIndex !== null)
+  }
+
+  const onScroll = (event: UIEvent<HTMLOListElement>) => {
+    if (!scrolling.current) wheelTarget.current = event.currentTarget.scrollTop
+    clearSelection()
   }
 
   const onWheel = (event: WheelEvent<HTMLElement>) => {
-    pointer.current = { x: event.clientX, y: event.clientY }
+    clearSelection()
     scrolling.current = true
     if (scroll.current) {
       const multiplier = event.deltaMode === 1 ? 16 : 1
@@ -255,7 +282,7 @@ export function RecordDeck({ albums, index, mechanic }: RecordDeckProps) {
       scroll.current.scrollTop = wheelTarget.current
     }
     if (settleTimer.current) clearTimeout(settleTimer.current)
-    settleTimer.current = setTimeout(retargetPointer, 280)
+    settleTimer.current = setTimeout(finishScrolling, 280)
   }
 
   const start = activeIndex - radius
@@ -286,13 +313,14 @@ export function RecordDeck({ albums, index, mechanic }: RecordDeckProps) {
       className={`record-deck mechanic-${mechanic} deck-${index + 1}`}
       aria-keyshortcuts="ArrowUp ArrowDown Home End Enter"
       aria-label={`Browse albums vertically. Selected: ${activeAlbum?.title ?? "album"}.`}
-      onBlur={() => setShowPreview(false)}
+      onBlur={() => {
+        if (!isTouch) clearSelection()
+      }}
+      onClick={onClick}
       onFocus={() => setShowPreview(true)}
       onKeyDown={onKeyDown}
-      onPointerEnter={() => setShowPreview(true)}
       onPointerLeave={() => {
-        setHoveredVisualIndex(null)
-        setShowPreview(false)
+        if (!isTouch) clearSelection()
       }}
       onPointerMove={onPointerMove}
       onWheel={onWheel}
@@ -321,6 +349,7 @@ export function RecordDeck({ albums, index, mechanic }: RecordDeckProps) {
       <ol
         className={`record-scroll snap-${settings.snap}`}
         aria-hidden="true"
+        onScroll={onScroll}
         ref={setScroll}
       >
         {albums.map((album) => (

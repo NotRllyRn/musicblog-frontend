@@ -1,14 +1,17 @@
 # After the Needle
 
-Five throwaway prototypes for the music blog’s record-flipping interaction.
+A responsive record-shop browser for the music blog’s album archive.
 
 ```bash
 pnpm dev
 ```
 
 Open `http://localhost:3000/?variant=A`. Try variants `A` through `E` with the
-bottom controls. Each uses a different 3D scrolling mechanic across seven
-borderless groups of real WordPress album covers.
+bottom controls. Variant A is the selected hinged-record direction. The catalog
+uses three groups on phones, five at medium widths, and seven on desktop.
+Ultrawide layouts keep the catalog centered at a readable width.
 
-Hover a record for its floating title and artist. Click it to open the existing
-post. WordPress access is server-only and read-only.
+With a mouse, hover a record to preview it and click to open its existing post.
+On touch screens, tap once to preview and tap the selected record again to open
+it. Starting another scroll dismisses the preview. WordPress access is
+server-only and read-only.
