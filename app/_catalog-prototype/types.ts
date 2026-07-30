@@ -8,7 +8,3 @@ export interface AlbumPost {
   imageUrl: string
   imageAlt: string
 }
-
-export type VariantKey = "A" | "B" | "C" | "D" | "E"
-
-export type FlipMechanic = "hinge" | "orbit" | "shuffle" | "push" | "accordion"

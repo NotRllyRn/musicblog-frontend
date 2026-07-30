@@ -1,34 +1,17 @@
 "use client"
 
-import { useState } from "react"
 import { Heading } from "@astryxdesign/core/Heading"
 import { Text } from "@astryxdesign/core/Text"
 
-import { PrototypeSwitcher } from "./prototype-switcher"
-import type { AlbumPost, VariantKey } from "./types"
-import { VariantA, VariantB, VariantC, VariantD, VariantE } from "./variants"
+import { RecordField } from "./record-field"
+import { ThemeToggle } from "./theme-toggle"
+import type { AlbumPost } from "./types"
 
-// PROTOTYPE: Five record-flipping mechanics on `/?variant=`, to be reduced to one.
-const variants = {
-  A: VariantA,
-  B: VariantB,
-  C: VariantC,
-  D: VariantD,
-  E: VariantE,
-}
-
-interface CatalogPrototypeProps {
+interface CatalogBrowserProps {
   albums: AlbumPost[]
-  initialVariant: VariantKey
 }
 
-export function CatalogPrototype({
-  albums,
-  initialVariant,
-}: CatalogPrototypeProps) {
-  const [variant, setVariant] = useState(initialVariant)
-  const ActiveVariant = variants[variant]
-
+export function CatalogBrowser({ albums }: CatalogBrowserProps) {
   if (!albums.length) {
     return (
       <>
@@ -38,15 +21,25 @@ export function CatalogPrototype({
             Check the WordPress connection, then refresh this page.
           </Text>
         </main>
-        <PrototypeSwitcher current={variant} onChange={setVariant} />
+        <ThemeToggle />
       </>
     )
   }
 
   return (
     <>
-      <ActiveVariant albums={albums} />
-      <PrototypeSwitcher current={variant} onChange={setVariant} />
+      <main className="variant-shell">
+        <header className="catalog-header">
+          <Heading level={1} color="inherit">
+            After the Needle
+          </Heading>
+          <Text type="supporting" color="inherit">
+            {albums.length} records · hinged by hand
+          </Text>
+        </header>
+        <RecordField albums={albums} />
+      </main>
+      <ThemeToggle />
     </>
   )
 }

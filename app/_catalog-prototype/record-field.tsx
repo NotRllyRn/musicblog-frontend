@@ -3,14 +3,13 @@
 import { useMediaQuery } from "@astryxdesign/core"
 
 import { RecordDeck } from "./record-deck"
-import type { AlbumPost, FlipMechanic } from "./types"
+import type { AlbumPost } from "./types"
 
 interface RecordFieldProps {
   albums: AlbumPost[]
-  mechanic: FlipMechanic
 }
 
-export function RecordField({ albums, mechanic }: RecordFieldProps) {
+export function RecordField({ albums }: RecordFieldProps) {
   const isMobile = useMediaQuery("(max-width: 47.99rem)")
   const isMedium = useMediaQuery("(max-width: 69.99rem)")
   const deckCount = isMobile ? 3 : isMedium ? 5 : 7
@@ -27,8 +26,7 @@ export function RecordField({ albums, mechanic }: RecordFieldProps) {
         <RecordDeck
           albums={records}
           index={index}
-          key={`${mechanic}-${deckCount}-${index}`}
-          mechanic={mechanic}
+          key={`${deckCount}-${index}`}
         />
       ))}
     </section>

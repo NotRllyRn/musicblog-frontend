@@ -40,14 +40,16 @@ read-only from this frontend.
 - Mouse users hover to preview; touch users tap once to preview and again to open.
 - Starting another scroll dismisses the current preview.
 - Existing WordPress posts and featured images are the source of truth.
-- Album-detail pages remain outside the current prototype.
+- Album-detail pages remain outside the current catalog scope.
 - The hinged record-shop interaction is the selected direction.
+- Light mode uses the quiet listening-index palette; dark mode uses the warm
+  record-shop palette. The operating-system preference is the initial default.
 
 ## Brand Commitments
 
 The product is a personal music blog rooted in vinyl collecting, record shops,
-and older cover-flow music players. Keep the implementation minimal, modular,
-and easy to extend after a direction is selected.
+and older cover-flow music players. Keep the implementation minimal and let the
+selected hinged interaction remain the product's single browsing model.
 
 ## Evidence on Hand
 

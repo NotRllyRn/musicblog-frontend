@@ -25,12 +25,11 @@ import {
 } from "react"
 
 import { getRecordVisual, mechanicSettings } from "./mechanics"
-import type { AlbumPost, FlipMechanic } from "./types"
+import type { AlbumPost } from "./types"
 
 interface RecordDeckProps {
   albums: AlbumPost[]
   index: number
-  mechanic: FlipMechanic
 }
 
 interface AnimatedRecordProps {
@@ -38,7 +37,6 @@ interface AnimatedRecordProps {
   albumIndex: number
   isActive: boolean
   isHovered: boolean
-  mechanic: FlipMechanic
   position: MotionValue<number>
   reduceMotion: boolean
   visualIndex: number
@@ -49,7 +47,6 @@ function AnimatedRecord({
   albumIndex,
   isActive,
   isHovered,
-  mechanic,
   position,
   reduceMotion,
   visualIndex,
@@ -69,17 +66,11 @@ function AnimatedRecord({
   const distance = () => visualIndex - position.get()
   const transform = useTransform(
     () =>
-      getRecordVisual(
-        mechanic,
-        distance(),
-        albumIndex,
-        reduceMotion,
-        pull.get()
-      ).transform
+      getRecordVisual(distance(), albumIndex, reduceMotion, pull.get())
+        .transform
   )
   const opacity = useTransform(
-    () =>
-      getRecordVisual(mechanic, distance(), albumIndex, reduceMotion).opacity
+    () => getRecordVisual(distance(), albumIndex, reduceMotion).opacity
   )
   const dynamicStyle = { opacity, transform }
 
@@ -107,8 +98,8 @@ function AnimatedRecord({
   )
 }
 
-export function RecordDeck({ albums, index, mechanic }: RecordDeckProps) {
-  const settings = mechanicSettings[mechanic]
+export function RecordDeck({ albums, index }: RecordDeckProps) {
+  const settings = mechanicSettings
   const radius = Math.floor(settings.window / 2)
   const initialIndex = Math.min(albums.length - 1, radius + 2 + (index % 3))
   const [activeIndex, setActiveIndex] = useState(initialIndex)
@@ -146,7 +137,6 @@ export function RecordDeck({ albums, index, mechanic }: RecordDeckProps) {
   const previewTransform = useTransform(
     () =>
       getRecordVisual(
-        mechanic,
         previewVisualIndex - position.get(),
         previewVisualIndex,
         reduceMotion,
@@ -273,7 +263,7 @@ export function RecordDeck({ albums, index, mechanic }: RecordDeckProps) {
     scrolling.current = true
     if (scroll.current) {
       const multiplier = event.deltaMode === 1 ? 16 : 1
-      const sensitivity = mechanic === "hinge" ? 1.5 : 1
+      const sensitivity = 1.5
       const max = (albums.length - 1) * settings.step
       wheelTarget.current = Math.max(
         0,
@@ -317,7 +307,7 @@ export function RecordDeck({ albums, index, mechanic }: RecordDeckProps) {
 
   return (
     <section
-      className={`record-deck mechanic-${mechanic} deck-${index + 1}`}
+      className={`record-deck deck-${index + 1}`}
       aria-keyshortcuts="ArrowUp ArrowDown Home End Enter"
       aria-label={`Browse albums vertically. Selected: ${activeAlbum?.title ?? "album"}.`}
       onBlur={() => {
@@ -343,7 +333,6 @@ export function RecordDeck({ albums, index, mechanic }: RecordDeckProps) {
             isActive={visualIndex === activeIndex}
             isHovered={visualIndex === hoveredVisualIndex}
             key={`${album.id}-${visualIndex}`}
-            mechanic={mechanic}
             position={position}
             reduceMotion={reduceMotion}
             visualIndex={visualIndex}
