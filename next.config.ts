@@ -17,7 +17,7 @@ const nextConfig: NextConfig = {
         ]
       : [],
   },
-  allowedDevOrigins: ['10.17.11.4'],
+  allowedDevOrigins: ['10.17.11.4', 'test.callita.day'],
 }
 
 export default nextConfig
