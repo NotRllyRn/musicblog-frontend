@@ -197,6 +197,11 @@ export function RecordDeck({ albums, index }: RecordDeckProps) {
     setShowPreview(false)
   }
 
+  const restartPreview = () => {
+    previewPullTarget.set(0)
+    previewPullSpring.jump(0)
+  }
+
   const finishScrolling = () => {
     scrolling.current = false
     if (scroll.current) wheelTarget.current = scroll.current.scrollTop
@@ -238,6 +243,7 @@ export function RecordDeck({ albums, index }: RecordDeckProps) {
     if (visualIndex === null) return
 
     if (isTouch && visualIndex !== hoveredVisualIndex) {
+      restartPreview()
       setHoveredVisualIndex(visualIndex)
       setShowPreview(true)
       return
@@ -249,6 +255,8 @@ export function RecordDeck({ albums, index }: RecordDeckProps) {
   const onPointerMove = (event: PointerEvent<HTMLElement>) => {
     if (isTouch || scrolling.current) return
     const visualIndex = visualIndexAt(event.target)
+    if (visualIndex !== null && visualIndex !== hoveredVisualIndex)
+      restartPreview()
     setHoveredVisualIndex(visualIndex)
     setShowPreview(visualIndex !== null)
   }
