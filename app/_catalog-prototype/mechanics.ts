@@ -104,6 +104,7 @@ export function getRecordVisual(
   visual.z = mix(visual.z, mix(132, 180, focus), pull)
   visual.rotateX = mix(visual.rotateX, mix(-18, 0, focus), pull)
   visual.rotateY = mix(visual.rotateY, 0, pull)
+  visual.rotateZ = mix(visual.rotateZ, 0, pull)
   visual.scaleX = mix(visual.scaleX, mix(1.04, 1, focus), pull)
   visual.scaleY = mix(visual.scaleY, mix(1.04, 1, focus), pull)
 
