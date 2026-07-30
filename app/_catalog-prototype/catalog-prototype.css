@@ -180,8 +180,8 @@
 .record-preview {
   position: absolute;
   z-index: 5;
-  top: calc(100% + 0.65rem);
   right: 0.1rem;
+  bottom: calc(100% + 0.65rem);
   left: 0.1rem;
   display: grid;
   gap: 0.05rem;
@@ -195,11 +195,6 @@
   pointer-events: none;
   transform: translateZ(0.06rem);
   backdrop-filter: blur(0.65rem);
-}
-
-.deck-record[data-preview-above="true"] .record-preview {
-  top: auto;
-  bottom: calc(100% + 0.65rem);
 }
 
 /* A — a sleeve hinged around its lower edge like a record handled by hand. */

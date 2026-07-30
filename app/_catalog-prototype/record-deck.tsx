@@ -41,7 +41,6 @@ interface AnimatedRecordProps {
   isPreviewed: boolean
   mechanic: FlipMechanic
   position: MotionValue<number>
-  previewAbove: boolean
   reduceMotion: boolean
   visualIndex: number
 }
@@ -54,7 +53,6 @@ function AnimatedRecord({
   isPreviewed,
   mechanic,
   position,
-  previewAbove,
   reduceMotion,
   visualIndex,
 }: AnimatedRecordProps) {
@@ -93,7 +91,6 @@ function AnimatedRecord({
       data-active={isActive || undefined}
       data-album-index={albumIndex}
       data-hovered={isHovered || undefined}
-      data-preview-above={previewAbove || undefined}
       data-visual-index={visualIndex}
       data-preview={isPreviewed || undefined}
       style={dynamicStyle}
@@ -339,7 +336,6 @@ export function RecordDeck({ albums, index, mechanic }: RecordDeckProps) {
             key={`${album.id}-${visualIndex}`}
             mechanic={mechanic}
             position={position}
-            previewAbove={visualIndex > activeIndex}
             reduceMotion={reduceMotion}
             visualIndex={visualIndex}
           />
