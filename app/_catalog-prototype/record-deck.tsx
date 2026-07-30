@@ -136,6 +136,13 @@ export function RecordDeck({ albums, index, mechanic }: RecordDeckProps) {
   const activeAlbum = albums[activeIndex]
   const previewVisualIndex = hoveredVisualIndex ?? activeIndex
   const previewAlbum = albums[previewVisualIndex]
+  const previewPullTarget = useMotionValue(0)
+  const previewPullSpring = useSpring(previewPullTarget, {
+    damping: 28,
+    mass: 0.32,
+    stiffness: 280,
+  })
+  const previewPull = reduceMotion ? previewPullTarget : previewPullSpring
   const previewTransform = useTransform(
     () =>
       getRecordVisual(
@@ -143,10 +150,14 @@ export function RecordDeck({ albums, index, mechanic }: RecordDeckProps) {
         previewVisualIndex - position.get(),
         previewVisualIndex,
         reduceMotion,
-        hoveredVisualIndex === null ? 0 : 1
+        previewPull.get()
       ).transform
   )
   const previewStyle = { transform: previewTransform }
+
+  useEffect(() => {
+    previewPullTarget.set(hoveredVisualIndex === null ? 0 : 1)
+  }, [hoveredVisualIndex, previewPullTarget])
 
   const setScroll = useCallback(
     (node: HTMLOListElement | null) => {
@@ -342,10 +353,7 @@ export function RecordDeck({ albums, index, mechanic }: RecordDeckProps) {
 
       {showPreview && previewAlbum && (
         <ol className="record-preview-stage" aria-hidden="true">
-          <motion.li
-            className="record-preview-positioner"
-            style={previewStyle}
-          >
+          <motion.li className="record-preview-positioner" style={previewStyle}>
             <aside className="record-preview">
               <Text type="label" color="inherit" maxLines={2}>
                 {previewAlbum.title}
