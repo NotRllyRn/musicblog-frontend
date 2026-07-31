@@ -73,8 +73,8 @@ async function fetchPage(page: number) {
   url.searchParams.set("_fields", "id,date,link,title,_links,_embedded")
 
   const response = await fetch(url, {
-    cache: "no-store",
     headers: requestHeaders(),
+    next: { revalidate: 3600, tags: ["wordpress-albums"] },
     signal: AbortSignal.timeout(15_000),
   })
 
