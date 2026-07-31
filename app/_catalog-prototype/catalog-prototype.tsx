@@ -2,18 +2,40 @@
 
 import { Heading } from "@astryxdesign/core/Heading"
 import { Text } from "@astryxdesign/core/Text"
-import { useCallback, useRef, useState } from "react"
+import { useCallback, useEffect, useRef, useState } from "react"
 
 import { RecordField } from "./record-field"
 import { ThemeToggle } from "./theme-toggle"
-import type { AlbumPage } from "./types"
+import type { AlbumPage, DeckCount } from "./types"
 
 interface CatalogBrowserProps {
   initialPage: AlbumPage
 }
 
+function useDeckCount() {
+  const [deckCount, setDeckCount] = useState<DeckCount | null>(null)
+
+  useEffect(() => {
+    const mobile = window.matchMedia("(max-width: 47.99rem)")
+    const medium = window.matchMedia("(max-width: 69.99rem)")
+    const update = () =>
+      setDeckCount(mobile.matches ? 3 : medium.matches ? 5 : 7)
+
+    update()
+    mobile.addEventListener("change", update)
+    medium.addEventListener("change", update)
+    return () => {
+      mobile.removeEventListener("change", update)
+      medium.removeEventListener("change", update)
+    }
+  }, [])
+
+  return deckCount
+}
+
 export function CatalogBrowser({ initialPage }: CatalogBrowserProps) {
   const [albums, setAlbums] = useState(initialPage.albums)
+  const deckCount = useDeckCount()
   const nextPage = useRef(initialPage.page + 1)
   const isLoading = useRef(false)
   const loadMore = useCallback(async () => {
@@ -45,6 +67,15 @@ export function CatalogBrowser({ initialPage }: CatalogBrowserProps) {
     )
   }
 
+  if (deckCount === null) {
+    return (
+      <>
+        <main className="variant-shell" aria-busy="true" />
+        <ThemeToggle />
+      </>
+    )
+  }
+
   return (
     <>
       <main className="variant-shell">
@@ -56,7 +87,11 @@ export function CatalogBrowser({ initialPage }: CatalogBrowserProps) {
             {initialPage.total} records · hinged by hand
           </Text>
         </header>
-        <RecordField albums={albums} onNeedMore={loadMore} />
+        <RecordField
+          albums={albums}
+          deckCount={deckCount}
+          onNeedMore={loadMore}
+        />
       </main>
       <ThemeToggle />
     </>

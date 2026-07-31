@@ -15,3 +15,5 @@ export interface AlbumPage {
   total: number
   totalPages: number
 }
+
+export type DeckCount = 3 | 5 | 7
