@@ -1,7 +1,10 @@
+import { Suspense } from "react"
+
+import { CatalogLoading } from "@/app/_catalog-prototype/catalog-loading"
 import { CatalogBrowser } from "@/app/_catalog-prototype/catalog-prototype"
 import { getAlbumPage } from "@/lib/wordpress"
 
-export default async function Page() {
+async function AlbumCatalog() {
   const initialPage = await getAlbumPage().catch(() => ({
     albums: [],
     page: 1,
@@ -10,4 +13,12 @@ export default async function Page() {
   }))
 
   return <CatalogBrowser initialPage={initialPage} />
+}
+
+export default function Page() {
+  return (
+    <Suspense fallback={<CatalogLoading />}>
+      <AlbumCatalog />
+    </Suspense>
+  )
 }

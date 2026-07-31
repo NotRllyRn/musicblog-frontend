@@ -4,6 +4,7 @@ import { Heading } from "@astryxdesign/core/Heading"
 import { Text } from "@astryxdesign/core/Text"
 import { useCallback, useEffect, useRef, useState } from "react"
 
+import { CatalogLoading } from "./catalog-loading"
 import { RecordField } from "./record-field"
 import { ThemeToggle } from "./theme-toggle"
 import type { AlbumPage, DeckCount } from "./types"
@@ -67,14 +68,7 @@ export function CatalogBrowser({ initialPage }: CatalogBrowserProps) {
     )
   }
 
-  if (deckCount === null) {
-    return (
-      <>
-        <main className="variant-shell" aria-busy="true" />
-        <ThemeToggle />
-      </>
-    )
-  }
+  if (deckCount === null) return <CatalogLoading />
 
   return (
     <>
