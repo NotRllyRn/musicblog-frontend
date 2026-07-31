@@ -99,6 +99,7 @@
   list-style: none;
   perspective: 70rem;
   perspective-origin: center 52%;
+  transform: translateY(clamp(-6.5rem, calc(11.875rem - 34dvh), -3.25rem));
   transform-style: preserve-3d;
 }
 
@@ -121,38 +122,8 @@
   transform-origin: center bottom;
 }
 
-.loading-sleeve:nth-child(1) {
-  transform: translate3d(
-      0,
-      calc(
-        -50% - 7.75rem +
-          clamp(
-            max(-50rem, -33.6dvh),
-            266.64% - 9.5rem - 66.64dvh +
-              clamp(0rem, calc(18.82rem - 39.2vw), 9.25rem),
-            -8rem
-          )
-      ),
-      -9.625rem
-    )
-    rotateX(-40deg) scale(0.92);
-}
-
-.loading-sleeve:nth-child(2) {
-  transform: translate3d(
-      0,
-      calc(
-        -50% - 7.75rem +
-          clamp(
-            max(-37.5rem, -25.2dvh),
-            199.98% - 7.125rem - 49.98dvh +
-              clamp(0rem, calc(14.11rem - 29.4vw), 6.9375rem),
-            -6rem
-          )
-      ),
-      -8.5rem
-    )
-    rotateX(-40deg) scale(0.92);
+.loading-sleeve:nth-child(-n + 2) {
+  display: none;
 }
 
 .loading-sleeve:nth-child(3) {
@@ -281,6 +252,7 @@
 .record-deck {
   --record-step: 4.5rem;
   position: relative;
+  z-index: 1;
   min-width: 0;
   min-height: 0;
   anchor-scope: --record-hover;
@@ -466,6 +438,53 @@ body:has(.deck-record[data-hovered="true"]) .theme-toggle {
   backdrop-filter: blur(0.65rem);
 }
 
+.catalog-easter-egg {
+  position: absolute;
+  z-index: 0;
+  inset: 52% var(--catalog-gutter) 4%;
+  display: grid;
+  color: color-mix(in oklch, var(--catalog-ink) 86%, transparent);
+  opacity: 0;
+  place-content: center;
+  pointer-events: none;
+  perspective: 70rem;
+  transform: translateY(35%);
+  transition:
+    opacity var(--duration-medium) var(--ease-standard),
+    transform var(--duration-slow-max) var(--ease-standard);
+}
+
+.catalog-easter-egg[data-visible="true"] {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.catalog-easter-egg .astryx-heading {
+  font-size: clamp(4rem, 14vw, 13rem);
+  line-height: 0.82;
+  letter-spacing: -0.08em;
+  text-shadow:
+    0 0.08em 0 color-mix(in oklch, var(--catalog-paper) 45%, transparent),
+    0 0.16em 0.2em oklch(0.03 0.01 55 / 0.28);
+  transform: rotateX(14deg) rotateZ(-1.25deg) translateZ(1rem);
+  transform-style: preserve-3d;
+}
+
+.catalog-easter-egg[data-visible="true"] .astryx-heading {
+  animation: easter-egg-float 9s ease-in-out infinite;
+}
+
+@keyframes easter-egg-float {
+  0%,
+  100% {
+    transform: rotateX(14deg) rotateZ(-1.25deg) translate3d(0, -0.2rem, 1rem);
+  }
+
+  50% {
+    transform: rotateX(12deg) rotateZ(1.25deg) translate3d(0, 0.2rem, 1rem);
+  }
+}
+
 .theme-toggle {
   position: fixed;
   z-index: 30;
@@ -544,6 +563,12 @@ body:has(.deck-record[data-hovered="true"]) .theme-toggle {
 }
 
 @media (prefers-reduced-motion: reduce) {
+  .catalog-easter-egg,
+  .catalog-easter-egg[data-visible="true"] .astryx-heading {
+    animation: none;
+    transition: none;
+  }
+
   .deck-record {
     will-change: auto;
   }

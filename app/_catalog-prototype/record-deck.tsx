@@ -30,6 +30,7 @@ import type { AlbumPost } from "./types"
 interface RecordDeckProps {
   albums: AlbumPost[]
   index: number
+  onEndChange: (index: number, ended: boolean) => void
   onNeedMore: () => void
   onSelectionChange: (visualIndex: number | null) => void
   selectionActive: boolean
@@ -139,6 +140,7 @@ function RecordHitZone({
 export function RecordDeck({
   albums,
   index,
+  onEndChange,
   onNeedMore,
   onSelectionChange,
   selectionActive,
@@ -147,6 +149,8 @@ export function RecordDeck({
 }: RecordDeckProps) {
   const settings = mechanicSettings
   const radius = Math.floor(settings.window / 2)
+  const recordsAbove = radius - 4
+  const recordsBelow = radius
   const initialIndex = Math.min(albums.length - 1, radius + 2 + (index % 3))
   const [activeIndex, setActiveIndex] = useState(initialIndex)
   const [hoveredVisualIndex, setHoveredVisualIndex] = useState<number | null>(
@@ -222,10 +226,14 @@ export function RecordDeck({
   useEffect(() => {
     if (
       albums.length < totalRecords &&
-      activeIndex + radius >= albums.length - 1
+      activeIndex + recordsBelow >= albums.length - 1
     )
       onNeedMore()
-  }, [activeIndex, albums.length, onNeedMore, radius, totalRecords])
+  }, [activeIndex, albums.length, onNeedMore, recordsBelow, totalRecords])
+
+  useEffect(() => {
+    onEndChange(index, activeIndex === totalRecords - 1 && Boolean(activeAlbum))
+  }, [activeAlbum, activeIndex, index, onEndChange, totalRecords])
 
   useMotionValueEvent(position, "change", (value) => {
     const next = Math.max(0, Math.min(totalRecords - 1, Math.round(value)))
@@ -357,8 +365,8 @@ export function RecordDeck({
     settleTimer.current = setTimeout(finishScrolling, 280)
   }
 
-  const start = Math.max(0, activeIndex - radius)
-  const end = Math.min(totalRecords, activeIndex + radius + 1)
+  const start = Math.max(0, activeIndex - recordsAbove)
+  const end = Math.min(totalRecords, activeIndex + recordsBelow + 1)
   const windowed = Array.from({ length: end - start }, (_, offset) => {
     const visualIndex = start + offset
     return {

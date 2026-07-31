@@ -58,13 +58,18 @@ export function getRecordVisual(
     direction < 0
       ? `clamp(${(-12.5 * pullAmount).toFixed(2)}dvh, calc(${(125 * pullAmount).toFixed(2)}px - ${(25 * pullAmount).toFixed(2)}dvh), ${(-24 * pullAmount).toFixed(2)}px)`
       : "0px"
+  const focusLift = "clamp(52px, calc(34dvh - 190px), 104px)"
+  const pullCompensation =
+    direction < 0
+      ? `clamp(${(52 * pullAmount).toFixed(2)}px, calc(${(34 * pullAmount).toFixed(2)}dvh - ${(190 * pullAmount).toFixed(2)}px), ${(104 * pullAmount).toFixed(2)}px)`
+      : "0px"
   const z = mix(mix(-24, stackedZ, focus), mix(132, 180, focus), pull)
   const rotateX = mix(mix(-20, -40, focus), mix(-18, 0, focus), pull)
   const rotateZ = mix(mix(-0.6, tilt, focus), 0, pull)
   const scale = mix(0.92, mix(1.092, 1.05, focus), pull)
   const anchor = mix(-72, -50, focus)
   const transform = [
-    `translate3d(${x.toFixed(2)}px, calc(${anchor.toFixed(2)}% + ${firstPercent.toFixed(2)}% + ${firstY.toFixed(2)}px + ${tailY} + ${pulledY} - ${(pullAmount * pullLift).toFixed(2)}%), ${z.toFixed(2)}px)`,
+    `translate3d(${x.toFixed(2)}px, calc(${anchor.toFixed(2)}% + ${firstPercent.toFixed(2)}% + ${firstY.toFixed(2)}px + ${tailY} + ${pulledY} + ${pullCompensation} - ${focusLift} - ${(pullAmount * pullLift).toFixed(2)}%), ${z.toFixed(2)}px)`,
     `rotateX(${rotateX.toFixed(2)}deg)`,
     "rotateY(0deg)",
     `rotateZ(${rotateZ.toFixed(2)}deg)`,

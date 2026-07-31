@@ -36,7 +36,9 @@ read-only from this frontend.
   and seven on desktop displays.
 - Catalog content is capped and centered on ultrawide displays.
 - No visible containers or separators between the free-floating records.
-- The centered record is fully visible; surrounding records collapse into depth.
+- The focal record sits in the upper half with at most five sleeves above it;
+  surrounding records collapse into depth.
+- Reaching the final album in every lane reveals the floating end-of-catalog text.
 - Mouse users preview from stationary exposed-sleeve hit regions, so the hover
   remains stable while the selected sleeve moves.
 - Touch users have one global selection: tap once to preview, tap that sleeve

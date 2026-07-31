@@ -16,7 +16,8 @@ With a mouse, hover a record’s exposed resting edge to preview it and click to
 open its existing post. The stationary edge remains active while the sleeve
 moves forward. On touch screens, tap once to preview and tap the selected record
 again to open it; tapping anywhere else dismisses it. Starting another scroll
-also dismisses the preview. WordPress access is server-only and read-only.
+also dismisses the preview. Reaching the last album in every lane reveals the
+end-of-catalog message. WordPress access is server-only and read-only.
 
 The first 100 albums and WordPress's authoritative total are cached for one
 hour. Every lane reserves its finite length from that total, so readers can keep

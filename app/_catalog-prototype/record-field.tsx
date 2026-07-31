@@ -1,6 +1,7 @@
 "use client"
 
-import { useState } from "react"
+import { Heading } from "@astryxdesign/core/Heading"
+import { useCallback, useState } from "react"
 
 import { RecordDeck } from "./record-deck"
 import type { AlbumPost, DeckCount } from "./types"
@@ -23,9 +24,26 @@ export function RecordField({
     deckCount: DeckCount
     visualIndex: number
   } | null>(null)
+  const [endState, setEndState] = useState<{
+    deckCount: DeckCount
+    decks: Record<number, boolean>
+  }>({ deckCount, decks: {} })
   const stacks = Array.from({ length: deckCount }, () => [] as AlbumPost[])
   albums.forEach((album, index) => stacks[index % stacks.length].push(album))
   const activeSelection = selection?.deckCount === deckCount ? selection : null
+  const allDecksEnded =
+    endState.deckCount === deckCount &&
+    stacks.every((_, index) => endState.decks[index])
+  const onEndChange = useCallback(
+    (index: number, ended: boolean) =>
+      setEndState((current) => {
+        const decks = current.deckCount === deckCount ? current.decks : {}
+        return decks[index] === ended
+          ? current
+          : { deckCount, decks: { ...decks, [index]: ended } }
+      }),
+    [deckCount]
+  )
 
   return (
     <section
@@ -38,6 +56,7 @@ export function RecordField({
           albums={records}
           index={index}
           key={index}
+          onEndChange={onEndChange}
           onNeedMore={() => onNeedMore(albums.length)}
           onSelectionChange={(visualIndex) =>
             setSelection(
@@ -53,6 +72,15 @@ export function RecordField({
           totalRecords={Math.ceil((total - index) / deckCount)}
         />
       ))}
+      <aside
+        className="catalog-easter-egg"
+        aria-hidden={!allDecksEnded}
+        data-visible={allDecksEnded || undefined}
+      >
+        <Heading level={2} type="display-1" color="inherit" justify="center">
+          Easter egg
+        </Heading>
+      </aside>
     </section>
   )
 }
