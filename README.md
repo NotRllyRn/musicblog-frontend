@@ -16,3 +16,9 @@ With a mouse, hover a record to preview it and click to open its existing post.
 On touch screens, tap once to preview and tap the selected record again to open
 it. Starting another scroll dismisses the preview. WordPress access is
 server-only and read-only.
+
+The first 100 albums and WordPress's authoritative total are cached for one
+hour. Additional cached pages load only as a reader approaches the end of a
+lane. The catalog uses WordPress's 300px artwork derivative through Next Image
+optimization, and an immediate responsive vinyl shell reserves the layout while
+the initial data hydrates.

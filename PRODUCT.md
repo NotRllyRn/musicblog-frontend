@@ -40,6 +40,10 @@ read-only from this frontend.
 - Mouse users hover to preview; touch users tap once to preview and again to open.
 - Starting another scroll dismisses the current preview.
 - Existing WordPress posts and featured images are the source of truth.
+- The first cached WordPress page supplies both initial albums and the
+  authoritative total; later pages load only near a lane boundary.
+- Responsive placeholder sleeves reserve the final 3D layout while album data
+  hydrates, and artwork uses WordPress derivatives plus Next Image optimization.
 - Album-detail pages remain outside the current catalog scope.
 - The hinged record-shop interaction is the selected direction.
 - Light mode uses the quiet listening-index palette; dark mode uses the warm
