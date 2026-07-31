@@ -85,7 +85,7 @@ export function CatalogBrowser({ initialPage }: CatalogBrowserProps) {
       <main className="variant-shell">
         <header className="catalog-header">
           <Heading level={1} color="inherit">
-            After the Needle
+            Tim's Music Blog
           </Heading>
           <Text type="supporting" color="inherit">
             {initialPage.total} records · hinged by hand

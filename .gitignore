@@ -9,6 +9,7 @@
 !.yarn/versions
 
 inspiration/
+.pi-subagents
 
 # testing
 /coverage

@@ -1,4 +1,4 @@
-# After the Needle
+# Tim's Music Blog
 
 A responsive record-shop browser for the music blog’s album archive.
 

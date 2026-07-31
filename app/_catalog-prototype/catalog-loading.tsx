@@ -13,7 +13,7 @@ export function CatalogLoading() {
       <main className="variant-shell loading-shell" aria-busy="true">
         <header className="catalog-header">
           <Heading level={1} color="inherit">
-            After the Needle
+            Tim's Music Blog
           </Heading>
           <Text type="supporting" color="inherit">
             Loading records

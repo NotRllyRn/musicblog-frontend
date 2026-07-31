@@ -6,7 +6,7 @@ import "./_catalog-prototype/catalog-prototype.css"
 import { AstryxProvider } from "./astryx-provider"
 
 export const metadata: Metadata = {
-  title: "After the Needle",
+  title: "Tim's Music Blog",
   description: "A tactile catalog of album reviews.",
 }
 
