@@ -6,7 +6,7 @@ import type { AlbumPost, DeckCount } from "./types"
 interface RecordFieldProps {
   albums: AlbumPost[]
   deckCount: DeckCount
-  onNeedMore: () => void
+  onNeedMore: (loadedCount: number) => void
 }
 
 export function RecordField({
@@ -28,7 +28,7 @@ export function RecordField({
           albums={records}
           index={index}
           key={`${deckCount}-${index}`}
-          onNeedMore={onNeedMore}
+          onNeedMore={() => onNeedMore(albums.length)}
         />
       ))}
     </section>

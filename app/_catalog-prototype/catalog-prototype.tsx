@@ -37,22 +37,32 @@ function useDeckCount() {
 export function CatalogBrowser({ initialPage }: CatalogBrowserProps) {
   const [albums, setAlbums] = useState(initialPage.albums)
   const deckCount = useDeckCount()
+  const loadedCount = useRef(initialPage.albums.length)
   const nextPage = useRef(initialPage.page + 1)
   const isLoading = useRef(false)
-  const loadMore = useCallback(async () => {
-    if (isLoading.current || nextPage.current > initialPage.totalPages) return
+  const loadMore = useCallback(
+    async (knownCount: number) => {
+      if (
+        knownCount < loadedCount.current ||
+        isLoading.current ||
+        nextPage.current > initialPage.totalPages
+      )
+        return
 
-    isLoading.current = true
-    try {
-      const response = await fetch(`/api/albums?page=${nextPage.current}`)
-      if (!response.ok) return
-      const page = (await response.json()) as AlbumPage
-      setAlbums((current) => [...current, ...page.albums])
-      nextPage.current += 1
-    } finally {
-      isLoading.current = false
-    }
-  }, [initialPage.totalPages])
+      isLoading.current = true
+      try {
+        const response = await fetch(`/api/albums?page=${nextPage.current}`)
+        if (!response.ok) return
+        const page = (await response.json()) as AlbumPage
+        loadedCount.current += page.albums.length
+        setAlbums((current) => [...current, ...page.albums])
+        nextPage.current += 1
+      } finally {
+        isLoading.current = false
+      }
+    },
+    [initialPage.totalPages]
+  )
 
   if (!albums.length) {
     return (
