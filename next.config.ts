@@ -6,6 +6,7 @@ const wordpressUrl = process.env.WORDPRESS_BASE_URL
 
 const nextConfig: NextConfig = {
   images: {
+    dangerouslyAllowLocalIP: true,
     remotePatterns: wordpressUrl
       ? [
           {

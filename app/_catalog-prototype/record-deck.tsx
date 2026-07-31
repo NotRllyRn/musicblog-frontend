@@ -91,8 +91,7 @@ function AnimatedRecord({
           alt=""
           fill
           loading={isActive ? "eager" : "lazy"}
-          sizes="(min-width: 64rem) 15vw, 14rem"
-          unoptimized
+          sizes="(max-width: 47.99rem) 34vw, (max-width: 69.99rem) 21vw, 15vw"
         />
       </figure>
     </motion.li>

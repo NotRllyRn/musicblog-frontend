@@ -9,6 +9,9 @@ interface WordPressTerm {
 
 interface WordPressMedia {
   alt_text?: string
+  media_details?: {
+    sizes?: { medium?: { source_url?: string } }
+  }
   source_url?: string
 }
 
@@ -92,7 +95,9 @@ function toAlbums(posts: WordPressPost[]): AlbumPost[] {
     const media = post._embedded?.["wp:featuredmedia"]?.[0]
     const terms = post._embedded?.["wp:term"]?.flat() ?? []
 
-    if (!media?.source_url) return []
+    const imageUrl =
+      media?.media_details?.sizes?.medium?.source_url ?? media?.source_url
+    if (!imageUrl) return []
 
     const title = decodeEntities(post.title.rendered)
     const artist =
@@ -110,8 +115,8 @@ function toAlbums(posts: WordPressPost[]): AlbumPost[] {
         ),
         year: post.date.slice(0, 4),
         href: post.link,
-        imageUrl: media.source_url,
-        imageAlt: media.alt_text || `${title} album art`,
+        imageUrl,
+        imageAlt: media?.alt_text || `${title} album art`,
       },
     ]
   })
