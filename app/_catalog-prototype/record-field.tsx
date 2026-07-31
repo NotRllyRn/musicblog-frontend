@@ -7,9 +7,10 @@ import type { AlbumPost } from "./types"
 
 interface RecordFieldProps {
   albums: AlbumPost[]
+  onNeedMore: () => void
 }
 
-export function RecordField({ albums }: RecordFieldProps) {
+export function RecordField({ albums, onNeedMore }: RecordFieldProps) {
   const isMobile = useMediaQuery("(max-width: 47.99rem)")
   const isMedium = useMediaQuery("(max-width: 69.99rem)")
   const deckCount = isMobile ? 3 : isMedium ? 5 : 7
@@ -27,6 +28,7 @@ export function RecordField({ albums }: RecordFieldProps) {
           albums={records}
           index={index}
           key={`${deckCount}-${index}`}
+          onNeedMore={onNeedMore}
         />
       ))}
     </section>

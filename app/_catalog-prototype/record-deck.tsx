@@ -30,6 +30,7 @@ import type { AlbumPost } from "./types"
 interface RecordDeckProps {
   albums: AlbumPost[]
   index: number
+  onNeedMore: () => void
 }
 
 interface AnimatedRecordProps {
@@ -98,7 +99,7 @@ function AnimatedRecord({
   )
 }
 
-export function RecordDeck({ albums, index }: RecordDeckProps) {
+export function RecordDeck({ albums, index, onNeedMore }: RecordDeckProps) {
   const settings = mechanicSettings
   const radius = Math.floor(settings.window / 2)
   const initialIndex = Math.min(albums.length - 1, radius + 2 + (index % 3))
@@ -167,6 +168,10 @@ export function RecordDeck({ albums, index }: RecordDeckProps) {
     },
     []
   )
+
+  useEffect(() => {
+    if (activeIndex + radius >= albums.length - 1) onNeedMore()
+  }, [activeIndex, albums.length, onNeedMore, radius])
 
   useMotionValueEvent(position, "change", (value) => {
     const next = Math.max(0, Math.min(albums.length - 1, Math.round(value)))

@@ -1,6 +1,6 @@
 import "server-only"
 
-import type { AlbumPost } from "@/app/_catalog-prototype/types"
+import type { AlbumPage, AlbumPost } from "@/app/_catalog-prototype/types"
 
 interface WordPressTerm {
   name: string
@@ -62,7 +62,7 @@ function requestHeaders() {
   }
 }
 
-async function fetchPage(page: number) {
+async function requestPage(page: number) {
   const url = URL.parse(`${apiRoot()}/posts`)
 
   if (!url) throw new Error("WordPress API URL is invalid")
@@ -82,45 +82,48 @@ async function fetchPage(page: number) {
 
   return {
     posts: (await response.json()) as WordPressPost[],
+    total: Number(response.headers.get("x-wp-total") ?? 0),
     totalPages: Number(response.headers.get("x-wp-totalpages") ?? 1),
   }
 }
 
-export async function getAlbumPosts(): Promise<AlbumPost[]> {
-  const first = await fetchPage(1)
-  const remaining = await Promise.all(
-    Array.from({ length: first.totalPages - 1 }, (_, index) =>
-      fetchPage(index + 2)
-    )
-  )
+function toAlbums(posts: WordPressPost[]): AlbumPost[] {
+  return posts.flatMap((post) => {
+    const media = post._embedded?.["wp:featuredmedia"]?.[0]
+    const terms = post._embedded?.["wp:term"]?.flat() ?? []
 
-  return [first, ...remaining]
-    .flatMap(({ posts }) => posts)
-    .flatMap((post) => {
-      const media = post._embedded?.["wp:featuredmedia"]?.[0]
-      const terms = post._embedded?.["wp:term"]?.flat() ?? []
+    if (!media?.source_url) return []
 
-      if (!media?.source_url) return []
+    const title = decodeEntities(post.title.rendered)
+    const artist =
+      terms.find(({ taxonomy }) => taxonomy === "artist")?.name ??
+      terms.find(({ taxonomy }) => taxonomy === "post_tag")?.name ??
+      "Unknown artist"
 
-      const title = decodeEntities(post.title.rendered)
-      const artist =
-        terms.find(({ taxonomy }) => taxonomy === "artist")?.name ??
-        terms.find(({ taxonomy }) => taxonomy === "post_tag")?.name ??
-        "Unknown artist"
+    return [
+      {
+        id: post.id,
+        title,
+        artist: decodeEntities(artist),
+        genre: decodeEntities(
+          terms.find(({ taxonomy }) => taxonomy === "genre")?.name ?? "Album"
+        ),
+        year: post.date.slice(0, 4),
+        href: post.link,
+        imageUrl: media.source_url,
+        imageAlt: media.alt_text || `${title} album art`,
+      },
+    ]
+  })
+}
 
-      return [
-        {
-          id: post.id,
-          title,
-          artist: decodeEntities(artist),
-          genre: decodeEntities(
-            terms.find(({ taxonomy }) => taxonomy === "genre")?.name ?? "Album"
-          ),
-          year: post.date.slice(0, 4),
-          href: post.link,
-          imageUrl: media.source_url,
-          imageAlt: media.alt_text || `${title} album art`,
-        },
-      ]
-    })
+export async function getAlbumPage(page = 1): Promise<AlbumPage> {
+  const response = await requestPage(page)
+
+  return {
+    albums: toAlbums(response.posts),
+    page,
+    total: response.total,
+    totalPages: response.totalPages,
+  }
 }

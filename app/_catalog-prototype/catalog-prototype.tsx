@@ -2,16 +2,35 @@
 
 import { Heading } from "@astryxdesign/core/Heading"
 import { Text } from "@astryxdesign/core/Text"
+import { useCallback, useRef, useState } from "react"
 
 import { RecordField } from "./record-field"
 import { ThemeToggle } from "./theme-toggle"
-import type { AlbumPost } from "./types"
+import type { AlbumPage } from "./types"
 
 interface CatalogBrowserProps {
-  albums: AlbumPost[]
+  initialPage: AlbumPage
 }
 
-export function CatalogBrowser({ albums }: CatalogBrowserProps) {
+export function CatalogBrowser({ initialPage }: CatalogBrowserProps) {
+  const [albums, setAlbums] = useState(initialPage.albums)
+  const nextPage = useRef(initialPage.page + 1)
+  const isLoading = useRef(false)
+  const loadMore = useCallback(async () => {
+    if (isLoading.current || nextPage.current > initialPage.totalPages) return
+
+    isLoading.current = true
+    try {
+      const response = await fetch(`/api/albums?page=${nextPage.current}`)
+      if (!response.ok) return
+      const page = (await response.json()) as AlbumPage
+      setAlbums((current) => [...current, ...page.albums])
+      nextPage.current += 1
+    } finally {
+      isLoading.current = false
+    }
+  }, [initialPage.totalPages])
+
   if (!albums.length) {
     return (
       <>
@@ -34,10 +53,10 @@ export function CatalogBrowser({ albums }: CatalogBrowserProps) {
             After the Needle
           </Heading>
           <Text type="supporting" color="inherit">
-            {albums.length} records · hinged by hand
+            {initialPage.total} records · hinged by hand
           </Text>
         </header>
-        <RecordField albums={albums} />
+        <RecordField albums={albums} onNeedMore={loadMore} />
       </main>
       <ThemeToggle />
     </>

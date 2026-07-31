@@ -8,3 +8,10 @@ export interface AlbumPost {
   imageUrl: string
   imageAlt: string
 }
+
+export interface AlbumPage {
+  albums: AlbumPost[]
+  page: number
+  total: number
+  totalPages: number
+}
