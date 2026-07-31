@@ -124,8 +124,16 @@
 .loading-sleeve:nth-child(1) {
   transform: translate3d(
       0,
-      calc(-50% - 7.75rem - clamp(19rem, 33.6dvh, 50rem)),
-      -8rem
+      calc(
+        -50% - 7.75rem +
+          clamp(
+            max(-50rem, -33.6dvh),
+            266.64% - 9.5rem - 66.64dvh +
+              clamp(0rem, calc(18.82rem - 39.2vw), 9.25rem),
+            -8rem
+          )
+      ),
+      -9.625rem
     )
     rotateX(-40deg) scale(0.92);
 }
@@ -133,8 +141,16 @@
 .loading-sleeve:nth-child(2) {
   transform: translate3d(
       0,
-      calc(-50% - 7.75rem - clamp(14.25rem, 25.2dvh, 37.5rem)),
-      -7.25rem
+      calc(
+        -50% - 7.75rem +
+          clamp(
+            max(-37.5rem, -25.2dvh),
+            199.98% - 7.125rem - 49.98dvh +
+              clamp(0rem, calc(14.11rem - 29.4vw), 6.9375rem),
+            -6rem
+          )
+      ),
+      -8.5rem
     )
     rotateX(-40deg) scale(0.92);
 }
@@ -142,8 +158,16 @@
 .loading-sleeve:nth-child(3) {
   transform: translate3d(
       0,
-      calc(-50% - 7.75rem - clamp(9.5rem, 16.8dvh, 25rem)),
-      -6.5rem
+      calc(
+        -50% - 7.75rem +
+          clamp(
+            max(-25rem, -16.8dvh),
+            133.32% - 4.75rem - 33.32dvh +
+              clamp(0rem, calc(9.41rem - 19.6vw), 4.625rem),
+            -4rem
+          )
+      ),
+      -7.375rem
     )
     rotateX(-40deg) scale(0.92);
 }
@@ -151,8 +175,16 @@
 .loading-sleeve:nth-child(4) {
   transform: translate3d(
       0,
-      calc(-50% - 7.75rem - clamp(4.75rem, 8.4dvh, 12.5rem)),
-      -5.5rem
+      calc(
+        -50% - 7.75rem +
+          clamp(
+            max(-12.5rem, -8.4dvh),
+            66.66% - 2.375rem - 16.66dvh +
+              clamp(0rem, calc(4.7rem - 9.8vw), 2.3125rem),
+            -2rem
+          )
+      ),
+      -6.25rem
     )
     rotateX(-40deg) scale(0.92);
 }
@@ -165,8 +197,16 @@
 .loading-sleeve:nth-child(6) {
   transform: translate3d(
       0,
-      calc(-50% + 7.75rem + clamp(4.75rem, 8.4dvh, 12.5rem)),
-      -8.5rem
+      calc(
+        -4% + 1.5rem +
+          clamp(
+            2rem,
+            -66.66% + 2.375rem + 16.66dvh -
+              clamp(0rem, calc(4.7rem - 9.8vw), 2.3125rem),
+            min(12.5rem, 8.4dvh)
+          )
+      ),
+      -7.375rem
     )
     rotateX(-40deg) scale(0.92);
 }
@@ -174,8 +214,16 @@
 .loading-sleeve:nth-child(7) {
   transform: translate3d(
       0,
-      calc(-50% + 7.75rem + clamp(9.5rem, 16.8dvh, 25rem)),
-      -7.85rem
+      calc(
+        -4% + 1.5rem +
+          clamp(
+            4rem,
+            -133.32% + 4.75rem + 33.32dvh -
+              clamp(0rem, calc(9.41rem - 19.6vw), 4.625rem),
+            min(25rem, 16.8dvh)
+          )
+      ),
+      -6.125rem
     )
     rotateX(-40deg) scale(0.92);
 }
@@ -183,8 +231,16 @@
 .loading-sleeve:nth-child(8) {
   transform: translate3d(
       0,
-      calc(-50% + 7.75rem + clamp(14.25rem, 25.2dvh, 37.5rem)),
-      -7.2rem
+      calc(
+        -4% + 1.5rem +
+          clamp(
+            6rem,
+            -199.98% + 7.125rem + 49.98dvh -
+              clamp(0rem, calc(14.11rem - 29.4vw), 6.9375rem),
+            min(37.5rem, 25.2dvh)
+          )
+      ),
+      -4.875rem
     )
     rotateX(-40deg) scale(0.92);
 }
@@ -192,8 +248,16 @@
 .loading-sleeve:nth-child(9) {
   transform: translate3d(
       0,
-      calc(-50% + 7.75rem + clamp(19rem, 33.6dvh, 50rem)),
-      -6.5rem
+      calc(
+        -4% + 1.5rem +
+          clamp(
+            8rem,
+            -266.64% + 9.5rem + 66.64dvh -
+              clamp(0rem, calc(18.82rem - 39.2vw), 9.25rem),
+            min(50rem, 33.6dvh)
+          )
+      ),
+      -3.625rem
     )
     rotateX(-40deg) scale(0.92);
 }
@@ -243,15 +307,23 @@
   transform-style: preserve-3d;
 }
 
-.record-preview-stage {
+.record-preview-stage,
+.record-hit-stage {
   position: absolute;
-  z-index: 20;
   inset: 0;
   margin: 0;
   padding: 0;
   list-style: none;
   pointer-events: none;
   transform-style: preserve-3d;
+}
+
+.record-preview-stage {
+  z-index: 20;
+}
+
+.record-hit-stage {
+  z-index: 30;
 }
 
 .record-preview-positioner {
@@ -303,16 +375,26 @@
   scroll-snap-type: none;
 }
 
-.deck-record {
+.deck-record,
+.record-hit-zone {
   position: absolute;
   top: 50%;
   left: 0;
   width: 100%;
+  aspect-ratio: 1;
   transform-origin: center bottom;
   transform-style: preserve-3d;
+}
+
+.deck-record {
+  pointer-events: none;
+  will-change: transform, opacity;
+}
+
+.record-hit-zone {
   pointer-events: auto;
   cursor: pointer;
-  will-change: transform, opacity;
+  will-change: transform;
 }
 
 .record-field:has(.deck-record[data-hovered="true"])
@@ -446,9 +528,17 @@ body:has(.deck-record[data-hovered="true"]) .theme-toggle {
 }
 
 @media (hover: none), (pointer: coarse) {
+  .record-hit-stage {
+    display: none;
+  }
+
+  .deck-record,
+  .record-scroll {
+    pointer-events: auto;
+  }
+
   .record-scroll {
     z-index: 2;
-    pointer-events: auto;
     touch-action: pan-y;
   }
 }

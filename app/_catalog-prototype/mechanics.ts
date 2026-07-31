@@ -17,9 +17,21 @@ const mix = (from: number, to: number, amount: number) =>
 
 const responsiveTail = (amount: number) => {
   if (amount === 0) return "0px"
-  const minimum = amount > 0 ? amount * 38 : amount * 100
-  const maximum = amount > 0 ? amount * 100 : amount * 38
-  return `clamp(${minimum.toFixed(2)}px, ${(amount * 4.2).toFixed(2)}dvh, ${maximum.toFixed(2)}px)`
+
+  const magnitude = Math.abs(amount)
+  const direction = Math.sign(amount)
+  const minimum =
+    direction > 0
+      ? `${(magnitude * 16).toFixed(2)}px`
+      : `max(${(-magnitude * 100).toFixed(2)}px, ${(-magnitude * 4.2).toFixed(2)}dvh)`
+  const maximum =
+    direction > 0
+      ? `min(${(magnitude * 100).toFixed(2)}px, ${(magnitude * 4.2).toFixed(2)}dvh)`
+      : `${(-magnitude * 16).toFixed(2)}px`
+  const mobileCompression = `clamp(0px, calc(${(magnitude * 2.352).toFixed(2)}rem - ${(magnitude * 4.9).toFixed(2)}vw), ${(magnitude * 18.5).toFixed(2)}px)`
+  const preferred = `calc(${(amount * 8.33).toFixed(2)}dvh - ${(amount * 33.33).toFixed(2)}% + ${(amount * 19).toFixed(2)}px ${direction > 0 ? "-" : "+"} ${mobileCompression})`
+
+  return `clamp(${minimum}, ${preferred}, ${maximum})`
 }
 
 export function getRecordVisual(
@@ -39,7 +51,8 @@ export function getRecordVisual(
   const pullLift = direction < 0 ? 0 : 68
   const baseAmount = direction < 0 ? 1 - pullAmount : 1
   const x = 0
-  const firstY = direction * mix(0, 124, focus) * baseAmount
+  const firstPercent = direction > 0 ? 46 * focus : 0
+  const firstY = direction < 0 ? -124 * focus * baseAmount : 24 * focus
   const tailY = responsiveTail(direction * tail * baseAmount)
   const pulledY =
     direction < 0
@@ -51,7 +64,7 @@ export function getRecordVisual(
   const scale = mix(0.92, mix(1.092, 1.05, focus), pull)
   const anchor = mix(-72, -50, focus)
   const transform = [
-    `translate3d(${x.toFixed(2)}px, calc(${anchor.toFixed(2)}% + ${firstY.toFixed(2)}px + ${tailY} + ${pulledY} - ${(pullAmount * pullLift).toFixed(2)}%), ${z.toFixed(2)}px)`,
+    `translate3d(${x.toFixed(2)}px, calc(${anchor.toFixed(2)}% + ${firstPercent.toFixed(2)}% + ${firstY.toFixed(2)}px + ${tailY} + ${pulledY} - ${(pullAmount * pullLift).toFixed(2)}%), ${z.toFixed(2)}px)`,
     `rotateX(${rotateX.toFixed(2)}deg)`,
     "rotateY(0deg)",
     `rotateZ(${rotateZ.toFixed(2)}deg)`,

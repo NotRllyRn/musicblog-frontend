@@ -31,6 +31,9 @@ interface RecordDeckProps {
   albums: AlbumPost[]
   index: number
   onNeedMore: () => void
+  onSelectionChange: (visualIndex: number | null) => void
+  selectionActive: boolean
+  selectedVisualIndex: number | null
   totalRecords: number
 }
 
@@ -104,10 +107,42 @@ function AnimatedRecord({
   )
 }
 
+interface RecordHitZoneProps {
+  albumIndex: number
+  position: MotionValue<number>
+  reduceMotion: boolean
+  visualIndex: number
+}
+
+function RecordHitZone({
+  albumIndex,
+  position,
+  reduceMotion,
+  visualIndex,
+}: RecordHitZoneProps) {
+  const transform = useTransform(
+    () =>
+      getRecordVisual(visualIndex - position.get(), albumIndex, reduceMotion)
+        .transform
+  )
+  const hitStyle = { transform }
+
+  return (
+    <motion.li
+      className="record-hit-zone"
+      data-visual-index={visualIndex}
+      style={hitStyle}
+    />
+  )
+}
+
 export function RecordDeck({
   albums,
   index,
   onNeedMore,
+  onSelectionChange,
+  selectionActive,
+  selectedVisualIndex,
   totalRecords,
 }: RecordDeckProps) {
   const settings = mechanicSettings
@@ -135,9 +170,13 @@ export function RecordDeck({
     stiffness: 300,
   })
   const position = reduceMotion ? rawPosition : smoothPosition
+  const interactionVisualIndex = isTouch
+    ? selectedVisualIndex
+    : hoveredVisualIndex
   const activeAlbum = albums[activeIndex]
-  const previewVisualIndex = hoveredVisualIndex ?? activeIndex
+  const previewVisualIndex = interactionVisualIndex ?? activeIndex
   const previewAlbum = albums[previewVisualIndex]
+  const previewVisible = isTouch ? selectedVisualIndex !== null : showPreview
   const previewPullTarget = useMotionValue(0)
   const previewPullSpring = useSpring(previewPullTarget, {
     damping: 28,
@@ -157,8 +196,8 @@ export function RecordDeck({
   const previewStyle = { transform: previewTransform }
 
   useEffect(() => {
-    previewPullTarget.set(hoveredVisualIndex === null ? 0 : 1)
-  }, [hoveredVisualIndex, previewPullTarget])
+    previewPullTarget.set(interactionVisualIndex === null ? 0 : 1)
+  }, [interactionVisualIndex, previewPullTarget])
 
   const setScroll = useCallback(
     (node: HTMLOListElement | null) => {
@@ -166,10 +205,11 @@ export function RecordDeck({
       if (node && !initialized.current) {
         wheelTarget.current = initialIndex * settings.step
         node.scrollTop = wheelTarget.current
+        smoothPosition.jump(initialIndex)
         initialized.current = true
       }
     },
-    [initialIndex, settings.step]
+    [initialIndex, settings.step, smoothPosition]
   )
 
   useEffect(
@@ -214,6 +254,7 @@ export function RecordDeck({
   const clearSelection = () => {
     setHoveredVisualIndex(null)
     setShowPreview(false)
+    if (isTouch) onSelectionChange(null)
   }
 
   const restartPreview = () => {
@@ -255,20 +296,29 @@ export function RecordDeck({
   }
 
   const onClick = (event: MouseEvent<HTMLElement>) => {
-    const visualIndex = visualIndexAt(event.target, {
+    const foundIndex = visualIndexAt(event.target, {
       x: event.clientX,
       y: event.clientY,
     })
-    if (visualIndex === null || !albums[visualIndex]) return
+    const visualIndex =
+      foundIndex !== null && albums[foundIndex] ? foundIndex : null
 
-    if (isTouch && visualIndex !== hoveredVisualIndex) {
-      restartPreview()
-      setHoveredVisualIndex(visualIndex)
-      setShowPreview(true)
+    if (isTouch) {
+      if (selectionActive) {
+        if (visualIndex === selectedVisualIndex && visualIndex !== null)
+          window.location.assign(albums[visualIndex].href)
+        else onSelectionChange(null)
+        return
+      }
+
+      if (visualIndex !== null) {
+        restartPreview()
+        onSelectionChange(visualIndex)
+      }
       return
     }
 
-    window.location.assign(albums[visualIndex].href)
+    if (visualIndex !== null) window.location.assign(albums[visualIndex].href)
   }
 
   const onPointerMove = (event: PointerEvent<HTMLElement>) => {
@@ -318,13 +368,13 @@ export function RecordDeck({
     }
   })
   const hovered =
-    hoveredVisualIndex !== null &&
-    !windowed.some(({ visualIndex }) => visualIndex === hoveredVisualIndex)
+    interactionVisualIndex !== null &&
+    !windowed.some(({ visualIndex }) => visualIndex === interactionVisualIndex)
       ? [
           {
-            album: albums[hoveredVisualIndex],
-            albumIndex: hoveredVisualIndex,
-            visualIndex: hoveredVisualIndex,
+            album: albums[interactionVisualIndex],
+            albumIndex: interactionVisualIndex,
+            visualIndex: interactionVisualIndex,
           },
         ]
       : []
@@ -360,7 +410,7 @@ export function RecordDeck({
             album={album}
             albumIndex={albumIndex}
             isActive={visualIndex === activeIndex}
-            isHovered={visualIndex === hoveredVisualIndex}
+            isHovered={visualIndex === interactionVisualIndex}
             key={album?.id ?? `placeholder-${visualIndex}`}
             position={position}
             reduceMotion={reduceMotion}
@@ -369,7 +419,22 @@ export function RecordDeck({
         ))}
       </ol>
 
-      {showPreview && previewAlbum && (
+      <ol className="record-hit-stage" aria-hidden="true">
+        {visible.map(
+          ({ album, albumIndex, visualIndex }) =>
+            album && (
+              <RecordHitZone
+                albumIndex={albumIndex}
+                key={album.id}
+                position={position}
+                reduceMotion={reduceMotion}
+                visualIndex={visualIndex}
+              />
+            )
+        )}
+      </ol>
+
+      {previewVisible && previewAlbum && (
         <ol className="record-preview-stage" aria-hidden="true">
           <motion.li className="record-preview-positioner" style={previewStyle}>
             <aside className="record-preview">
@@ -396,7 +461,7 @@ export function RecordDeck({
         <li className="record-tail" />
       </ol>
 
-      {showPreview && previewAlbum && (
+      {previewVisible && previewAlbum && (
         <VisuallyHidden as="div" aria-live="polite">
           {previewAlbum.title}, {previewAlbum.artist}
         </VisuallyHidden>

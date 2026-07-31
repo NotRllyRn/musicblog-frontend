@@ -37,7 +37,10 @@ read-only from this frontend.
 - Catalog content is capped and centered on ultrawide displays.
 - No visible containers or separators between the free-floating records.
 - The centered record is fully visible; surrounding records collapse into depth.
-- Mouse users hover to preview; touch users tap once to preview and again to open.
+- Mouse users preview from stationary exposed-sleeve hit regions, so the hover
+  remains stable while the selected sleeve moves.
+- Touch users have one global selection: tap once to preview, tap that sleeve
+  again to open, or tap anywhere else to dismiss it.
 - Starting another scroll dismisses the current preview.
 - Existing WordPress posts and featured images are the source of truth.
 - The first cached WordPress page supplies both initial albums and the

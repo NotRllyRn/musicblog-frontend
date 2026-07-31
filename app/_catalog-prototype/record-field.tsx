@@ -1,5 +1,7 @@
 "use client"
 
+import { useState } from "react"
+
 import { RecordDeck } from "./record-deck"
 import type { AlbumPost, DeckCount } from "./types"
 
@@ -16,8 +18,14 @@ export function RecordField({
   onNeedMore,
   total,
 }: RecordFieldProps) {
+  const [selection, setSelection] = useState<{
+    deck: number
+    deckCount: DeckCount
+    visualIndex: number
+  } | null>(null)
   const stacks = Array.from({ length: deckCount }, () => [] as AlbumPost[])
   albums.forEach((album, index) => stacks[index % stacks.length].push(album))
+  const activeSelection = selection?.deckCount === deckCount ? selection : null
 
   return (
     <section
@@ -29,8 +37,19 @@ export function RecordField({
         <RecordDeck
           albums={records}
           index={index}
-          key={`${deckCount}-${index}`}
+          key={index}
           onNeedMore={() => onNeedMore(albums.length)}
+          onSelectionChange={(visualIndex) =>
+            setSelection(
+              visualIndex === null
+                ? null
+                : { deck: index, deckCount, visualIndex }
+            )
+          }
+          selectionActive={activeSelection !== null}
+          selectedVisualIndex={
+            activeSelection?.deck === index ? activeSelection.visualIndex : null
+          }
           totalRecords={Math.ceil((total - index) / deckCount)}
         />
       ))}
