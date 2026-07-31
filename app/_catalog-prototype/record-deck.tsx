@@ -31,10 +31,11 @@ interface RecordDeckProps {
   albums: AlbumPost[]
   index: number
   onNeedMore: () => void
+  totalRecords: number
 }
 
 interface AnimatedRecordProps {
-  album: AlbumPost
+  album?: AlbumPost
   albumIndex: number
   isActive: boolean
   isHovered: boolean
@@ -84,21 +85,31 @@ function AnimatedRecord({
       data-visual-index={visualIndex}
       style={dynamicStyle}
     >
-      <figure className="record-figure">
-        <Image
-          className="record-art"
-          src={album.imageUrl}
-          alt=""
-          fill
-          loading={isActive ? "eager" : "lazy"}
-          sizes="(max-width: 47.99rem) 34vw, (max-width: 69.99rem) 21vw, 15vw"
-        />
+      <figure
+        className={`record-figure${album ? "" : " record-placeholder"}`}
+        data-loading={album ? undefined : true}
+      >
+        {album && (
+          <Image
+            className="record-art"
+            src={album.imageUrl}
+            alt=""
+            fill
+            loading={isActive ? "eager" : "lazy"}
+            sizes="(max-width: 47.99rem) 34vw, (max-width: 69.99rem) 21vw, 13.5rem"
+          />
+        )}
       </figure>
     </motion.li>
   )
 }
 
-export function RecordDeck({ albums, index, onNeedMore }: RecordDeckProps) {
+export function RecordDeck({
+  albums,
+  index,
+  onNeedMore,
+  totalRecords,
+}: RecordDeckProps) {
   const settings = mechanicSettings
   const radius = Math.floor(settings.window / 2)
   const initialIndex = Math.min(albums.length - 1, radius + 2 + (index % 3))
@@ -169,11 +180,15 @@ export function RecordDeck({ albums, index, onNeedMore }: RecordDeckProps) {
   )
 
   useEffect(() => {
-    if (activeIndex + radius >= albums.length - 1) onNeedMore()
-  }, [activeIndex, albums.length, onNeedMore, radius])
+    if (
+      albums.length < totalRecords &&
+      activeIndex + radius >= albums.length - 1
+    )
+      onNeedMore()
+  }, [activeIndex, albums.length, onNeedMore, radius, totalRecords])
 
   useMotionValueEvent(position, "change", (value) => {
-    const next = Math.max(0, Math.min(albums.length - 1, Math.round(value)))
+    const next = Math.max(0, Math.min(totalRecords - 1, Math.round(value)))
     if (next === activeRef.current) return
     activeRef.current = next
     setActiveIndex(next)
@@ -212,7 +227,7 @@ export function RecordDeck({ albums, index, onNeedMore }: RecordDeckProps) {
   }
 
   const moveTo = (nextIndex: number) => {
-    const next = Math.max(0, Math.min(albums.length - 1, nextIndex))
+    const next = Math.max(0, Math.min(totalRecords - 1, nextIndex))
     wheelTarget.current = next * settings.step
     clearSelection()
     scroll.current?.scrollTo({
@@ -225,7 +240,7 @@ export function RecordDeck({ albums, index, onNeedMore }: RecordDeckProps) {
     const moves: Partial<Record<string, number>> = {
       ArrowDown: activeIndex + 1,
       ArrowUp: activeIndex - 1,
-      End: albums.length - 1,
+      End: totalRecords - 1,
       Home: 0,
     }
 
@@ -244,7 +259,7 @@ export function RecordDeck({ albums, index, onNeedMore }: RecordDeckProps) {
       x: event.clientX,
       y: event.clientY,
     })
-    if (visualIndex === null) return
+    if (visualIndex === null || !albums[visualIndex]) return
 
     if (isTouch && visualIndex !== hoveredVisualIndex) {
       restartPreview()
@@ -258,7 +273,9 @@ export function RecordDeck({ albums, index, onNeedMore }: RecordDeckProps) {
 
   const onPointerMove = (event: PointerEvent<HTMLElement>) => {
     if (isTouch || scrolling.current) return
-    const visualIndex = visualIndexAt(event.target)
+    const foundIndex = visualIndexAt(event.target)
+    const visualIndex =
+      foundIndex !== null && albums[foundIndex] ? foundIndex : null
     if (visualIndex !== null && visualIndex !== hoveredVisualIndex)
       restartPreview()
     setHoveredVisualIndex(visualIndex)
@@ -276,7 +293,7 @@ export function RecordDeck({ albums, index, onNeedMore }: RecordDeckProps) {
     if (scroll.current) {
       const multiplier = event.deltaMode === 1 ? 16 : 1
       const sensitivity = 1.5
-      const max = (albums.length - 1) * settings.step
+      const max = (totalRecords - 1) * settings.step
       wheelTarget.current = Math.max(
         0,
         Math.min(
@@ -291,7 +308,7 @@ export function RecordDeck({ albums, index, onNeedMore }: RecordDeckProps) {
   }
 
   const start = Math.max(0, activeIndex - radius)
-  const end = Math.min(albums.length, activeIndex + radius + 1)
+  const end = Math.min(totalRecords, activeIndex + radius + 1)
   const windowed = Array.from({ length: end - start }, (_, offset) => {
     const visualIndex = start + offset
     return {
@@ -344,7 +361,7 @@ export function RecordDeck({ albums, index, onNeedMore }: RecordDeckProps) {
             albumIndex={albumIndex}
             isActive={visualIndex === activeIndex}
             isHovered={visualIndex === hoveredVisualIndex}
-            key={`${album.id}-${visualIndex}`}
+            key={album?.id ?? `placeholder-${visualIndex}`}
             position={position}
             reduceMotion={reduceMotion}
             visualIndex={visualIndex}
@@ -373,8 +390,8 @@ export function RecordDeck({ albums, index, onNeedMore }: RecordDeckProps) {
         onScroll={onScroll}
         ref={setScroll}
       >
-        {albums.map((album) => (
-          <li className="record-stop" key={album.id} />
+        {Array.from({ length: totalRecords }, (_, recordIndex) => (
+          <li className="record-stop" key={recordIndex} />
         ))}
         <li className="record-tail" />
       </ol>

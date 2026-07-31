@@ -18,6 +18,7 @@
     0 1.7rem 3rem oklch(0.03 0.01 50 / 0.7)
   );
   --record-radius: 0.2rem;
+  --catalog-gutter: clamp(0.45rem, 1vw, 1rem);
   position: relative;
   box-sizing: border-box;
   height: 100dvh;
@@ -55,7 +56,7 @@
   display: flex;
   width: min(100%, 100rem);
   margin-inline: auto;
-  padding-inline: 1.35rem;
+  padding-inline: var(--catalog-gutter);
   align-items: baseline;
   justify-content: space-between;
   gap: 1rem;
@@ -82,7 +83,7 @@
   width: min(100%, 100rem);
   margin-inline: auto;
   gap: clamp(0.18rem, 0.5vw, 0.58rem);
-  padding-inline: clamp(0.45rem, 1vw, 1rem);
+  padding-inline: var(--catalog-gutter);
 }
 
 .loading-field {
@@ -121,23 +122,39 @@
 }
 
 .loading-sleeve:nth-child(1) {
-  transform: translate3d(0, calc(-50% - 15rem), -8rem) rotateX(-40deg)
-    scale(0.92);
+  transform: translate3d(
+      0,
+      calc(-50% - 7.75rem - clamp(19rem, 33.6dvh, 50rem)),
+      -8rem
+    )
+    rotateX(-40deg) scale(0.92);
 }
 
 .loading-sleeve:nth-child(2) {
-  transform: translate3d(0, calc(-50% - 12.5rem), -7.25rem) rotateX(-40deg)
-    scale(0.92);
+  transform: translate3d(
+      0,
+      calc(-50% - 7.75rem - clamp(14.25rem, 25.2dvh, 37.5rem)),
+      -7.25rem
+    )
+    rotateX(-40deg) scale(0.92);
 }
 
 .loading-sleeve:nth-child(3) {
-  transform: translate3d(0, calc(-50% - 10rem), -6.5rem) rotateX(-40deg)
-    scale(0.92);
+  transform: translate3d(
+      0,
+      calc(-50% - 7.75rem - clamp(9.5rem, 16.8dvh, 25rem)),
+      -6.5rem
+    )
+    rotateX(-40deg) scale(0.92);
 }
 
 .loading-sleeve:nth-child(4) {
-  transform: translate3d(0, calc(-50% - 7.75rem), -5.5rem) rotateX(-40deg)
-    scale(0.92);
+  transform: translate3d(
+      0,
+      calc(-50% - 7.75rem - clamp(4.75rem, 8.4dvh, 12.5rem)),
+      -5.5rem
+    )
+    rotateX(-40deg) scale(0.92);
 }
 
 .loading-sleeve:nth-child(5) {
@@ -146,23 +163,39 @@
 }
 
 .loading-sleeve:nth-child(6) {
-  transform: translate3d(0, calc(-50% + 7.75rem), -8.5rem) rotateX(-40deg)
-    scale(0.92);
+  transform: translate3d(
+      0,
+      calc(-50% + 7.75rem + clamp(4.75rem, 8.4dvh, 12.5rem)),
+      -8.5rem
+    )
+    rotateX(-40deg) scale(0.92);
 }
 
 .loading-sleeve:nth-child(7) {
-  transform: translate3d(0, calc(-50% + 10rem), -7.85rem) rotateX(-40deg)
-    scale(0.92);
+  transform: translate3d(
+      0,
+      calc(-50% + 7.75rem + clamp(9.5rem, 16.8dvh, 25rem)),
+      -7.85rem
+    )
+    rotateX(-40deg) scale(0.92);
 }
 
 .loading-sleeve:nth-child(8) {
-  transform: translate3d(0, calc(-50% + 12.5rem), -7.2rem) rotateX(-40deg)
-    scale(0.92);
+  transform: translate3d(
+      0,
+      calc(-50% + 7.75rem + clamp(14.25rem, 25.2dvh, 37.5rem)),
+      -7.2rem
+    )
+    rotateX(-40deg) scale(0.92);
 }
 
 .loading-sleeve:nth-child(9) {
-  transform: translate3d(0, calc(-50% + 15rem), -6.5rem) rotateX(-40deg)
-    scale(0.92);
+  transform: translate3d(
+      0,
+      calc(-50% + 7.75rem + clamp(19rem, 33.6dvh, 50rem)),
+      -6.5rem
+    )
+    rotateX(-40deg) scale(0.92);
 }
 
 .catalog-loader {
@@ -321,6 +354,16 @@ body:has(.deck-record[data-hovered="true"]) .theme-toggle {
   object-fit: cover;
 }
 
+.record-placeholder {
+  background: color-mix(
+    in oklch,
+    var(--catalog-paper) 24%,
+    oklch(0.08 0.01 55)
+  );
+  filter: blur(0.08rem);
+  opacity: 0.72;
+}
+
 .record-preview {
   position: absolute;
   z-index: 5;
@@ -379,9 +422,12 @@ body:has(.deck-record[data-hovered="true"]) .theme-toggle {
 }
 
 @media (max-width: 47.99rem) {
+  .variant-shell {
+    --catalog-gutter: 0.35rem;
+  }
+
   .catalog-header {
     inset-block-start: 0.65rem;
-    padding-inline: 0.75rem;
   }
 
   .catalog-header > :last-child {
@@ -391,7 +437,6 @@ body:has(.deck-record[data-hovered="true"]) .theme-toggle {
   .record-field {
     grid-template-columns: repeat(3, minmax(0, 1fr));
     gap: 0.18rem;
-    padding-inline: 0.35rem;
   }
 
   .loading-deck:nth-child(n + 4),

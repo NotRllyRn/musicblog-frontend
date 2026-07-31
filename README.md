@@ -18,7 +18,7 @@ it. Starting another scroll dismisses the preview. WordPress access is
 server-only and read-only.
 
 The first 100 albums and WordPress's authoritative total are cached for one
-hour. Additional cached pages load only as a reader approaches the end of a
-lane. The catalog uses WordPress's 300px artwork derivative through Next Image
-optimization, and an immediate responsive vinyl shell reserves the layout while
-the initial data hydrates.
+hour. Every lane reserves its finite length from that total, so readers can keep
+scrolling through placeholders while additional cached pages load. WordPress's
+original artwork passes through responsive Next Image optimization, and an
+immediate vinyl shell reserves the layout while the initial data hydrates.

@@ -95,6 +95,7 @@ export function CatalogBrowser({ initialPage }: CatalogBrowserProps) {
           albums={albums}
           deckCount={deckCount}
           onNeedMore={loadMore}
+          total={initialPage.total}
         />
       </main>
       <ThemeToggle />

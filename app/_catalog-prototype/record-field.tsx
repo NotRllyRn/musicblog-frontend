@@ -7,12 +7,14 @@ interface RecordFieldProps {
   albums: AlbumPost[]
   deckCount: DeckCount
   onNeedMore: (loadedCount: number) => void
+  total: number
 }
 
 export function RecordField({
   albums,
   deckCount,
   onNeedMore,
+  total,
 }: RecordFieldProps) {
   const stacks = Array.from({ length: deckCount }, () => [] as AlbumPost[])
   albums.forEach((album, index) => stacks[index % stacks.length].push(album))
@@ -29,6 +31,7 @@ export function RecordField({
           index={index}
           key={`${deckCount}-${index}`}
           onNeedMore={() => onNeedMore(albums.length)}
+          totalRecords={Math.ceil((total - index) / deckCount)}
         />
       ))}
     </section>

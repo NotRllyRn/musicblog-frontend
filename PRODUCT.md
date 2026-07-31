@@ -42,8 +42,9 @@ read-only from this frontend.
 - Existing WordPress posts and featured images are the source of truth.
 - The first cached WordPress page supplies both initial albums and the
   authoritative total; later pages load only near a lane boundary.
-- Responsive placeholder sleeves reserve the final 3D layout while album data
-  hydrates, and artwork uses WordPress derivatives plus Next Image optimization.
+- Responsive placeholder sleeves reserve the finite 3D layout while album data
+  loads, and full-resolution WordPress artwork uses responsive Next Image
+  optimization.
 - Album-detail pages remain outside the current catalog scope.
 - The hinged record-shop interaction is the selected direction.
 - Light mode uses the quiet listening-index palette; dark mode uses the warm
