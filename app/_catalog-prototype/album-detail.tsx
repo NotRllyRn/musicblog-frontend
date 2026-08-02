@@ -14,6 +14,7 @@ import {
   useState,
 } from "react"
 
+import { AlbumDetailLayouts } from "./album-detail-layouts"
 import type { AlbumDetail, AlbumPost } from "./types"
 
 interface AlbumDetailOverlayProps {
@@ -85,7 +86,11 @@ export function AlbumDetailOverlay({
 
     const first = focusable[0]
     const last = focusable.at(-1)
-    if (event.shiftKey && document.activeElement === first) {
+    if (
+      event.shiftKey &&
+      (document.activeElement === first ||
+        document.activeElement === overlay.current)
+    ) {
       event.preventDefault()
       last?.focus()
     } else if (!event.shiftKey && document.activeElement === last) {
@@ -161,26 +166,24 @@ export function AlbumDetailOverlay({
         </motion.figure>
       </section>
 
-      <motion.article
-        animate={reduceMotion ? undefined : { opacity: 1, x: 0 }}
-        className="album-detail-placeholder"
-        data-detail-content
-        initial={reduceMotion ? undefined : { opacity: 0, x: "3rem" }}
-        transition={{ delay: reduceMotion ? 0 : 0.18, duration: 0.45 }}
-      >
-        <Heading level={2} id="album-detail-title" color="inherit">
-          {album.title}
-        </Heading>
-        {detail ? (
-          <Text as="p" color="inherit">
-            Album details loaded. Choose a prototype layout below.
-          </Text>
-        ) : (
+      {detail ? (
+        <AlbumDetailLayouts detail={detail} />
+      ) : (
+        <motion.article
+          animate={reduceMotion ? undefined : { opacity: 1, x: 0 }}
+          className="album-detail-placeholder"
+          data-detail-content
+          initial={reduceMotion ? undefined : { opacity: 0, x: "3rem" }}
+          transition={{ delay: reduceMotion ? 0 : 0.18, duration: 0.45 }}
+        >
+          <Heading level={2} id="album-detail-title" color="inherit">
+            {album.title}
+          </Heading>
           <Text as="p" color="inherit">
             {failed ? "Album details could not load." : "Loading album notes…"}
           </Text>
-        )}
-      </motion.article>
+        </motion.article>
+      )}
     </motion.section>
   )
 }

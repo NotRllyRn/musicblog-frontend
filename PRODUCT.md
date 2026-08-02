@@ -27,8 +27,9 @@ time.
 ## Operating Context
 
 The catalog reads published posts and featured media from an existing WordPress
-site. Each cover links to its existing WordPress post. WordPress is strictly
-read-only from this frontend.
+site. Desktop readers open reviews in place while the catalog remains dimmed in
+the background; touch readers retain the existing external-post flow. WordPress
+is strictly read-only from this frontend.
 
 ## Capabilities and Constraints
 
@@ -44,13 +45,24 @@ read-only from this frontend.
 - Touch users have one global selection: tap once to preview, tap that sleeve
   again to open, or tap anywhere else to dismiss it.
 - Starting another scroll dismisses the current preview.
+- Desktop activation flies the selected sleeve and its widening identity label
+  into a flat left-side presentation while the review opens on the right.
+- Empty backdrop space and Escape reverse the detail transition; review content
+  and links do not dismiss it.
+- Detail shows the available release/listening/post dates, up to three genres,
+  review body, highlighted tracks, and relevant album statistics. A missing
+  rating remains visible as `NA/100`; other missing optional sections are
+  omitted.
 - Existing WordPress posts and featured images are the source of truth.
 - The first cached WordPress page supplies both initial albums and the
   authoritative total; later pages load only near a lane boundary.
 - Responsive placeholder sleeves reserve the finite 3D layout while album data
   loads, and full-resolution WordPress artwork uses responsive Next Image
   optimization.
-- Album-detail pages remain outside the current catalog scope.
+- Full review payloads load on demand through a one-hour cached detail endpoint,
+  and editorial HTML is reduced to a server-side allowlist before rendering.
+- Five structurally distinct desktop detail layouts are under temporary
+  development-only prototype selection.
 - The hinged record-shop interaction is the selected direction.
 - Light mode uses the quiet listening-index palette; dark mode uses the warm
   record-shop palette. The operating-system preference is the initial default.
