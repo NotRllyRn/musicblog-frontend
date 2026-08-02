@@ -438,6 +438,115 @@ body:has(.deck-record[data-hovered="true"]) .theme-toggle {
   backdrop-filter: blur(0.65rem);
 }
 
+.album-detail-overlay {
+  --detail-surface: light-dark(
+    oklch(0.98 0.004 255 / 0.84),
+    oklch(0.12 0.018 57 / 0.88)
+  );
+  --detail-border: color-mix(in oklch, var(--catalog-ink) 20%, transparent);
+  --spotify-green: oklch(0.72 0.19 145);
+  position: fixed;
+  z-index: 60;
+  inset: 0;
+  overflow: hidden;
+  background: light-dark(
+    oklch(0.77 0.006 255 / 0.58),
+    oklch(0.025 0.01 55 / 0.72)
+  );
+  color: var(--catalog-ink);
+  backdrop-filter: blur(0.7rem) brightness(0.62);
+}
+
+.album-detail-cover-stage {
+  position: absolute;
+  inset: clamp(4.5rem, 8dvh, 7rem) 52% clamp(2rem, 5dvh, 4rem)
+    clamp(1.5rem, 4vw, 5rem);
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  gap: 1rem;
+  min-width: 0;
+  place-items: center;
+  pointer-events: none;
+}
+
+.album-detail-label,
+.album-detail-cover {
+  width: min(42vw, calc(100dvh - 12rem), 44rem);
+  max-width: 100%;
+  pointer-events: auto;
+}
+
+.album-detail-label {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 1rem;
+  min-height: 4.5rem;
+  padding: 0.75rem 1rem;
+  border: 0.06rem solid var(--detail-border);
+  border-radius: 0.45rem;
+  background: var(--detail-surface);
+  box-shadow: var(--shadow-raised);
+  align-items: center;
+  backdrop-filter: blur(1rem);
+}
+
+.album-detail-label > header {
+  display: grid;
+  gap: 0.15rem;
+  min-width: 0;
+}
+
+.album-detail-label .astryx-text {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.album-spotify-link,
+.album-spotify-link .astryx-link {
+  display: grid;
+  place-content: center;
+}
+
+.album-spotify-link .astryx-text {
+  color: var(--spotify-green) !important;
+}
+
+.album-spotify-link .astryx-link > .astryx-icon {
+  display: none;
+}
+
+.album-detail-cover {
+  position: relative;
+  aspect-ratio: 1;
+  margin: 0;
+  overflow: hidden;
+  border: 0.12rem solid var(--detail-border);
+  border-radius: var(--record-radius);
+  background: var(--catalog-paper);
+  box-shadow: 0 2rem 5rem oklch(0.02 0.01 55 / 0.48);
+  transform: rotateX(0deg) rotateZ(0deg);
+}
+
+.album-detail-cover img {
+  object-fit: cover;
+}
+
+.album-detail-placeholder {
+  position: absolute;
+  inset: clamp(4.5rem, 8dvh, 7rem) clamp(2rem, 4vw, 5rem)
+    clamp(2rem, 5dvh, 4rem) 52%;
+  display: grid;
+  gap: 1rem;
+  padding: clamp(1.25rem, 2.5vw, 2.5rem);
+  border: 0.06rem solid var(--detail-border);
+  border-radius: 0.6rem;
+  background: var(--detail-surface);
+  align-content: center;
+  overflow: auto;
+  backdrop-filter: blur(1rem);
+}
+
 .catalog-easter-egg {
   position: absolute;
   z-index: 0;

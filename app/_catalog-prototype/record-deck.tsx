@@ -30,8 +30,10 @@ import type { AlbumPost } from "./types"
 interface RecordDeckProps {
   albums: AlbumPost[]
   index: number
+  openedAlbumId: number | null
   onEndChange: (index: number, ended: boolean) => void
   onNeedMore: () => void
+  onOpenAlbum: (album: AlbumPost, invoker: HTMLElement) => void
   onSelectionChange: (visualIndex: number | null) => void
   selectionActive: boolean
   selectedVisualIndex: number | null
@@ -89,9 +91,10 @@ function AnimatedRecord({
       data-visual-index={visualIndex}
       style={dynamicStyle}
     >
-      <figure
+      <motion.figure
         className={`record-figure${album ? "" : " record-placeholder"}`}
         data-loading={album ? undefined : true}
+        layoutId={album ? `album-cover-${album.id}` : undefined}
       >
         {album && (
           <Image
@@ -103,7 +106,7 @@ function AnimatedRecord({
             sizes="(max-width: 47.99rem) 34vw, (max-width: 69.99rem) 21vw, 13.5rem"
           />
         )}
-      </figure>
+      </motion.figure>
     </motion.li>
   )
 }
@@ -140,8 +143,10 @@ function RecordHitZone({
 export function RecordDeck({
   albums,
   index,
+  openedAlbumId,
   onEndChange,
   onNeedMore,
+  onOpenAlbum,
   onSelectionChange,
   selectionActive,
   selectedVisualIndex,
@@ -174,13 +179,18 @@ export function RecordDeck({
     stiffness: 300,
   })
   const position = reduceMotion ? rawPosition : smoothPosition
-  const interactionVisualIndex = isTouch
-    ? selectedVisualIndex
-    : hoveredVisualIndex
+  const openedVisualIndex = albums.findIndex(
+    (album) => album.id === openedAlbumId
+  )
+  const detailVisualIndex = openedVisualIndex < 0 ? null : openedVisualIndex
+  const interactionVisualIndex =
+    detailVisualIndex ?? (isTouch ? selectedVisualIndex : hoveredVisualIndex)
   const activeAlbum = albums[activeIndex]
   const previewVisualIndex = interactionVisualIndex ?? activeIndex
   const previewAlbum = albums[previewVisualIndex]
-  const previewVisible = isTouch ? selectedVisualIndex !== null : showPreview
+  const previewVisible =
+    detailVisualIndex !== null ||
+    (isTouch ? selectedVisualIndex !== null : showPreview)
   const previewPullTarget = useMotionValue(0)
   const previewPullSpring = useSpring(previewPullTarget, {
     damping: 28,
@@ -298,9 +308,8 @@ export function RecordDeck({
       moveTo(moves[event.key] ?? activeIndex)
     }
 
-    if (event.key === "Enter" && activeAlbum) {
-      window.location.assign(activeAlbum.href)
-    }
+    if (event.key === "Enter" && activeAlbum && deck.current)
+      onOpenAlbum(activeAlbum, deck.current)
   }
 
   const onClick = (event: MouseEvent<HTMLElement>) => {
@@ -326,7 +335,8 @@ export function RecordDeck({
       return
     }
 
-    if (visualIndex !== null) window.location.assign(albums[visualIndex].href)
+    if (visualIndex !== null && deck.current)
+      onOpenAlbum(albums[visualIndex], deck.current)
   }
 
   const onPointerMove = (event: PointerEvent<HTMLElement>) => {
@@ -445,14 +455,17 @@ export function RecordDeck({
       {previewVisible && previewAlbum && (
         <ol className="record-preview-stage" aria-hidden="true">
           <motion.li className="record-preview-positioner" style={previewStyle}>
-            <aside className="record-preview">
+            <motion.aside
+              className="record-preview"
+              layoutId={`album-label-${previewAlbum.id}`}
+            >
               <Text type="label" color="inherit" maxLines={2}>
                 {previewAlbum.title}
               </Text>
               <Text type="supporting" color="inherit" maxLines={1}>
                 {previewAlbum.artist}
               </Text>
-            </aside>
+            </motion.aside>
           </motion.li>
         </ol>
       )}

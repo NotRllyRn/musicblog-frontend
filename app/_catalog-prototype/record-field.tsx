@@ -9,14 +9,18 @@ import type { AlbumPost, DeckCount } from "./types"
 interface RecordFieldProps {
   albums: AlbumPost[]
   deckCount: DeckCount
+  openedAlbumId: number | null
   onNeedMore: (loadedCount: number) => void
+  onOpenAlbum: (album: AlbumPost, invoker: HTMLElement) => void
   total: number
 }
 
 export function RecordField({
   albums,
   deckCount,
+  openedAlbumId,
   onNeedMore,
+  onOpenAlbum,
   total,
 }: RecordFieldProps) {
   const [selection, setSelection] = useState<{
@@ -50,14 +54,17 @@ export function RecordField({
       className="record-field"
       aria-label={`Scrollable album catalog in ${deckCount} groups`}
       data-deck-count={deckCount}
+      inert={openedAlbumId !== null ? true : undefined}
     >
       {stacks.map((records, index) => (
         <RecordDeck
           albums={records}
           index={index}
           key={index}
+          openedAlbumId={openedAlbumId}
           onEndChange={onEndChange}
           onNeedMore={() => onNeedMore(albums.length)}
+          onOpenAlbum={onOpenAlbum}
           onSelectionChange={(visualIndex) =>
             setSelection(
               visualIndex === null

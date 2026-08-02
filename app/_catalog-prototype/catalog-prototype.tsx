@@ -2,12 +2,14 @@
 
 import { Heading } from "@astryxdesign/core/Heading"
 import { Text } from "@astryxdesign/core/Text"
+import { AnimatePresence, LayoutGroup } from "motion/react"
 import { useCallback, useEffect, useRef, useState } from "react"
 
+import { AlbumDetailOverlay } from "./album-detail"
 import { CatalogLoading } from "./catalog-loading"
 import { RecordField } from "./record-field"
 import { ThemeToggle } from "./theme-toggle"
-import type { AlbumPage, DeckCount } from "./types"
+import type { AlbumPage, AlbumPost, DeckCount } from "./types"
 
 interface CatalogBrowserProps {
   initialPage: AlbumPage
@@ -36,6 +38,11 @@ function useDeckCount() {
 
 export function CatalogBrowser({ initialPage }: CatalogBrowserProps) {
   const [albums, setAlbums] = useState(initialPage.albums)
+  const [opened, setOpened] = useState<{
+    album: AlbumPost
+    invoker: HTMLElement
+  } | null>(null)
+  const [detailVisible, setDetailVisible] = useState(false)
   const deckCount = useDeckCount()
   const loadedCount = useRef(initialPage.albums.length)
   const nextPage = useRef(initialPage.page + 1)
@@ -80,24 +87,50 @@ export function CatalogBrowser({ initialPage }: CatalogBrowserProps) {
 
   if (deckCount === null) return <CatalogLoading />
 
+  const openAlbum = (album: AlbumPost, invoker: HTMLElement) => {
+    setOpened({ album, invoker })
+    setDetailVisible(true)
+  }
+
   return (
     <>
-      <main className="variant-shell">
-        <header className="catalog-header">
-          <Heading level={1} color="inherit">
-            Tim&apos;s Music Blog
-          </Heading>
-          <Text type="supporting" color="inherit">
-            {initialPage.total} records · hinged by hand
-          </Text>
-        </header>
-        <RecordField
-          albums={albums}
-          deckCount={deckCount}
-          onNeedMore={loadMore}
-          total={initialPage.total}
-        />
-      </main>
+      <LayoutGroup id="album-detail">
+        <main className="variant-shell">
+          <header className="catalog-header" inert={opened ? true : undefined}>
+            <Heading level={1} color="inherit">
+              Tim&apos;s Music Blog
+            </Heading>
+            <Text type="supporting" color="inherit">
+              {initialPage.total} records · hinged by hand
+            </Text>
+          </header>
+          <RecordField
+            albums={albums}
+            deckCount={deckCount}
+            openedAlbumId={opened?.album.id ?? null}
+            onNeedMore={loadMore}
+            onOpenAlbum={openAlbum}
+            total={initialPage.total}
+          />
+          <AnimatePresence
+            onExitComplete={() => {
+              const invoker = opened?.invoker
+              setOpened(null)
+              requestAnimationFrame(() =>
+                requestAnimationFrame(() => invoker?.focus())
+              )
+            }}
+          >
+            {opened && detailVisible && (
+              <AlbumDetailOverlay
+                album={opened.album}
+                key={opened.album.id}
+                onClose={() => setDetailVisible(false)}
+              />
+            )}
+          </AnimatePresence>
+        </main>
+      </LayoutGroup>
       <ThemeToggle />
     </>
   )
