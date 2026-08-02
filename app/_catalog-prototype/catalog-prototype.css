@@ -30,7 +30,7 @@
 
 .variant-shell::before {
   position: absolute;
-  z-index: 0;
+  z-index: 5;
   inset: 0;
   background: oklch(0.02 0.01 55 / 0.28);
   content: "";
@@ -369,7 +369,7 @@
   will-change: transform;
 }
 
-.record-field:has(.deck-record[data-hovered="true"])
+.record-deck:has(.deck-record[data-hovered="true"])
   .deck-record:not([data-hovered="true"])
   .record-figure {
   filter: brightness(0.62) saturate(0.78);
@@ -435,26 +435,22 @@ body:has(.deck-record[data-hovered="true"]) .theme-toggle {
   color: var(--catalog-ink);
   pointer-events: none;
   transform: translateZ(0.06rem);
-  backdrop-filter: blur(0.65rem);
 }
 
 .album-detail-overlay {
-  --detail-surface: light-dark(
-    oklch(0.98 0.004 255 / 0.84),
-    oklch(0.12 0.018 57 / 0.88)
-  );
+  --detail-surface: light-dark(oklch(0.98 0.004 255), oklch(0.12 0.018 57));
   --detail-border: color-mix(in oklch, var(--catalog-ink) 20%, transparent);
   --spotify-green: oklch(0.72 0.19 145);
   position: fixed;
   z-index: 60;
   inset: 0;
   overflow: hidden;
+  opacity: 1 !important;
   background: light-dark(
-    oklch(0.77 0.006 255 / 0.58),
-    oklch(0.025 0.01 55 / 0.72)
+    oklch(0.77 0.006 255 / 0.82),
+    oklch(0.025 0.01 55 / 0.88)
   );
   color: var(--catalog-ink);
-  backdrop-filter: blur(0.7rem) brightness(0.62);
 }
 
 .album-detail-cover-stage {
@@ -487,7 +483,6 @@ body:has(.deck-record[data-hovered="true"]) .theme-toggle {
   background: var(--detail-surface);
   box-shadow: var(--shadow-raised);
   align-items: center;
-  backdrop-filter: blur(1rem);
 }
 
 .album-detail-label > header {
@@ -524,7 +519,6 @@ body:has(.deck-record[data-hovered="true"]) .theme-toggle {
   border: 0.12rem solid var(--detail-border);
   border-radius: var(--record-radius);
   background: var(--catalog-paper);
-  box-shadow: 0 2rem 5rem oklch(0.02 0.01 55 / 0.48);
   transform: rotateX(0deg) rotateZ(0deg);
 }
 
@@ -544,11 +538,10 @@ body:has(.deck-record[data-hovered="true"]) .theme-toggle {
   background: var(--detail-surface);
   align-content: center;
   overflow: auto;
-  backdrop-filter: blur(1rem);
 }
 
 .album-detail-layout {
-  --detail-panel: light-dark(rgb(255 255 255 / 72%), rgb(28 24 21 / 76%));
+  --detail-panel: light-dark(rgb(250 250 251), rgb(28 24 21));
   --detail-line: light-dark(rgb(20 20 20 / 16%), rgb(255 245 232 / 18%));
   --detail-muted: light-dark(rgb(20 20 20 / 62%), rgb(255 245 232 / 65%));
   position: absolute;

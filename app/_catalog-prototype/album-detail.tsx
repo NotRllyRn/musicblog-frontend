@@ -49,21 +49,30 @@ export function AlbumDetailOverlay({
 
   useEffect(() => {
     const controller = new AbortController()
+    let revealTimer: ReturnType<typeof setTimeout> | undefined
 
     void fetch(`/api/albums/${album.id}`, { signal: controller.signal })
       .then((response) => {
         if (!response.ok) throw new Error("Album detail could not load")
         return response.json() as Promise<AlbumDetail>
       })
-      .then(setDetail)
+      .then((albumDetail) => {
+        revealTimer = setTimeout(
+          () => setDetail(albumDetail),
+          reduceMotion ? 0 : 720
+        )
+      })
       .catch((error: unknown) => {
         if (!(error instanceof DOMException && error.name === "AbortError"))
           setFailed(true)
       })
 
     overlay.current?.focus()
-    return () => controller.abort()
-  }, [album.id])
+    return () => {
+      controller.abort()
+      clearTimeout(revealTimer)
+    }
+  }, [album.id, reduceMotion])
 
   const onKeyDown = (event: KeyboardEvent<HTMLElement>) => {
     if (event.key === "Escape") {
@@ -167,7 +176,7 @@ export function AlbumDetailOverlay({
             alt={album.imageAlt}
             fill
             priority
-            sizes="46vw"
+            sizes="640px"
             src={album.imageUrl}
           />
         </motion.figure>

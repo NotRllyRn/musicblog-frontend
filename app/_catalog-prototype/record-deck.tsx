@@ -18,6 +18,7 @@ import {
   type PointerEvent,
   type UIEvent,
   type WheelEvent,
+  memo,
   useCallback,
   useEffect,
   useRef,
@@ -47,16 +48,18 @@ interface AnimatedRecordProps {
   isHovered: boolean
   position: MotionValue<number>
   reduceMotion: boolean
+  trackLayout: boolean
   visualIndex: number
 }
 
-function AnimatedRecord({
+const AnimatedRecord = memo(function AnimatedRecord({
   album,
   albumIndex,
   isActive,
   isHovered,
   position,
   reduceMotion,
+  trackLayout,
   visualIndex,
 }: AnimatedRecordProps) {
   const pullTarget = useMotionValue(0)
@@ -94,7 +97,7 @@ function AnimatedRecord({
       <motion.figure
         className={`record-figure${album ? "" : " record-placeholder"}`}
         data-loading={album ? undefined : true}
-        layoutId={album ? `album-cover-${album.id}` : undefined}
+        layoutId={album && trackLayout ? `album-cover-${album.id}` : undefined}
       >
         {album && (
           <Image
@@ -109,7 +112,7 @@ function AnimatedRecord({
       </motion.figure>
     </motion.li>
   )
-}
+})
 
 interface RecordHitZoneProps {
   albumIndex: number
@@ -118,7 +121,7 @@ interface RecordHitZoneProps {
   visualIndex: number
 }
 
-function RecordHitZone({
+const RecordHitZone = memo(function RecordHitZone({
   albumIndex,
   position,
   reduceMotion,
@@ -138,7 +141,7 @@ function RecordHitZone({
       style={hitStyle}
     />
   )
-}
+})
 
 export function RecordDeck({
   albums,
@@ -437,6 +440,7 @@ export function RecordDeck({
             key={album?.id ?? `placeholder-${visualIndex}`}
             position={position}
             reduceMotion={reduceMotion}
+            trackLayout={openedAlbumId === null || album?.id === openedAlbumId}
             visualIndex={visualIndex}
           />
         ))}
