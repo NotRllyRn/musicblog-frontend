@@ -308,8 +308,12 @@ export function RecordDeck({
       moveTo(moves[event.key] ?? activeIndex)
     }
 
-    if (event.key === "Enter" && activeAlbum && deck.current)
-      onOpenAlbum(activeAlbum, deck.current)
+    const activates = event.key === "Enter" || (!isTouch && event.key === " ")
+    if (activates && activeAlbum && deck.current) {
+      event.preventDefault()
+      if (isTouch) window.location.assign(activeAlbum.href)
+      else onOpenAlbum(activeAlbum, deck.current)
+    }
   }
 
   const onClick = (event: MouseEvent<HTMLElement>) => {
@@ -406,7 +410,7 @@ export function RecordDeck({
     <section
       className={`record-deck deck-${index + 1}`}
       aria-haspopup={isTouch ? undefined : "dialog"}
-      aria-keyshortcuts="ArrowUp ArrowDown Home End Enter"
+      aria-keyshortcuts={`ArrowUp ArrowDown Home End Enter${isTouch ? "" : " Space"}`}
       aria-label={`Browse albums vertically. Selected: ${activeAlbum?.title ?? "album"}.`}
       onBlur={() => {
         if (!isTouch) clearSelection()
