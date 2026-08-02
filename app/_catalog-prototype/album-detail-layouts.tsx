@@ -5,6 +5,7 @@ import { Heading } from "@astryxdesign/core/Heading"
 import { Link } from "@astryxdesign/core/Link"
 import { MetadataList, MetadataListItem } from "@astryxdesign/core/MetadataList"
 import { Text } from "@astryxdesign/core/Text"
+import { VStack } from "@astryxdesign/core/VStack"
 
 import { DetailPrototypeSwitcher } from "./detail-prototype-switcher"
 import type { AlbumDetail } from "./types"
@@ -82,22 +83,22 @@ function Dates({ detail }: DetailLayoutProps) {
   return (
     <dl className="detail-dates">
       {released && (
-        <section>
+        <VStack gap={0.5}>
           <dt>Released</dt>
           <dd>{released}</dd>
-        </section>
+        </VStack>
       )}
       {listened && (
-        <section>
+        <VStack gap={0.5}>
           <dt>Listened</dt>
           <dd>{listened}</dd>
-        </section>
+        </VStack>
       )}
       {posted && (
-        <section>
+        <VStack gap={0.5}>
           <dt>Posted</dt>
           <dd>{posted}</dd>
-        </section>
+        </VStack>
       )}
     </dl>
   )
@@ -163,21 +164,24 @@ function Highlights({ detail }: DetailLayoutProps) {
   )
 }
 
-function Facts({ detail }: DetailLayoutProps) {
-  const duration = formatDuration(detail.durationMs)
-  const average = formatDuration(detail.averageTrackMs)
-  const hasFacts = Boolean(
+function hasFacts(detail: AlbumDetail) {
+  return Boolean(
     detail.releaseTypes[0] ||
     detail.totalTracks !== null ||
-    duration ||
-    average ||
+    detail.durationMs !== null ||
+    detail.averageTrackMs !== null ||
     detail.listenCount !== null ||
     detail.explicit ||
     detail.favorite ||
     detail.lastfmUrl
   )
+}
 
-  if (!hasFacts) return null
+function Facts({ detail }: DetailLayoutProps) {
+  const duration = formatDuration(detail.durationMs)
+  const average = formatDuration(detail.averageTrackMs)
+
+  if (!hasFacts(detail)) return null
 
   return (
     <section className="detail-facts">
@@ -251,11 +255,11 @@ function VariantB({ detail }: DetailLayoutProps) {
         <Dates detail={detail} />
         <GenreCloud detail={detail} />
       </aside>
-      <main className="detail-b-story">
+      <section className="detail-b-story">
         <DetailHeading detail={detail} />
         <Review detail={detail} />
         <Highlights detail={detail} />
-      </main>
+      </section>
       <footer>
         <Facts detail={detail} />
       </footer>
@@ -328,9 +332,11 @@ function VariantE({ detail }: DetailLayoutProps) {
             <Highlights detail={detail} />
           </li>
         )}
-        <li>
-          <Facts detail={detail} />
-        </li>
+        {hasFacts(detail) && (
+          <li>
+            <Facts detail={detail} />
+          </li>
+        )}
       </ol>
     </article>
   )

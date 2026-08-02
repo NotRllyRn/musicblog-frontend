@@ -49,8 +49,10 @@ interface WordPressPost {
   id: number
   date: string
   link: string
+  status?: string
+  password?: string
   title: { rendered: string }
-  content?: { rendered?: string }
+  content?: { rendered?: string; protected?: boolean }
   acf?: WordPressAcf
   _embedded?: {
     "wp:featuredmedia"?: WordPressMedia[]
@@ -133,7 +135,7 @@ async function requestPost(id: number) {
   url.searchParams.set("_embed", "wp:featuredmedia,wp:term")
   url.searchParams.set(
     "_fields",
-    "id,date,link,title,content,acf,_links,_embedded"
+    "id,date,link,status,password,title,content,acf,_links,_embedded"
   )
 
   const response = await fetch(url, {
@@ -249,7 +251,6 @@ function sanitizePostContent(value: string) {
       "img",
     ],
     allowedAttributes: {
-      "*": ["class"],
       a: ["href", "target", "rel"],
       img: ["src", "alt", "width", "height", "loading"],
     },
@@ -289,7 +290,13 @@ export async function getAlbumDetail(id: number): Promise<AlbumDetail | null> {
   if (!Number.isInteger(id) || id < 1) return null
 
   const post = await requestPost(id)
-  if (!post) return null
+  if (
+    !post ||
+    post.status !== "publish" ||
+    Boolean(post.password) ||
+    post.content?.protected
+  )
+    return null
 
   const album = toAlbum(post)
   if (!album) return null

@@ -1,9 +1,11 @@
 "use client"
 
+import { Button } from "@astryxdesign/core/Button"
 import { Heading } from "@astryxdesign/core/Heading"
 import { Icon } from "@astryxdesign/core/Icon"
 import { Link } from "@astryxdesign/core/Link"
 import { Text } from "@astryxdesign/core/Text"
+import { VisuallyHidden } from "@astryxdesign/core/VisuallyHidden"
 import { motion, useReducedMotion } from "motion/react"
 import Image from "next/image"
 import {
@@ -123,6 +125,11 @@ export function AlbumDetailOverlay({
       tabIndex={-1}
       transition={transition}
     >
+      <VisuallyHidden>
+        <Button label="Close album details" onClick={onClose}>
+          Close album details
+        </Button>
+      </VisuallyHidden>
       <section className="album-detail-cover-stage">
         <motion.aside
           className="album-detail-label"

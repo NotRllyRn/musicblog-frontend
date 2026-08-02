@@ -26,9 +26,11 @@ export function DetailPrototypeSwitcher({
   const pathname = usePathname()
   const searchParams = useSearchParams()
   const requested = searchParams.get("detail")
-  const current = definitions.some(({ key }) => key === requested)
-    ? (requested as DetailVariant)
-    : "A"
+  const current =
+    process.env.NODE_ENV !== "production" &&
+    definitions.some(({ key }) => key === requested)
+      ? (requested as DetailVariant)
+      : "A"
   const currentIndex = definitions.findIndex(({ key }) => key === current)
 
   const select = useCallback(

@@ -405,6 +405,7 @@ export function RecordDeck({
   return (
     <section
       className={`record-deck deck-${index + 1}`}
+      aria-haspopup={isTouch ? undefined : "dialog"}
       aria-keyshortcuts="ArrowUp ArrowDown Home End Enter"
       aria-label={`Browse albums vertically. Selected: ${activeAlbum?.title ?? "album"}.`}
       onBlur={() => {
@@ -419,7 +420,7 @@ export function RecordDeck({
       onPointerMove={onPointerMove}
       onWheel={onWheel}
       ref={deck}
-      role="link"
+      role={isTouch ? "link" : "button"}
       tabIndex={0}
     >
       <ol className="record-stage" aria-hidden="true">
