@@ -1,5 +1,7 @@
 import "server-only"
 
+import sanitizeHtml from "sanitize-html"
+
 import type {
   AlbumDetail,
   AlbumPage,
@@ -224,6 +226,37 @@ function trustedExternalUrl(value: unknown, allowedHostname: string) {
   }
 }
 
+function sanitizePostContent(value: string) {
+  return sanitizeHtml(value, {
+    allowedTags: [
+      "p",
+      "h2",
+      "h3",
+      "h4",
+      "ul",
+      "ol",
+      "li",
+      "blockquote",
+      "strong",
+      "em",
+      "b",
+      "i",
+      "a",
+      "br",
+      "hr",
+      "figure",
+      "figcaption",
+      "img",
+    ],
+    allowedAttributes: {
+      "*": ["class"],
+      a: ["href", "target", "rel"],
+      img: ["src", "alt", "width", "height", "loading"],
+    },
+    allowedSchemes: ["https", "mailto"],
+  })
+}
+
 function toTrack(track: WordPressTrack): AlbumTrack | null {
   const title = optionalString(track.title)
   if (!title) return null
@@ -266,7 +299,7 @@ export async function getAlbumDetail(id: number): Promise<AlbumDetail | null> {
 
   return {
     ...album,
-    contentHtml: post.content?.rendered ?? "",
+    contentHtml: sanitizePostContent(post.content?.rendered ?? ""),
     postedAt: post.date,
     releaseDate: compactDate(acf.music_release_date),
     listenedAt: compactDate(acf.music_listened_at),
