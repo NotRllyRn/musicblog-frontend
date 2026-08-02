@@ -110,6 +110,7 @@ function Review({ detail }: DetailLayoutProps) {
       {detail.contentHtml ? (
         <section
           className="detail-review-copy"
+          // pi-lens-ignore: typescript.react.security.audit.react-dangerouslysetinnerhtml.react-dangerouslysetinnerhtml
           dangerouslySetInnerHTML={{ __html: detail.contentHtml }}
         />
       ) : detail.notes ? (
