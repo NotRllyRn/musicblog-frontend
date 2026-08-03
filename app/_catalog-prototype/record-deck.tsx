@@ -7,7 +7,6 @@ import {
   useMotionValue,
   useMotionValueEvent,
   useReducedMotion,
-  useScroll,
   useSpring,
   useTransform,
 } from "motion/react"
@@ -187,8 +186,7 @@ export function RecordDeck({
   const settleTimer = useRef<ReturnType<typeof setTimeout>>(null)
   const isTouch = useMediaQuery("(hover: none), (pointer: coarse)")
   const reduceMotion = Boolean(useReducedMotion())
-  const { scrollY } = useScroll({ container: scroll })
-  const rawPosition = useTransform(scrollY, (value) => value / settings.step)
+  const rawPosition = useMotionValue(initialIndex)
   const smoothPosition = useSpring(rawPosition, {
     damping: 34,
     mass: 0.42,
@@ -243,11 +241,12 @@ export function RecordDeck({
       if (node && !initialized.current) {
         wheelTarget.current = initialIndex * settings.step
         node.scrollTop = wheelTarget.current
+        rawPosition.jump(initialIndex)
         smoothPosition.jump(initialIndex)
         initialized.current = true
       }
     },
-    [initialIndex, settings.step, smoothPosition]
+    [initialIndex, rawPosition, settings.step, smoothPosition]
   )
 
   useEffect(
@@ -392,6 +391,7 @@ export function RecordDeck({
   }
 
   const onScroll = (event: UIEvent<HTMLOListElement>) => {
+    rawPosition.set(event.currentTarget.scrollTop / settings.step)
     if (!scrolling.current) wheelTarget.current = event.currentTarget.scrollTop
     clearSelection()
   }

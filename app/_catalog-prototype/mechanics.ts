@@ -15,6 +15,14 @@ const clamp = (value: number, min: number, max: number) =>
 const mix = (from: number, to: number, amount: number) =>
   from + (to - from) * amount
 
+const responsivePx = (value: number) => {
+  if (value === 0) return "0px"
+  const viewport = `${(value / 19.2).toFixed(3)}vw`
+  return value > 0
+    ? `clamp(${value.toFixed(2)}px, ${viewport}, ${(value * 2).toFixed(2)}px)`
+    : `clamp(${(value * 2).toFixed(2)}px, ${viewport}, ${value.toFixed(2)}px)`
+}
+
 const responsiveTail = (amount: number) => {
   if (amount === 0) return "0px"
 
@@ -22,14 +30,14 @@ const responsiveTail = (amount: number) => {
   const direction = Math.sign(amount)
   const minimum =
     direction > 0
-      ? `${(magnitude * 16).toFixed(2)}px`
-      : `max(${(-magnitude * 100).toFixed(2)}px, ${(-magnitude * 4.2).toFixed(2)}dvh)`
+      ? responsivePx(magnitude * 16)
+      : `max(${responsivePx(-magnitude * 100)}, ${(-magnitude * 4.2).toFixed(2)}dvh)`
   const maximum =
     direction > 0
-      ? `min(${(magnitude * 100).toFixed(2)}px, ${(magnitude * 4.2).toFixed(2)}dvh)`
-      : `${(-magnitude * 16).toFixed(2)}px`
-  const mobileCompression = `clamp(0px, calc(${(magnitude * 2.352).toFixed(2)}rem - ${(magnitude * 4.9).toFixed(2)}vw), ${(magnitude * 18.5).toFixed(2)}px)`
-  const preferred = `calc(${(amount * 8.33).toFixed(2)}dvh - ${(amount * 33.33).toFixed(2)}% + ${(amount * 19).toFixed(2)}px ${direction > 0 ? "-" : "+"} ${mobileCompression})`
+      ? `min(${responsivePx(magnitude * 100)}, ${(magnitude * 4.2).toFixed(2)}dvh)`
+      : responsivePx(-magnitude * 16)
+  const mobileCompression = `clamp(0px, calc(${(magnitude * 2.352).toFixed(2)}rem - ${(magnitude * 4.9).toFixed(2)}vw), ${responsivePx(magnitude * 18.5)})`
+  const preferred = `calc(${(amount * 8.33).toFixed(2)}dvh - ${(amount * 33.33).toFixed(2)}% + ${responsivePx(amount * 19)} ${direction > 0 ? "-" : "+"} ${mobileCompression})`
 
   return `clamp(${minimum}, ${preferred}, ${maximum})`
 }
@@ -56,12 +64,12 @@ export function getRecordVisual(
   const tailY = responsiveTail(direction * tail * baseAmount)
   const pulledY =
     direction < 0
-      ? `clamp(${(-12.5 * pullAmount).toFixed(2)}dvh, calc(${(125 * pullAmount).toFixed(2)}px - ${(25 * pullAmount).toFixed(2)}dvh), ${(-24 * pullAmount).toFixed(2)}px)`
+      ? `clamp(${(-12.5 * pullAmount).toFixed(2)}dvh, calc(${responsivePx(125 * pullAmount)} - ${(25 * pullAmount).toFixed(2)}dvh), ${responsivePx(-24 * pullAmount)})`
       : "0px"
-  const focusLift = "clamp(52px, calc(34dvh - 190px), 104px)"
+  const focusLift = `clamp(${responsivePx(52)}, calc(34dvh - ${responsivePx(190)}), ${responsivePx(104)})`
   const pullCompensation =
     direction < 0
-      ? `clamp(${(52 * pullAmount).toFixed(2)}px, calc(${(34 * pullAmount).toFixed(2)}dvh - ${(190 * pullAmount).toFixed(2)}px), ${(104 * pullAmount).toFixed(2)}px)`
+      ? `clamp(${responsivePx(52 * pullAmount)}, calc(${(34 * pullAmount).toFixed(2)}dvh - ${responsivePx(190 * pullAmount)}), ${responsivePx(104 * pullAmount)})`
       : "0px"
   const z = mix(mix(-24, stackedZ, focus), mix(132, 180, focus), pull)
   const rotateX = mix(mix(-20, -40, focus), mix(-18, 0, focus), pull)
@@ -69,7 +77,7 @@ export function getRecordVisual(
   const scale = mix(0.92, mix(1.092, 1.05, focus), pull)
   const anchor = mix(-72, -50, focus)
   const transform = [
-    `translate3d(${x.toFixed(2)}px, calc(${anchor.toFixed(2)}% + ${firstPercent.toFixed(2)}% + ${firstY.toFixed(2)}px + ${tailY} + ${pulledY} + ${pullCompensation} - ${focusLift} - ${(pullAmount * pullLift).toFixed(2)}%), ${z.toFixed(2)}px)`,
+    `translate3d(${responsivePx(x)}, calc(${anchor.toFixed(2)}% + ${firstPercent.toFixed(2)}% + ${responsivePx(firstY)} + ${tailY} + ${pulledY} + ${pullCompensation} - ${focusLift} - ${(pullAmount * pullLift).toFixed(2)}%), ${responsivePx(z)})`,
     `rotateX(${rotateX.toFixed(2)}deg)`,
     "rotateY(0deg)",
     `rotateZ(${rotateZ.toFixed(2)}deg)`,
