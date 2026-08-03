@@ -77,7 +77,8 @@ const AnimatedRecord = memo(function AnimatedRecord({
 
   useEffect(() => {
     pullTarget.set(isHovered ? 1 : 0)
-  }, [isHovered, pullTarget])
+    if (isDetailSource && detailVisible) pullSpring.jump(0)
+  }, [detailVisible, isDetailSource, isHovered, pullSpring, pullTarget])
 
   const distance = () => visualIndex - position.get()
   const transform = useTransform(
@@ -201,16 +202,12 @@ export function RecordDeck({
   const interactionVisualIndex = isTouch
     ? selectedVisualIndex
     : hoveredVisualIndex
-  const detailReturning = detailVisualIndex !== null && !detailVisible
   const activeAlbum = albums[activeIndex]
-  const previewVisualIndex = detailReturning
-    ? detailVisualIndex
-    : (interactionVisualIndex ?? activeIndex)
+  const previewVisualIndex = interactionVisualIndex ?? activeIndex
   const previewAlbum = albums[previewVisualIndex]
   const previewVisible =
-    detailReturning ||
-    (detailVisualIndex === null &&
-      (isTouch ? selectedVisualIndex !== null : showPreview))
+    detailVisualIndex === null &&
+    (isTouch ? selectedVisualIndex !== null : showPreview)
   const previewPullTarget = useMotionValue(0)
   const previewPullSpring = useSpring(previewPullTarget, {
     damping: 28,
@@ -231,7 +228,14 @@ export function RecordDeck({
 
   useEffect(() => {
     previewPullTarget.set(interactionVisualIndex === null ? 0 : 1)
-  }, [interactionVisualIndex, previewPullTarget])
+    if (detailVisualIndex !== null && detailVisible) previewPullSpring.jump(0)
+  }, [
+    detailVisible,
+    detailVisualIndex,
+    interactionVisualIndex,
+    previewPullSpring,
+    previewPullTarget,
+  ])
 
   const setScroll = useCallback(
     (node: HTMLOListElement | null) => {
@@ -449,7 +453,6 @@ export function RecordDeck({
         if (!isTouch) clearSelection()
       }}
       onClick={onClick}
-      onFocus={() => setShowPreview(true)}
       onKeyDown={onKeyDown}
       onPointerLeave={() => {
         if (!isTouch) clearSelection()
@@ -499,7 +502,6 @@ export function RecordDeck({
             <motion.aside
               className="record-preview"
               data-album-id={previewAlbum.id}
-              data-returning={detailReturning || undefined}
               layoutId={`album-label-${previewAlbum.id}`}
             >
               <Text type="label" color="inherit" maxLines={2}>

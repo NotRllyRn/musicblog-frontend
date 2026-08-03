@@ -117,6 +117,9 @@ export function AlbumDetailOverlay({
   const transition = reduceMotion
     ? { duration: 0 }
     : { duration: 0.72, ease: [0.16, 1, 0.3, 1] as const }
+  const sceneTransition = reduceMotion
+    ? { duration: 0 }
+    : { duration: 0.72, ease: [0.4, 0, 0.2, 1] as const }
 
   return (
     <motion.section
@@ -139,7 +142,7 @@ export function AlbumDetailOverlay({
         className="album-detail-backdrop"
         exit={{ opacity: 0 }}
         initial={{ opacity: 0 }}
-        transition={transition}
+        transition={sceneTransition}
       />
       <VisuallyHidden>
         <Button label="Close album details" onClick={onClose}>
@@ -150,6 +153,8 @@ export function AlbumDetailOverlay({
         <motion.aside
           className="album-detail-label"
           data-detail-content
+          exit={{ opacity: 0, transition: sceneTransition }}
+          layoutCrossfade={false}
           layoutId={`album-label-${album.id}`}
           transition={transition}
         >
@@ -176,6 +181,7 @@ export function AlbumDetailOverlay({
         <motion.figure
           className="album-detail-cover"
           data-detail-content
+          layoutCrossfade={false}
           layoutId={`album-cover-${album.id}`}
           transition={transition}
         >
@@ -194,7 +200,7 @@ export function AlbumDetailOverlay({
         className="album-detail-information"
         exit={reduceMotion ? undefined : { opacity: 0, x: "3rem" }}
         initial={reduceMotion ? undefined : { opacity: 0, x: "3rem" }}
-        transition={transition}
+        transition={sceneTransition}
       >
         {detail ? (
           <AlbumDetailLayouts detail={detail} />
