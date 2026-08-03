@@ -577,7 +577,6 @@ body:has(.deck-record[data-hovered="true"]) .theme-toggle {
 
 .detail-score {
   display: grid;
-  animation: detail-score-drift 6s ease-in-out infinite alternate;
   place-content: center;
 }
 
@@ -945,12 +944,6 @@ body:has(.deck-record[data-hovered="true"]) .theme-toggle {
   }
 }
 
-@keyframes detail-score-drift {
-  to {
-    transform: translate3d(0, -0.35rem, 0) rotateZ(0.4deg);
-  }
-}
-
 @keyframes detail-genre-drift {
   to {
     transform: translate3d(0, -0.55rem, 0) rotateZ(-1.5deg);
@@ -1084,7 +1077,6 @@ body:has(.deck-record[data-hovered="true"]) .theme-toggle {
 @media (prefers-reduced-motion: reduce) {
   .catalog-easter-egg,
   .catalog-easter-egg[data-visible="true"] .astryx-heading,
-  .detail-score,
   .detail-genre-cloud li,
   .album-detail-layout {
     animation: none;
