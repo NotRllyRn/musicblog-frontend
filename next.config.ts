@@ -5,6 +5,7 @@ const wordpressUrl = process.env.WORDPRESS_BASE_URL
   : null
 
 const nextConfig: NextConfig = {
+  turbopack: { root: process.cwd() },
   images: {
     dangerouslyAllowLocalIP: true,
     remotePatterns: wordpressUrl
