@@ -376,10 +376,20 @@
   will-change: transform;
 }
 
+.record-figure::after {
+  position: absolute;
+  inset: 0;
+  background: oklch(0.02 0.01 55 / 0.28);
+  content: "";
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 180ms ease;
+}
+
 .record-deck:has(.deck-record[data-hovered="true"])
   .deck-record:not([data-hovered="true"])
-  .record-figure {
-  filter: brightness(0.72);
+  .record-figure::after {
+  opacity: 1;
 }
 
 .catalog-header,
