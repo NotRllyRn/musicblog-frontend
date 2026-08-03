@@ -516,7 +516,7 @@ export function RecordDeck({
             className="record-preview-stage"
             aria-hidden="true"
             exit={{ opacity: 0 }}
-            transition={{ duration: 0.18 }}
+            transition={{ duration: reduceMotion ? 0 : 0.18 }}
           >
             <motion.li
               className="record-preview-positioner"
