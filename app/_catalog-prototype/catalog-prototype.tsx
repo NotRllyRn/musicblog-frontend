@@ -113,6 +113,14 @@ export function CatalogBrowser({ initialPage }: CatalogBrowserProps) {
   }
 
   const openAlbum = (album: AlbumPost, invoker: HTMLElement) => {
+    const closingOverlay = document.querySelector<HTMLElement>(
+      ".album-detail-overlay[data-closing]"
+    )
+    if (opened?.album.id === album.id) {
+      closingOverlay?.removeAttribute("data-closing")
+      closingOverlay?.removeAttribute("data-interrupted")
+      closingOverlay?.focus()
+    }
     detailVisibleRef.current = true
     setOpened({
       album,

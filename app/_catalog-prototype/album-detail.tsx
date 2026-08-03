@@ -132,6 +132,7 @@ export function AlbumDetailOverlay({
       </VisuallyHidden>
       <section className="album-detail-cover-stage">
         <motion.figure
+          animate={{ opacity: 1 }}
           className="album-detail-cover"
           data-detail-content
           exit={{
