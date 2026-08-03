@@ -35,7 +35,8 @@ is strictly read-only from this frontend.
 
 - Three independently scrolling album groups on phones, five at medium widths,
   and seven on desktop displays.
-- Catalog content is capped and centered on ultrawide displays.
+- Desktop lanes fill the available width and scale their 3D geometry so 1080p
+  and 4K displays retain the same composition.
 - No visible containers or separators between the free-floating records.
 - The focal record sits in the upper half with at most five sleeves above it;
   surrounding records collapse into depth.
@@ -45,10 +46,11 @@ is strictly read-only from this frontend.
 - Touch users have one global selection: tap once to preview, tap that sleeve
   again to open, or tap anywhere else to dismiss it.
 - Starting another scroll dismisses the current preview.
-- Desktop activation flies the selected sleeve and its widening identity label
-  into a flat left-side presentation while the review opens on the right.
-- Empty backdrop space and Escape reverse the detail transition; review content
-  and links do not dismiss it.
+- Desktop activation fades the preview label and flies the selected sleeve into
+  a flat left-side presentation while a content-sized review opens on the right.
+- Empty backdrop space and Escape reverse the detail transition; catalog hover
+  and scrolling resume immediately while the visual exit completes. Review
+  content and links do not dismiss it.
 - Detail shows the available release/listening/post dates, up to three genres,
   review body, highlighted tracks, and relevant album statistics. A missing
   rating remains visible as `NA/100`; other missing optional sections are
@@ -59,8 +61,10 @@ is strictly read-only from this frontend.
 - Responsive placeholder sleeves reserve the finite 3D layout while album data
   loads, and full-resolution WordPress artwork uses responsive Next Image
   optimization.
-- Full review payloads load on demand through a one-hour cached detail endpoint,
-  and editorial HTML is reduced to a server-side allowlist before rendering.
+- Full review payloads use a one-hour cached detail endpoint and begin loading
+  after a 300ms desktop hover or the first touch selection; activation falls back
+  to a compact loading status when needed. Editorial HTML is reduced to a
+  server-side allowlist before rendering.
 - Five structurally distinct desktop detail layouts are under temporary
   development-only prototype selection.
 - The hinged record-shop interaction is the selected direction.
