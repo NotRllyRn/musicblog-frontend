@@ -489,7 +489,7 @@ export function RecordDeck({
             key={album?.id ?? `placeholder-${visualIndex}`}
             position={position}
             reduceMotion={reduceMotion}
-            trackLayout={!detailVisible || album?.id === openedAlbumId}
+            trackLayout={openedAlbumId === null || album?.id === openedAlbumId}
             visualIndex={visualIndex}
           />
         ))}

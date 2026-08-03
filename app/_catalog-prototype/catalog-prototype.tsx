@@ -45,6 +45,7 @@ export function CatalogBrowser({ initialPage }: CatalogBrowserProps) {
     invoker: HTMLElement
   } | null>(null)
   const [detailVisible, setDetailVisible] = useState(false)
+  const detailVisibleRef = useRef(false)
   const deckCount = useDeckCount()
   const loadedCount = useRef(initialPage.albums.length)
   const nextPage = useRef(initialPage.page + 1)
@@ -106,6 +107,7 @@ export function CatalogBrowser({ initialPage }: CatalogBrowserProps) {
   if (deckCount === null) return <CatalogLoading />
 
   const openAlbum = (album: AlbumPost, invoker: HTMLElement) => {
+    detailVisibleRef.current = true
     setOpened({
       album,
       detail: detailCache.current.get(album.id) ?? null,
@@ -139,6 +141,7 @@ export function CatalogBrowser({ initialPage }: CatalogBrowserProps) {
           />
           <AnimatePresence
             onExitComplete={() => {
+              if (detailVisibleRef.current) return
               const invoker = opened?.invoker
               setOpened(null)
               requestAnimationFrame(() =>
@@ -152,7 +155,10 @@ export function CatalogBrowser({ initialPage }: CatalogBrowserProps) {
                 detailRequest={opened.detailRequest}
                 initialDetail={opened.detail}
                 key={opened.album.id}
-                onClose={() => setDetailVisible(false)}
+                onClose={() => {
+                  detailVisibleRef.current = false
+                  setDetailVisible(false)
+                }}
               />
             )}
           </AnimatePresence>
