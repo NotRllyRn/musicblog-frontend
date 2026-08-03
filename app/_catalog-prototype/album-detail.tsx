@@ -134,6 +134,10 @@ export function AlbumDetailOverlay({
         <motion.figure
           className="album-detail-cover"
           data-detail-content
+          exit={{
+            opacity: 0,
+            transition: { duration: reduceMotion ? 0 : 0.48 },
+          }}
           layoutCrossfade={false}
           layoutId={`album-cover-${album.id}`}
           transition={transition}
