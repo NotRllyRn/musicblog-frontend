@@ -372,7 +372,7 @@
 .record-deck:has(.deck-record[data-hovered="true"])
   .deck-record:not([data-hovered="true"])
   .record-figure {
-  filter: brightness(0.62) saturate(0.78);
+  filter: brightness(0.72);
 }
 
 .catalog-header,
@@ -446,6 +446,11 @@ body:has(.deck-record[data-hovered="true"]) .theme-toggle {
   inset: 0;
   overflow: hidden;
   color: var(--catalog-ink);
+}
+
+.album-detail-overlay[data-closing],
+.album-detail-overlay[data-closing] * {
+  pointer-events: none;
 }
 
 .album-detail-backdrop {

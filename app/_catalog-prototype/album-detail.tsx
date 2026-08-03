@@ -50,10 +50,15 @@ export function AlbumDetailOverlay({
     }
   }, [detailRequest])
 
+  const close = () => {
+    overlay.current?.setAttribute("data-closing", "")
+    onClose()
+  }
+
   const onKeyDown = (event: KeyboardEvent<HTMLElement>) => {
     if (event.key === "Escape") {
       event.preventDefault()
-      onClose()
+      close()
       return
     }
 
@@ -87,7 +92,7 @@ export function AlbumDetailOverlay({
   }
 
   const closeFromEmptySpace = (event: PointerEvent<HTMLElement>) => {
-    if (!(event.target as Element).closest("[data-detail-content]")) onClose()
+    if (!(event.target as Element).closest("[data-detail-content]")) close()
   }
 
   const transition = reduceMotion
@@ -121,7 +126,7 @@ export function AlbumDetailOverlay({
         transition={sceneTransition}
       />
       <VisuallyHidden>
-        <Button label="Close album details" onClick={onClose}>
+        <Button label="Close album details" onClick={close}>
           Close album details
         </Button>
       </VisuallyHidden>

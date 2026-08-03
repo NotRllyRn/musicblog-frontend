@@ -58,7 +58,7 @@ export function RecordField({
       className="record-field"
       aria-label={`Scrollable album catalog in ${deckCount} groups`}
       data-deck-count={deckCount}
-      inert={openedAlbumId !== null ? true : undefined}
+      inert={detailVisible ? true : undefined}
     >
       {stacks.map((records, index) => (
         <RecordDeck
