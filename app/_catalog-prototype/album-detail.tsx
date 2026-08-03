@@ -18,44 +18,37 @@ import type { AlbumDetail, AlbumPost } from "./types"
 
 interface AlbumDetailOverlayProps {
   album: AlbumPost
+  detailRequest: Promise<AlbumDetail>
+  initialDetail: AlbumDetail | null
   onClose: () => void
 }
 
 export function AlbumDetailOverlay({
   album,
+  detailRequest,
+  initialDetail,
   onClose,
 }: AlbumDetailOverlayProps) {
-  const [detail, setDetail] = useState<AlbumDetail | null>(null)
+  const [detail, setDetail] = useState<AlbumDetail | null>(initialDetail)
   const [failed, setFailed] = useState(false)
   const overlay = useRef<HTMLElement>(null)
   const reduceMotion = Boolean(useReducedMotion())
 
   useEffect(() => {
-    const controller = new AbortController()
-    let revealTimer: ReturnType<typeof setTimeout> | undefined
-
-    void fetch(`/api/albums/${album.id}`, { signal: controller.signal })
-      .then((response) => {
-        if (!response.ok) throw new Error("Album detail could not load")
-        return response.json() as Promise<AlbumDetail>
-      })
+    let active = true
+    void detailRequest
       .then((albumDetail) => {
-        revealTimer = setTimeout(
-          () => setDetail(albumDetail),
-          reduceMotion ? 0 : 720
-        )
+        if (active) setDetail(albumDetail)
       })
-      .catch((error: unknown) => {
-        if (!(error instanceof DOMException && error.name === "AbortError"))
-          setFailed(true)
+      .catch(() => {
+        if (active) setFailed(true)
       })
 
     overlay.current?.focus()
     return () => {
-      controller.abort()
-      clearTimeout(revealTimer)
+      active = false
     }
-  }, [album.id, reduceMotion])
+  }, [detailRequest])
 
   const onKeyDown = (event: KeyboardEvent<HTMLElement>) => {
     if (event.key === "Escape") {

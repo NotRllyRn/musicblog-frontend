@@ -9,7 +9,7 @@ import { AlbumDetailOverlay } from "./album-detail"
 import { CatalogLoading } from "./catalog-loading"
 import { RecordField } from "./record-field"
 import { ThemeToggle } from "./theme-toggle"
-import type { AlbumPage, AlbumPost, DeckCount } from "./types"
+import type { AlbumDetail, AlbumPage, AlbumPost, DeckCount } from "./types"
 
 interface CatalogBrowserProps {
   initialPage: AlbumPage
@@ -40,6 +40,8 @@ export function CatalogBrowser({ initialPage }: CatalogBrowserProps) {
   const [albums, setAlbums] = useState(initialPage.albums)
   const [opened, setOpened] = useState<{
     album: AlbumPost
+    detail: AlbumDetail | null
+    detailRequest: Promise<AlbumDetail>
     invoker: HTMLElement
   } | null>(null)
   const [detailVisible, setDetailVisible] = useState(false)
@@ -47,6 +49,22 @@ export function CatalogBrowser({ initialPage }: CatalogBrowserProps) {
   const loadedCount = useRef(initialPage.albums.length)
   const nextPage = useRef(initialPage.page + 1)
   const isLoading = useRef(false)
+  const detailCache = useRef(new Map<number, AlbumDetail>())
+  const detailRequests = useRef(new Map<number, Promise<AlbumDetail>>())
+  const requestAlbumDetail = useCallback((album: AlbumPost) => {
+    const cached = detailRequests.current.get(album.id)
+    if (cached) return cached
+
+    const request = fetch(`/api/albums/${album.id}`).then((response) => {
+      if (!response.ok) throw new Error("Album detail could not load")
+      return response.json() as Promise<AlbumDetail>
+    })
+    detailRequests.current.set(album.id, request)
+    void request
+      .then((detail) => detailCache.current.set(album.id, detail))
+      .catch(() => detailRequests.current.delete(album.id))
+    return request
+  }, [])
   const loadMore = useCallback(
     async (knownCount: number) => {
       if (
@@ -88,7 +106,12 @@ export function CatalogBrowser({ initialPage }: CatalogBrowserProps) {
   if (deckCount === null) return <CatalogLoading />
 
   const openAlbum = (album: AlbumPost, invoker: HTMLElement) => {
-    setOpened({ album, invoker })
+    setOpened({
+      album,
+      detail: detailCache.current.get(album.id) ?? null,
+      detailRequest: requestAlbumDetail(album),
+      invoker,
+    })
     setDetailVisible(true)
   }
 
@@ -111,6 +134,7 @@ export function CatalogBrowser({ initialPage }: CatalogBrowserProps) {
             openedAlbumId={opened?.album.id ?? null}
             onNeedMore={loadMore}
             onOpenAlbum={openAlbum}
+            onPrefetchAlbum={(album) => void requestAlbumDetail(album)}
             total={initialPage.total}
           />
           <AnimatePresence
@@ -125,6 +149,8 @@ export function CatalogBrowser({ initialPage }: CatalogBrowserProps) {
             {opened && detailVisible && (
               <AlbumDetailOverlay
                 album={opened.album}
+                detailRequest={opened.detailRequest}
+                initialDetail={opened.detail}
                 key={opened.album.id}
                 onClose={() => setDetailVisible(false)}
               />

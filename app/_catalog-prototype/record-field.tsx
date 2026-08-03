@@ -13,6 +13,7 @@ interface RecordFieldProps {
   openedAlbumId: number | null
   onNeedMore: (loadedCount: number) => void
   onOpenAlbum: (album: AlbumPost, invoker: HTMLElement) => void
+  onPrefetchAlbum: (album: AlbumPost) => void
   total: number
 }
 
@@ -23,6 +24,7 @@ export function RecordField({
   openedAlbumId,
   onNeedMore,
   onOpenAlbum,
+  onPrefetchAlbum,
   total,
 }: RecordFieldProps) {
   const [selection, setSelection] = useState<{
@@ -68,6 +70,7 @@ export function RecordField({
           onEndChange={onEndChange}
           onNeedMore={() => onNeedMore(albums.length)}
           onOpenAlbum={onOpenAlbum}
+          onPrefetchAlbum={onPrefetchAlbum}
           onSelectionChange={(visualIndex) =>
             setSelection(
               visualIndex === null

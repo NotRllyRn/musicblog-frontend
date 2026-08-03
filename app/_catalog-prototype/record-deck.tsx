@@ -36,6 +36,7 @@ interface RecordDeckProps {
   onEndChange: (index: number, ended: boolean) => void
   onNeedMore: () => void
   onOpenAlbum: (album: AlbumPost, invoker: HTMLElement) => void
+  onPrefetchAlbum: (album: AlbumPost) => void
   onSelectionChange: (visualIndex: number | null) => void
   selectionActive: boolean
   selectedVisualIndex: number | null
@@ -162,6 +163,7 @@ export function RecordDeck({
   onEndChange,
   onNeedMore,
   onOpenAlbum,
+  onPrefetchAlbum,
   onSelectionChange,
   selectionActive,
   selectedVisualIndex,
@@ -181,6 +183,7 @@ export function RecordDeck({
   const deck = useRef<HTMLElement>(null)
   const initialized = useRef(false)
   const openFrame = useRef<number | null>(null)
+  const prefetchTimer = useRef<ReturnType<typeof setTimeout>>(null)
   const scroll = useRef<HTMLOListElement>(null)
   const scrolling = useRef(false)
   const wheelTarget = useRef(initialIndex * settings.step)
@@ -253,6 +256,7 @@ export function RecordDeck({
   useEffect(
     () => () => {
       if (openFrame.current !== null) cancelAnimationFrame(openFrame.current)
+      if (prefetchTimer.current) clearTimeout(prefetchTimer.current)
       if (settleTimer.current) clearTimeout(settleTimer.current)
     },
     []
@@ -295,6 +299,7 @@ export function RecordDeck({
   }
 
   const clearSelection = () => {
+    if (prefetchTimer.current) clearTimeout(prefetchTimer.current)
     setHoveredVisualIndex(null)
     setShowPreview(false)
     if (isTouch) onSelectionChange(null)
@@ -372,6 +377,7 @@ export function RecordDeck({
 
       if (visualIndex !== null) {
         restartPreview()
+        onPrefetchAlbum(albums[visualIndex])
         onSelectionChange(visualIndex)
       }
       return
@@ -385,8 +391,15 @@ export function RecordDeck({
     const foundIndex = visualIndexAt(event.target)
     const visualIndex =
       foundIndex !== null && albums[foundIndex] ? foundIndex : null
-    if (visualIndex !== null && visualIndex !== hoveredVisualIndex)
+    if (visualIndex !== hoveredVisualIndex && prefetchTimer.current)
+      clearTimeout(prefetchTimer.current)
+    if (visualIndex !== null && visualIndex !== hoveredVisualIndex) {
       restartPreview()
+      prefetchTimer.current = setTimeout(
+        () => onPrefetchAlbum(albums[visualIndex]),
+        300
+      )
+    }
     setHoveredVisualIndex(visualIndex)
     setShowPreview(visualIndex !== null)
   }
