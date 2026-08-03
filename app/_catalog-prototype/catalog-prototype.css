@@ -445,16 +445,23 @@ body:has(.deck-record[data-hovered="true"]) .theme-toggle {
   z-index: 60;
   inset: 0;
   overflow: hidden;
-  opacity: 1 !important;
+  color: var(--catalog-ink);
+}
+
+.album-detail-backdrop {
+  position: absolute;
+  z-index: 0;
+  inset: 0;
   background: light-dark(
     oklch(0.77 0.006 255 / 0.82),
     oklch(0.025 0.01 55 / 0.88)
   );
-  color: var(--catalog-ink);
+  pointer-events: none;
 }
 
 .album-detail-cover-stage {
   position: absolute;
+  z-index: 1;
   inset: clamp(4.5rem, 8dvh, 7rem) 52% clamp(2rem, 5dvh, 4rem)
     clamp(1.5rem, 4vw, 5rem);
   display: grid;
@@ -526,6 +533,13 @@ body:has(.deck-record[data-hovered="true"]) .theme-toggle {
   object-fit: cover;
 }
 
+.album-detail-information {
+  position: absolute;
+  z-index: 1;
+  inset: 0;
+  pointer-events: none;
+}
+
 .album-detail-placeholder {
   position: absolute;
   inset: clamp(4.5rem, 8dvh, 7rem) clamp(2rem, 4vw, 5rem)
@@ -538,6 +552,7 @@ body:has(.deck-record[data-hovered="true"]) .theme-toggle {
   background: var(--detail-surface);
   align-content: center;
   overflow: auto;
+  pointer-events: auto;
 }
 
 .album-detail-layout {
@@ -554,6 +569,7 @@ body:has(.deck-record[data-hovered="true"]) .theme-toggle {
   background: var(--detail-panel);
   box-shadow: 0 1.5rem 5rem rgb(0 0 0 / 24%);
   color: var(--catalog-ink);
+  pointer-events: auto;
   scrollbar-color: var(--detail-muted) transparent;
 }
 

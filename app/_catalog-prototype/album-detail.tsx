@@ -120,13 +120,12 @@ export function AlbumDetailOverlay({
 
   return (
     <motion.section
-      animate={{ opacity: 1 }}
       aria-busy={!detail && !failed}
       aria-labelledby="album-detail-title"
       aria-modal="true"
       className="album-detail-overlay"
-      exit={{ opacity: 0 }}
-      initial={{ opacity: 0 }}
+      exit={{ opacity: 1 }}
+      initial={false}
       onKeyDown={onKeyDown}
       onPointerDown={closeFromEmptySpace}
       ref={overlay}
@@ -134,6 +133,14 @@ export function AlbumDetailOverlay({
       tabIndex={-1}
       transition={transition}
     >
+      <motion.div
+        animate={{ opacity: 1 }}
+        aria-hidden="true"
+        className="album-detail-backdrop"
+        exit={{ opacity: 0 }}
+        initial={{ opacity: 0 }}
+        transition={transition}
+      />
       <VisuallyHidden>
         <Button label="Close album details" onClick={onClose}>
           Close album details
@@ -182,24 +189,28 @@ export function AlbumDetailOverlay({
         </motion.figure>
       </section>
 
-      {detail ? (
-        <AlbumDetailLayouts detail={detail} />
-      ) : (
-        <motion.article
-          animate={reduceMotion ? undefined : { opacity: 1, x: 0 }}
-          className="album-detail-placeholder"
-          data-detail-content
-          initial={reduceMotion ? undefined : { opacity: 0, x: "3rem" }}
-          transition={{ delay: reduceMotion ? 0 : 0.18, duration: 0.45 }}
-        >
-          <Heading level={2} id="album-detail-title" color="inherit">
-            {album.title}
-          </Heading>
-          <Text as="p" color="inherit">
-            {failed ? "Album details could not load." : "Loading album notes…"}
-          </Text>
-        </motion.article>
-      )}
+      <motion.div
+        animate={reduceMotion ? undefined : { opacity: 1, x: 0 }}
+        className="album-detail-information"
+        exit={reduceMotion ? undefined : { opacity: 0, x: "3rem" }}
+        initial={reduceMotion ? undefined : { opacity: 0, x: "3rem" }}
+        transition={transition}
+      >
+        {detail ? (
+          <AlbumDetailLayouts detail={detail} />
+        ) : (
+          <article className="album-detail-placeholder" data-detail-content>
+            <Heading level={2} id="album-detail-title" color="inherit">
+              {album.title}
+            </Heading>
+            <Text as="p" color="inherit">
+              {failed
+                ? "Album details could not load."
+                : "Loading album notes…"}
+            </Text>
+          </article>
+        )}
+      </motion.div>
     </motion.section>
   )
 }
