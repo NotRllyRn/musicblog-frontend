@@ -2,6 +2,7 @@
 
 import { Text, VisuallyHidden, useMediaQuery } from "@astryxdesign/core"
 import {
+  AnimatePresence,
   motion,
   type MotionValue,
   useMotionValue,
@@ -496,24 +497,30 @@ export function RecordDeck({
         )}
       </ol>
 
-      {previewVisible && previewAlbum && (
-        <ol className="record-preview-stage" aria-hidden="true">
-          <motion.li className="record-preview-positioner" style={previewStyle}>
-            <motion.aside
-              className="record-preview"
-              data-album-id={previewAlbum.id}
-              layoutId={`album-label-${previewAlbum.id}`}
+      <AnimatePresence initial={false}>
+        {previewVisible && previewAlbum && (
+          <motion.ol
+            className="record-preview-stage"
+            aria-hidden="true"
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.18 }}
+          >
+            <motion.li
+              className="record-preview-positioner"
+              style={previewStyle}
             >
-              <Text type="label" color="inherit" maxLines={2}>
-                {previewAlbum.title}
-              </Text>
-              <Text type="supporting" color="inherit" maxLines={1}>
-                {previewAlbum.artist}
-              </Text>
-            </motion.aside>
-          </motion.li>
-        </ol>
-      )}
+              <aside className="record-preview" data-album-id={previewAlbum.id}>
+                <Text type="label" color="inherit" maxLines={2}>
+                  {previewAlbum.title}
+                </Text>
+                <Text type="supporting" color="inherit" maxLines={1}>
+                  {previewAlbum.artist}
+                </Text>
+              </aside>
+            </motion.li>
+          </motion.ol>
+        )}
+      </AnimatePresence>
 
       <ol
         className={`record-scroll snap-${settings.snap}`}

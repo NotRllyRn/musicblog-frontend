@@ -43,6 +43,11 @@ function DetailHeading({ detail }: DetailLayoutProps) {
       <Text type="large" color="inherit">
         {detail.artist}
       </Text>
+      {detail.spotifyUrl && (
+        <Link href={detail.spotifyUrl} isExternalLink>
+          Listen on Spotify
+        </Link>
+      )}
     </header>
   )
 }
@@ -51,7 +56,7 @@ function Score({ detail }: DetailLayoutProps) {
   return (
     <aside className="detail-score" aria-label="Album rating">
       <Text color="inherit" weight="bold">
-        {detail.rating ?? "NA"}
+        <strong>{detail.rating ?? "NA"}</strong>
         <small>/100</small>
       </Text>
     </aside>

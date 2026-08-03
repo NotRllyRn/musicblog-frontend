@@ -1,9 +1,6 @@
 "use client"
 
 import { Button } from "@astryxdesign/core/Button"
-import { Heading } from "@astryxdesign/core/Heading"
-import { Icon } from "@astryxdesign/core/Icon"
-import { Link } from "@astryxdesign/core/Link"
 import { Text } from "@astryxdesign/core/Text"
 import { VisuallyHidden } from "@astryxdesign/core/VisuallyHidden"
 import { motion, useReducedMotion } from "motion/react"
@@ -22,20 +19,6 @@ import type { AlbumDetail, AlbumPost } from "./types"
 interface AlbumDetailOverlayProps {
   album: AlbumPost
   onClose: () => void
-}
-
-function SpotifyMark(props: React.SVGProps<SVGSVGElement>) {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" {...props}>
-      <circle cx="12" cy="12" r="11" fill="currentColor" />
-      <path
-        d="M6.8 9.1c3.7-1 7.8-.7 11.1 1M7.5 12.2c3.1-.8 6.8-.5 9.7.9M8.2 15.1c2.7-.6 5.6-.4 8 .8"
-        stroke="var(--catalog-paper)"
-        strokeWidth="1.5"
-        strokeLinecap="round"
-      />
-    </svg>
-  )
 }
 
 export function AlbumDetailOverlay({
@@ -124,7 +107,7 @@ export function AlbumDetailOverlay({
   return (
     <motion.section
       aria-busy={!detail && !failed}
-      aria-labelledby="album-detail-title"
+      aria-label={`${album.title} details`}
       aria-modal="true"
       className="album-detail-overlay"
       exit={{ opacity: 1 }}
@@ -150,34 +133,6 @@ export function AlbumDetailOverlay({
         </Button>
       </VisuallyHidden>
       <section className="album-detail-cover-stage">
-        <motion.aside
-          className="album-detail-label"
-          data-detail-content
-          exit={{ opacity: 0, transition: sceneTransition }}
-          layoutCrossfade={false}
-          layoutId={`album-label-${album.id}`}
-          transition={transition}
-        >
-          <header>
-            <Text type="large" weight="semibold" color="inherit">
-              {album.title}
-            </Text>
-            <Text type="body" color="inherit">
-              {album.artist}
-            </Text>
-          </header>
-          {detail?.spotifyUrl && (
-            <nav className="album-spotify-link" data-detail-content>
-              <Link
-                href={detail.spotifyUrl}
-                isExternalLink
-                label={`Listen to ${album.title} on Spotify`}
-              >
-                <Icon icon={SpotifyMark} size="lg" />
-              </Link>
-            </nav>
-          )}
-        </motion.aside>
         <motion.figure
           className="album-detail-cover"
           data-detail-content
@@ -206,9 +161,6 @@ export function AlbumDetailOverlay({
           <AlbumDetailLayouts detail={detail} />
         ) : (
           <article className="album-detail-placeholder" data-detail-content>
-            <Heading level={2} id="album-detail-title" color="inherit">
-              {album.title}
-            </Heading>
             <Text as="p" color="inherit">
               {failed
                 ? "Album details could not load."

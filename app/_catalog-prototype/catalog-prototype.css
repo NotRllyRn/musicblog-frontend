@@ -465,60 +465,15 @@ body:has(.deck-record[data-hovered="true"]) .theme-toggle {
   inset: clamp(4.5rem, 8dvh, 7rem) 52% clamp(2rem, 5dvh, 4rem)
     clamp(1.5rem, 4vw, 5rem);
   display: grid;
-  grid-template-rows: auto minmax(0, 1fr);
-  gap: 1rem;
   min-width: 0;
   place-items: center;
   pointer-events: none;
 }
 
-.album-detail-label,
 .album-detail-cover {
-  width: min(42vw, calc(100dvh - 12rem), 72rem);
+  width: min(42vw, calc(100dvh - 12rem));
   max-width: 100%;
   pointer-events: auto;
-}
-
-.album-detail-label {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  gap: 1rem;
-  min-height: 4.5rem;
-  padding: 0.75rem 1rem;
-  border: 0.06rem solid var(--detail-border);
-  border-radius: 0.45rem;
-  background: var(--detail-surface);
-  box-shadow: var(--shadow-raised);
-  align-items: center;
-}
-
-.album-detail-label > header {
-  display: grid;
-  gap: 0.15rem;
-  min-width: 0;
-}
-
-.album-detail-label .astryx-text {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.album-spotify-link,
-.album-spotify-link .astryx-link {
-  display: grid;
-  place-content: center;
-}
-
-.album-spotify-link .astryx-text {
-  color: var(--spotify-green) !important;
-}
-
-.album-spotify-link .astryx-link > .astryx-icon {
-  display: none;
-}
-
-.album-detail-cover {
   position: relative;
   aspect-ratio: 1;
   margin: 0;
@@ -542,17 +497,30 @@ body:has(.deck-record[data-hovered="true"]) .theme-toggle {
 
 .album-detail-placeholder {
   position: absolute;
-  inset: clamp(4.5rem, 8dvh, 7rem) clamp(2rem, 4vw, 5rem)
-    clamp(2rem, 5dvh, 4rem) 52%;
-  display: grid;
-  gap: 1rem;
-  padding: clamp(1.25rem, 2.5vw, 2.5rem);
+  top: 50%;
+  left: 74%;
+  display: flex;
+  width: max-content;
+  max-width: 40%;
+  padding: 0.8rem 1.1rem;
   border: 0.06rem solid var(--detail-border);
-  border-radius: 0.6rem;
-  background: var(--detail-surface);
-  align-content: center;
-  overflow: auto;
+  border-radius: 999rem;
+  background: color-mix(in oklch, var(--detail-surface) 92%, transparent);
+  align-items: center;
+  gap: 0.75rem;
   pointer-events: auto;
+  translate: -50% -50%;
+}
+
+.album-detail-placeholder::before {
+  width: 0.8rem;
+  aspect-ratio: 1;
+  border: 0.12rem solid currentColor;
+  border-right-color: transparent;
+  border-radius: 50%;
+  animation: detail-loading-spin 700ms linear infinite;
+  content: "";
+  flex: 0 0 auto;
 }
 
 .album-detail-layout {
@@ -561,16 +529,21 @@ body:has(.deck-record[data-hovered="true"]) .theme-toggle {
   --detail-muted: light-dark(rgb(20 20 20 / 62%), rgb(255 245 232 / 65%));
   position: absolute;
   z-index: 1;
-  inset: clamp(3rem, 8dvh, 6rem) 4vw clamp(3rem, 6dvh, 5rem) 52%;
+  top: 50%;
+  right: 4vw;
+  left: 52%;
+  height: fit-content;
+  max-height: 88dvh;
   overflow: auto;
-  padding: clamp(1.25rem, 2vw, 3.5rem);
+  padding: clamp(1.25rem, 2vw, 7rem);
   border: 1px solid var(--detail-line);
   border-radius: 0.75rem;
-  background: var(--detail-panel);
+  background: light-dark(rgb(250 250 251 / 94%), rgb(28 24 21 / 94%));
   box-shadow: 0 1.5rem 5rem rgb(0 0 0 / 24%);
   color: var(--catalog-ink);
   pointer-events: auto;
   scrollbar-color: var(--detail-muted) transparent;
+  translate: 0 -50%;
 }
 
 .detail-heading {
@@ -580,8 +553,13 @@ body:has(.deck-record[data-hovered="true"]) .theme-toggle {
 
 .detail-heading h2 {
   margin: 0;
-  font-size: clamp(1.65rem, 2.4vw, 4rem);
+  font-size: clamp(1.65rem, 2.4vw, 8rem);
   line-height: 0.95;
+}
+
+.detail-heading > .astryx-link .astryx-text {
+  color: var(--spotify-green) !important;
+  font-size: clamp(0.9rem, 0.65vw, 2.4rem);
 }
 
 .detail-score {
@@ -592,15 +570,22 @@ body:has(.deck-record[data-hovered="true"]) .theme-toggle {
 
 .detail-score > .astryx-text {
   margin: 0;
-  font-size: clamp(3.25rem, 6vw, 8rem);
+  display: inline-flex;
+  font-size: clamp(3.25rem, 6vw, 16rem);
   line-height: 0.8;
-  letter-spacing: -0.08em;
+  letter-spacing: 0;
+  align-items: baseline;
+  gap: 0.08em;
   white-space: nowrap;
+}
+
+.detail-score strong {
+  letter-spacing: -0.06em;
 }
 
 .detail-score small {
   font-size: 0.32em;
-  letter-spacing: -0.04em;
+  letter-spacing: 0;
 }
 
 .detail-genre-cloud {
@@ -619,18 +604,18 @@ body:has(.deck-record[data-hovered="true"]) .theme-toggle {
   border: 1px solid var(--detail-line);
   border-radius: 999rem;
   background: light-dark(rgb(255 255 255 / 58%), rgb(255 245 232 / 8%));
-  animation: detail-genre-drift 5s ease-in-out infinite alternate;
+  animation: detail-genre-drift 3s ease-in-out infinite alternate;
   box-shadow: 0 0.75rem 2rem rgb(0 0 0 / 8%);
 }
 
 .detail-genre-cloud li:nth-child(2) {
   animation-delay: -2s;
-  animation-duration: 6.5s;
+  animation-duration: 3.8s;
 }
 
 .detail-genre-cloud li:nth-child(3) {
   animation-delay: -4s;
-  animation-duration: 7.5s;
+  animation-duration: 4.4s;
 }
 
 .detail-dates {
@@ -646,7 +631,7 @@ body:has(.deck-record[data-hovered="true"]) .theme-toggle {
 
 .detail-dates dt {
   color: var(--detail-muted);
-  font-size: clamp(0.72rem, 0.5vw, 1rem);
+  font-size: clamp(0.72rem, 0.5vw, 2rem);
   font-weight: 700;
   letter-spacing: 0.08em;
   text-transform: uppercase;
@@ -654,14 +639,19 @@ body:has(.deck-record[data-hovered="true"]) .theme-toggle {
 
 .detail-dates dd {
   margin: 0;
-  font-size: clamp(1rem, 0.65vw, 1.3rem);
+  font-size: clamp(1rem, 0.65vw, 2.6rem);
   font-variant-numeric: tabular-nums;
 }
 
 .detail-review {
   min-width: 0;
-  font-size: clamp(0.95rem, 1.15vw, 1.35rem);
+  font-size: clamp(1rem, 1.15vw, 2.7rem);
   line-height: 1.65;
+}
+
+.detail-review .astryx-text,
+.detail-review-copy {
+  font-size: inherit !important;
 }
 
 .detail-review-copy > :first-child,
@@ -699,18 +689,20 @@ body:has(.deck-record[data-hovered="true"]) .theme-toggle {
   background: light-dark(rgb(255 255 255 / 62%), rgb(255 245 232 / 8%));
 }
 
+.detail-highlight-track .astryx-text,
+.detail-highlights > .astryx-text {
+  font-size: clamp(0.85rem, 0.6vw, 2.2rem) !important;
+}
+
 .detail-facts {
   padding-top: 1rem;
   border-top: 1px solid var(--detail-line);
 }
 
 .detail-facts dt,
-.detail-facts dd {
-  font-size: clamp(0.8rem, 0.55vw, 1.15rem) !important;
-}
-
+.detail-facts dd,
 .detail-genre-cloud .astryx-text {
-  font-size: clamp(0.8rem, 0.55vw, 1.15rem) !important;
+  font-size: clamp(0.8rem, 0.55vw, 2.3rem) !important;
 }
 
 .detail-a-hero {
@@ -925,6 +917,12 @@ body:has(.deck-record[data-hovered="true"]) .theme-toggle {
   color: white;
   gap: 0.65rem;
   translate: 50%;
+}
+
+@keyframes detail-loading-spin {
+  to {
+    rotate: 1turn;
+  }
 }
 
 @keyframes detail-score-drift {
