@@ -545,6 +545,7 @@ body:has(.deck-record[data-hovered="true"]) .theme-toggle {
   border-radius: 0.75rem;
   background: light-dark(rgb(250 250 251 / 94%), rgb(28 24 21 / 94%));
   box-shadow: 0 1.5rem 5rem rgb(0 0 0 / 24%);
+  animation: detail-panel-reveal 280ms var(--ease-standard) both;
   color: var(--catalog-ink);
   pointer-events: auto;
   scrollbar-color: var(--detail-muted) transparent;
@@ -930,6 +931,13 @@ body:has(.deck-record[data-hovered="true"]) .theme-toggle {
   }
 }
 
+@keyframes detail-panel-reveal {
+  from {
+    opacity: 0;
+    translate: 1.5rem -50%;
+  }
+}
+
 @keyframes detail-score-drift {
   to {
     transform: translate3d(0, -0.35rem, 0) rotateZ(0.4deg);
@@ -1070,7 +1078,8 @@ body:has(.deck-record[data-hovered="true"]) .theme-toggle {
   .catalog-easter-egg,
   .catalog-easter-egg[data-visible="true"] .astryx-heading,
   .detail-score,
-  .detail-genre-cloud li {
+  .detail-genre-cloud li,
+  .album-detail-layout {
     animation: none;
     transition: none;
   }
