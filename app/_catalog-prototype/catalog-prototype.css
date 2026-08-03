@@ -71,6 +71,7 @@
 .catalog-header > :last-child {
   display: block;
   max-width: 42vw;
+  font-size: clamp(0.75rem, 0.65vw, 1.5rem);
   text-align: right;
   white-space: normal;
 }
@@ -99,7 +100,13 @@
   list-style: none;
   perspective: max(70rem, 58.33vw);
   perspective-origin: center 52%;
-  transform: translateY(clamp(-6.5rem, calc(11.875rem - 34dvh), -3.25rem));
+  transform: translateY(
+    clamp(
+      clamp(-13rem, -5.42vw, -6.5rem),
+      calc(clamp(11.875rem, 9.9vw, 23.75rem) - 34dvh),
+      clamp(-6.5rem, -2.71vw, -3.25rem)
+    )
+  );
   transform-style: preserve-3d;
 }
 
