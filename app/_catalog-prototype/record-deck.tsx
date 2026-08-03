@@ -117,7 +117,7 @@ const AnimatedRecord = memo(function AnimatedRecord({
               alt=""
               fill
               loading={isActive ? "eager" : "lazy"}
-              sizes="(max-width: 47.99rem) 34vw, (max-width: 69.99rem) 21vw, 13.5rem"
+              sizes="(max-width: 47.99rem) 34vw, (max-width: 69.99rem) 21vw, 14vw"
             />
           )}
         </motion.figure>
