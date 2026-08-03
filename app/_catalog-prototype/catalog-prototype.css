@@ -492,6 +492,11 @@ body:has(.deck-record[data-hovered="true"]) .theme-toggle {
   pointer-events: none;
 }
 
+.album-detail-overlay[data-closing][data-interrupted]
+  .album-detail-cover-stage {
+  opacity: 0;
+}
+
 .album-detail-cover {
   width: min(42vw, calc(100dvh - 12rem));
   max-width: 100%;

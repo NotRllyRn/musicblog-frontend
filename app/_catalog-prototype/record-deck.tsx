@@ -34,6 +34,7 @@ interface RecordDeckProps {
   index: number
   openedAlbumId: number | null
   onEndChange: (index: number, ended: boolean) => void
+  onExitInteraction: () => void
   onNeedMore: () => void
   onOpenAlbum: (album: AlbumPost, invoker: HTMLElement) => void
   onPrefetchAlbum: (album: AlbumPost) => void
@@ -161,6 +162,7 @@ export function RecordDeck({
   index,
   openedAlbumId,
   onEndChange,
+  onExitInteraction,
   onNeedMore,
   onOpenAlbum,
   onPrefetchAlbum,
@@ -360,6 +362,7 @@ export function RecordDeck({
   }
 
   const onClick = (event: MouseEvent<HTMLElement>) => {
+    onExitInteraction()
     const foundIndex = visualIndexAt(event.target, {
       x: event.clientX,
       y: event.clientY,
@@ -387,7 +390,9 @@ export function RecordDeck({
   }
 
   const onPointerMove = (event: PointerEvent<HTMLElement>) => {
-    if (isTouch || scrolling.current) return
+    if (isTouch) return
+    onExitInteraction()
+    if (scrolling.current) return
     const foundIndex = visualIndexAt(event.target)
     const visualIndex =
       foundIndex !== null && albums[foundIndex] ? foundIndex : null
@@ -405,12 +410,14 @@ export function RecordDeck({
   }
 
   const onScroll = (event: UIEvent<HTMLOListElement>) => {
+    onExitInteraction()
     rawPosition.set(event.currentTarget.scrollTop / settings.step)
     if (!scrolling.current) wheelTarget.current = event.currentTarget.scrollTop
     clearSelection()
   }
 
   const onWheel = (event: WheelEvent<HTMLElement>) => {
+    onExitInteraction()
     clearSelection()
     scrolling.current = true
     if (scroll.current) {

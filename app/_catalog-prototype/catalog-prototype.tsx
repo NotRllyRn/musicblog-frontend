@@ -106,6 +106,12 @@ export function CatalogBrowser({ initialPage }: CatalogBrowserProps) {
 
   if (deckCount === null) return <CatalogLoading />
 
+  const interruptDetailExit = () => {
+    document
+      .querySelector<HTMLElement>(".album-detail-overlay[data-closing]")
+      ?.setAttribute("data-interrupted", "")
+  }
+
   const openAlbum = (album: AlbumPost, invoker: HTMLElement) => {
     detailVisibleRef.current = true
     setOpened({
@@ -134,6 +140,7 @@ export function CatalogBrowser({ initialPage }: CatalogBrowserProps) {
             deckCount={deckCount}
             detailVisible={detailVisible}
             openedAlbumId={opened?.album.id ?? null}
+            onExitInteraction={interruptDetailExit}
             onNeedMore={loadMore}
             onOpenAlbum={openAlbum}
             onPrefetchAlbum={(album) => void requestAlbumDetail(album)}

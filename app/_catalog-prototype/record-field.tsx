@@ -11,6 +11,7 @@ interface RecordFieldProps {
   deckCount: DeckCount
   detailVisible: boolean
   openedAlbumId: number | null
+  onExitInteraction: () => void
   onNeedMore: (loadedCount: number) => void
   onOpenAlbum: (album: AlbumPost, invoker: HTMLElement) => void
   onPrefetchAlbum: (album: AlbumPost) => void
@@ -22,6 +23,7 @@ export function RecordField({
   deckCount,
   detailVisible,
   openedAlbumId,
+  onExitInteraction,
   onNeedMore,
   onOpenAlbum,
   onPrefetchAlbum,
@@ -68,6 +70,7 @@ export function RecordField({
           key={index}
           openedAlbumId={openedAlbumId}
           onEndChange={onEndChange}
+          onExitInteraction={onExitInteraction}
           onNeedMore={() => onNeedMore(albums.length)}
           onOpenAlbum={onOpenAlbum}
           onPrefetchAlbum={onPrefetchAlbum}
