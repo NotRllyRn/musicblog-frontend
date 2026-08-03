@@ -307,7 +307,6 @@ export async function getAlbumDetail(id: number): Promise<AlbumDetail | null> {
   return {
     ...album,
     contentHtml: sanitizePostContent(post.content?.rendered ?? ""),
-    postedAt: post.date,
     releaseDate: compactDate(acf.music_release_date),
     listenedAt: compactDate(acf.music_listened_at),
     rating: rating === null ? null : Math.round(rating),

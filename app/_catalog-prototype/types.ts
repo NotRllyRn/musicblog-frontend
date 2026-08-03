@@ -21,7 +21,6 @@ export interface AlbumTrack {
 
 export interface AlbumDetail extends AlbumPost {
   contentHtml: string
-  postedAt: string
   releaseDate: string | null
   listenedAt: string | null
   rating: number | null

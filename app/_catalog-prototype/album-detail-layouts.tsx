@@ -81,7 +81,6 @@ function GenreCloud({ detail }: DetailLayoutProps) {
 }
 
 function Dates({ detail }: DetailLayoutProps) {
-  const posted = formatDate(detail.postedAt)
   const released = formatDate(detail.releaseDate)
   const listened = formatDate(detail.listenedAt)
 
@@ -97,12 +96,6 @@ function Dates({ detail }: DetailLayoutProps) {
         <VStack gap={0.5}>
           <dt>Listened</dt>
           <dd>{listened}</dd>
-        </VStack>
-      )}
-      {posted && (
-        <VStack gap={0.5}>
-          <dt>Posted</dt>
-          <dd>{posted}</dd>
         </VStack>
       )}
     </dl>
