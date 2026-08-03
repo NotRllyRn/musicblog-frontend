@@ -9,6 +9,7 @@ import type { AlbumPost, DeckCount } from "./types"
 interface RecordFieldProps {
   albums: AlbumPost[]
   deckCount: DeckCount
+  detailVisible: boolean
   openedAlbumId: number | null
   onNeedMore: (loadedCount: number) => void
   onOpenAlbum: (album: AlbumPost, invoker: HTMLElement) => void
@@ -18,6 +19,7 @@ interface RecordFieldProps {
 export function RecordField({
   albums,
   deckCount,
+  detailVisible,
   openedAlbumId,
   onNeedMore,
   onOpenAlbum,
@@ -59,6 +61,7 @@ export function RecordField({
       {stacks.map((records, index) => (
         <RecordDeck
           albums={records}
+          detailVisible={detailVisible}
           index={index}
           key={index}
           openedAlbumId={openedAlbumId}

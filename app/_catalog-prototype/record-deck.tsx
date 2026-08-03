@@ -30,6 +30,7 @@ import type { AlbumPost } from "./types"
 
 interface RecordDeckProps {
   albums: AlbumPost[]
+  detailVisible: boolean
   index: number
   openedAlbumId: number | null
   onEndChange: (index: number, ended: boolean) => void
@@ -44,7 +45,9 @@ interface RecordDeckProps {
 interface AnimatedRecordProps {
   album?: AlbumPost
   albumIndex: number
+  detailVisible: boolean
   isActive: boolean
+  isDetailSource: boolean
   isHovered: boolean
   position: MotionValue<number>
   reduceMotion: boolean
@@ -55,7 +58,9 @@ interface AnimatedRecordProps {
 const AnimatedRecord = memo(function AnimatedRecord({
   album,
   albumIndex,
+  detailVisible,
   isActive,
+  isDetailSource,
   isHovered,
   position,
   reduceMotion,
@@ -94,22 +99,27 @@ const AnimatedRecord = memo(function AnimatedRecord({
       data-visual-index={visualIndex}
       style={dynamicStyle}
     >
-      <motion.figure
-        className={`record-figure${album ? "" : " record-placeholder"}`}
-        data-loading={album ? undefined : true}
-        layoutId={album && trackLayout ? `album-cover-${album.id}` : undefined}
-      >
-        {album && (
-          <Image
-            className="record-art"
-            src={album.imageUrl}
-            alt=""
-            fill
-            loading={isActive ? "eager" : "lazy"}
-            sizes="(max-width: 47.99rem) 34vw, (max-width: 69.99rem) 21vw, 13.5rem"
-          />
-        )}
-      </motion.figure>
+      {!(album && isDetailSource && detailVisible) && (
+        <motion.figure
+          className={`record-figure${album ? "" : " record-placeholder"}`}
+          data-album-id={album?.id}
+          data-loading={album ? undefined : true}
+          layoutId={
+            album && trackLayout ? `album-cover-${album.id}` : undefined
+          }
+        >
+          {album && (
+            <Image
+              className="record-art"
+              src={album.imageUrl}
+              alt=""
+              fill
+              loading={isActive ? "eager" : "lazy"}
+              sizes="(max-width: 47.99rem) 34vw, (max-width: 69.99rem) 21vw, 13.5rem"
+            />
+          )}
+        </motion.figure>
+      )}
     </motion.li>
   )
 })
@@ -145,6 +155,7 @@ const RecordHitZone = memo(function RecordHitZone({
 
 export function RecordDeck({
   albums,
+  detailVisible,
   index,
   openedAlbumId,
   onEndChange,
@@ -168,6 +179,7 @@ export function RecordDeck({
   const activeRef = useRef(initialIndex)
   const deck = useRef<HTMLElement>(null)
   const initialized = useRef(false)
+  const openFrame = useRef<number | null>(null)
   const scroll = useRef<HTMLOListElement>(null)
   const scrolling = useRef(false)
   const wheelTarget = useRef(initialIndex * settings.step)
@@ -186,14 +198,19 @@ export function RecordDeck({
     (album) => album.id === openedAlbumId
   )
   const detailVisualIndex = openedVisualIndex < 0 ? null : openedVisualIndex
-  const interactionVisualIndex =
-    detailVisualIndex ?? (isTouch ? selectedVisualIndex : hoveredVisualIndex)
+  const interactionVisualIndex = isTouch
+    ? selectedVisualIndex
+    : hoveredVisualIndex
+  const detailReturning = detailVisualIndex !== null && !detailVisible
   const activeAlbum = albums[activeIndex]
-  const previewVisualIndex = interactionVisualIndex ?? activeIndex
+  const previewVisualIndex = detailReturning
+    ? detailVisualIndex
+    : (interactionVisualIndex ?? activeIndex)
   const previewAlbum = albums[previewVisualIndex]
   const previewVisible =
-    detailVisualIndex !== null ||
-    (isTouch ? selectedVisualIndex !== null : showPreview)
+    detailReturning ||
+    (detailVisualIndex === null &&
+      (isTouch ? selectedVisualIndex !== null : showPreview))
   const previewPullTarget = useMotionValue(0)
   const previewPullSpring = useSpring(previewPullTarget, {
     damping: 28,
@@ -231,6 +248,7 @@ export function RecordDeck({
 
   useEffect(
     () => () => {
+      if (openFrame.current !== null) cancelAnimationFrame(openFrame.current)
       if (settleTimer.current) clearTimeout(settleTimer.current)
     },
     []
@@ -278,6 +296,19 @@ export function RecordDeck({
     if (isTouch) onSelectionChange(null)
   }
 
+  const openDesktopAlbum = (album: AlbumPost) => {
+    if (!deck.current) return
+    const invoker = deck.current
+    if (openFrame.current !== null) cancelAnimationFrame(openFrame.current)
+    openFrame.current = requestAnimationFrame(() => {
+      openFrame.current = requestAnimationFrame(() => {
+        openFrame.current = null
+        clearSelection()
+        onOpenAlbum(album, invoker)
+      })
+    })
+  }
+
   const restartPreview = () => {
     previewPullTarget.set(0)
     previewPullSpring.jump(0)
@@ -315,7 +346,7 @@ export function RecordDeck({
     if (activates && activeAlbum && deck.current) {
       event.preventDefault()
       if (isTouch) window.location.assign(activeAlbum.href)
-      else onOpenAlbum(activeAlbum, deck.current)
+      else openDesktopAlbum(activeAlbum)
     }
   }
 
@@ -342,8 +373,7 @@ export function RecordDeck({
       return
     }
 
-    if (visualIndex !== null && deck.current)
-      onOpenAlbum(albums[visualIndex], deck.current)
+    if (visualIndex !== null) openDesktopAlbum(albums[visualIndex])
   }
 
   const onPointerMove = (event: PointerEvent<HTMLElement>) => {
@@ -435,12 +465,14 @@ export function RecordDeck({
           <AnimatedRecord
             album={album}
             albumIndex={albumIndex}
+            detailVisible={detailVisible}
             isActive={visualIndex === activeIndex}
+            isDetailSource={album?.id === openedAlbumId}
             isHovered={visualIndex === interactionVisualIndex}
             key={album?.id ?? `placeholder-${visualIndex}`}
             position={position}
             reduceMotion={reduceMotion}
-            trackLayout={openedAlbumId === null || album?.id === openedAlbumId}
+            trackLayout={!detailVisible || album?.id === openedAlbumId}
             visualIndex={visualIndex}
           />
         ))}
@@ -466,6 +498,8 @@ export function RecordDeck({
           <motion.li className="record-preview-positioner" style={previewStyle}>
             <motion.aside
               className="record-preview"
+              data-album-id={previewAlbum.id}
+              data-returning={detailReturning || undefined}
               layoutId={`album-label-${previewAlbum.id}`}
             >
               <Text type="label" color="inherit" maxLines={2}>

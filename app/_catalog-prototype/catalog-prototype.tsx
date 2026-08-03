@@ -107,6 +107,7 @@ export function CatalogBrowser({ initialPage }: CatalogBrowserProps) {
           <RecordField
             albums={albums}
             deckCount={deckCount}
+            detailVisible={detailVisible}
             openedAlbumId={opened?.album.id ?? null}
             onNeedMore={loadMore}
             onOpenAlbum={openAlbum}
