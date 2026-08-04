@@ -10,11 +10,13 @@ Variant A's warm dark palette.
 
 ## Album-detail prototype
 
-Question: which desktop information layout best supports reading a complete
-album review while preserving the catalog and its physical sleeve transition?
+Question: which information layout best supports reading a complete album
+review while preserving the catalog and its physical sleeve transition?
 
 Five structural options are available through `?detail=A`–`E`: editorial stack,
 score rail, constellation, liner notes, and review timeline. Their review
-surfaces size to available content, center vertically, and cap at the viewport
-before scrolling. The floating switcher is development-only and the losing
-layouts should be deleted after a winner is selected.
+surfaces size to available content and center vertically on wide screens. At
+compact widths the sleeve and equally wide panel stack into one scrollable
+page, with a short crossfade when a live resize changes arrangements. The
+floating switcher is development-only and the losing layouts should be deleted
+after a winner is selected.

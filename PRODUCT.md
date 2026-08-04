@@ -27,9 +27,8 @@ time.
 ## Operating Context
 
 The catalog reads published posts and featured media from an existing WordPress
-site. Desktop readers open reviews in place while the catalog remains dimmed in
-the background; touch readers retain the existing external-post flow. WordPress
-is strictly read-only from this frontend.
+site. Mouse and touch readers open reviews in place while the catalog remains
+dimmed in the background. WordPress is strictly read-only from this frontend.
 
 ## Capabilities and Constraints
 
@@ -43,15 +42,20 @@ is strictly read-only from this frontend.
 - Reaching the final album in every lane reveals the floating end-of-catalog text.
 - Mouse users preview from stationary exposed-sleeve hit regions, so the hover
   remains stable while the selected sleeve moves.
-- Touch users have one global selection: tap once to preview, tap that sleeve
-  again to open, or tap anywhere else to dismiss it.
+- Touch users have one global selection: tap once to preview and prefetch, tap
+  that sleeve again to open its in-catalog review, or tap anywhere else to
+  dismiss it.
 - Starting another scroll dismisses the current preview.
-- Desktop activation fades the preview label and flies the selected sleeve into
-  a flat left-side presentation while a content-sized review opens on the right.
+- Detail activation fades the preview label and flies the selected sleeve into
+  a flat presentation. Wide screens place a content-sized review on the right;
+  compact screens center an equally wide sleeve and panel vertically in one
+  scrollable overlay.
+- Live resizing crossfades between wide and compact detail arrangements while
+  the catalog independently retains its responsive three, five, or seven lanes.
 - Empty backdrop space and Escape reverse the detail transition; catalog hover
   and scrolling resume immediately while the visual exit completes. Review
   content and links do not dismiss it.
-- Detail shows the available release/listening/post dates, up to three genres,
+- Detail shows the available release and listening dates, up to three genres,
   review body, highlighted tracks, and relevant album statistics. A missing
   rating remains visible as `NA/100`; other missing optional sections are
   omitted.
@@ -65,7 +69,7 @@ is strictly read-only from this frontend.
   after a 300ms desktop hover or the first touch selection; activation falls back
   to a compact loading status when needed. Editorial HTML is reduced to a
   server-side allowlist before rendering.
-- Five structurally distinct desktop detail layouts are under temporary
+- Five structurally distinct responsive detail layouts are under temporary
   development-only prototype selection.
 - The hinged record-shop interaction is the selected direction.
 - Light mode uses the quiet listening-index palette; dark mode uses the warm

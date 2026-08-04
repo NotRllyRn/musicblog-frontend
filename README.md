@@ -15,12 +15,15 @@ the operating system and can be changed with the theme switch.
 
 With a mouse, hover a record’s exposed resting edge to preview it and click to
 open its review without leaving the catalog. The preview label fades while the
-sleeve flies into a flat, full-size presentation beside a vertically centered,
-content-sized review panel. Click empty backdrop space or press Escape to return
-the sleeve to its row; scrolling and hovering resume as soon as dismissal
-starts. On touch screens, the existing two-tap external-post flow remains in
-place while the in-catalog detail experience is desktop-only. Starting another
-scroll dismisses a preview. Reaching the last
+sleeve flies into a flat presentation beside a vertically centered,
+content-sized review panel. On touch screens, tap once to preview and prefetch,
+then tap the same sleeve again to open its review. At compact widths the sleeve
+centers above an equally wide review panel, and the overlay scrolls as one
+continuous page. Crossing the compact breakpoint while details are open fades
+smoothly between arrangements while the catalog keeps its responsive three,
+five, or seven lanes. Click or tap empty backdrop space, or press Escape, to
+return the sleeve to its row; catalog interaction resumes as soon as dismissal
+starts. Starting another catalog scroll dismisses a preview. Reaching the last
 album in every lane reveals the end-of-catalog message. WordPress access is
 server-only and read-only.
 
@@ -34,6 +37,6 @@ Review bodies and track lists use the cached `/api/albums/[id]` endpoint. A
 compact loading status remains available when activation wins that race.
 Allowed editorial HTML is sanitized on the server.
 
-Five desktop detail layouts are temporarily available in development. Open an
-album, then use the floating arrows, the keyboard’s left/right arrows, or share
+Five responsive detail layouts are temporarily available in development. Open
+an album, then use the floating arrows, the keyboard’s left/right arrows, or share
 `?detail=A` through `?detail=E`. The switcher is omitted from production builds.
