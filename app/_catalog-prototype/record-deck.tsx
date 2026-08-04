@@ -307,7 +307,7 @@ export function RecordDeck({
     if (isTouch) onSelectionChange(null)
   }
 
-  const openDesktopAlbum = (album: AlbumPost) => {
+  const openAlbum = (album: AlbumPost) => {
     if (!deck.current) return
     const invoker = deck.current
     if (openFrame.current !== null) cancelAnimationFrame(openFrame.current)
@@ -356,8 +356,7 @@ export function RecordDeck({
     const activates = event.key === "Enter" || (!isTouch && event.key === " ")
     if (activates && activeAlbum && deck.current) {
       event.preventDefault()
-      if (isTouch) window.location.assign(activeAlbum.href)
-      else openDesktopAlbum(activeAlbum)
+      openAlbum(activeAlbum)
     }
   }
 
@@ -373,7 +372,7 @@ export function RecordDeck({
     if (isTouch) {
       if (selectionActive) {
         if (visualIndex === selectedVisualIndex && visualIndex !== null)
-          window.location.assign(albums[visualIndex].href)
+          openAlbum(albums[visualIndex])
         else onSelectionChange(null)
         return
       }
@@ -386,7 +385,7 @@ export function RecordDeck({
       return
     }
 
-    if (visualIndex !== null) openDesktopAlbum(albums[visualIndex])
+    if (visualIndex !== null) openAlbum(albums[visualIndex])
   }
 
   const onPointerMove = (event: PointerEvent<HTMLElement>) => {
@@ -467,7 +466,7 @@ export function RecordDeck({
   return (
     <section
       className={`record-deck deck-${index + 1}`}
-      aria-haspopup={isTouch ? undefined : "dialog"}
+      aria-haspopup="dialog"
       aria-keyshortcuts={`ArrowUp ArrowDown Home End Enter${isTouch ? "" : " Space"}`}
       aria-label={`Browse albums vertically. Selected: ${activeAlbum?.title ?? "album"}.`}
       onBlur={() => {
@@ -481,7 +480,7 @@ export function RecordDeck({
       onPointerMove={onPointerMove}
       onWheel={onWheel}
       ref={deck}
-      role={isTouch ? "link" : "button"}
+      role="button"
       tabIndex={0}
     >
       <ol className="record-stage" aria-hidden="true">
