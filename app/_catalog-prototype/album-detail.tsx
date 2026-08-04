@@ -164,26 +164,25 @@ export function AlbumDetailOverlay({
           </motion.figure>
         </motion.section>
 
-        <motion.section
-          animate={reduceMotion ? undefined : { opacity: 1, y: 0 }}
-          className="album-detail-information"
-          exit={reduceMotion ? undefined : { opacity: 0, y: "1.5rem" }}
-          initial={reduceMotion ? undefined : { opacity: 0, y: "1.5rem" }}
-          layout
-          transition={sceneTransition}
-        >
-          {detail ? (
+        {detail ? (
+          <motion.section
+            animate={reduceMotion ? undefined : { opacity: 1, y: 0 }}
+            className="album-detail-information"
+            exit={reduceMotion ? undefined : { opacity: 0, y: "1.5rem" }}
+            initial={reduceMotion ? undefined : { opacity: 0, y: "1.5rem" }}
+            transition={sceneTransition}
+          >
             <AlbumDetailLayouts detail={detail} />
-          ) : (
-            <article className="album-detail-placeholder" data-detail-content>
-              <Text as="p" color="inherit">
-                {failed
-                  ? "Album details could not load."
-                  : "Loading album notes…"}
-              </Text>
-            </article>
-          )}
-        </motion.section>
+          </motion.section>
+        ) : (
+          <article className="album-detail-placeholder" data-detail-content>
+            <Text as="p" color="inherit">
+              {failed
+                ? "Album details could not load."
+                : "Loading album notes…"}
+            </Text>
+          </article>
+        )}
       </section>
     </motion.section>
   )
