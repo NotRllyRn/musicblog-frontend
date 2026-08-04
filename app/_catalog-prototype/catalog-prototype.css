@@ -1097,7 +1097,7 @@ body:has(.deck-record[data-hovered="true"]) .theme-toggle {
   }
 
   .album-detail-overlay {
-    --detail-mobile-width: min(82vw, 52dvh, 30rem);
+    --detail-mobile-width: min(82vw, 68dvh, 30rem);
     overflow-x: hidden;
     overflow-y: auto;
     overscroll-behavior: contain;
