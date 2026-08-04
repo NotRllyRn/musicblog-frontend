@@ -8,7 +8,7 @@ import { motion, useReducedMotion } from "motion/react"
 import Image from "next/image"
 import {
   type KeyboardEvent,
-  type PointerEvent,
+  type MouseEvent,
   useEffect,
   useRef,
   useState,
@@ -93,7 +93,7 @@ export function AlbumDetailOverlay({
     }
   }
 
-  const closeFromEmptySpace = (event: PointerEvent<HTMLElement>) => {
+  const closeFromEmptySpace = (event: MouseEvent<HTMLElement>) => {
     if (!(event.target as Element).closest("[data-detail-content]")) close()
   }
 
@@ -112,8 +112,8 @@ export function AlbumDetailOverlay({
       className="album-detail-overlay"
       exit={{ opacity: 1 }}
       initial={false}
+      onClick={closeFromEmptySpace}
       onKeyDown={onKeyDown}
-      onPointerDown={closeFromEmptySpace}
       ref={overlay}
       role="dialog"
       tabIndex={-1}
@@ -165,10 +165,10 @@ export function AlbumDetailOverlay({
         </motion.section>
 
         <motion.section
-          animate={reduceMotion ? undefined : { opacity: 1 }}
+          animate={reduceMotion ? undefined : { opacity: 1, y: 0 }}
           className="album-detail-information"
-          exit={reduceMotion ? undefined : { opacity: 0 }}
-          initial={reduceMotion ? undefined : { opacity: 0 }}
+          exit={reduceMotion ? undefined : { opacity: 0, y: "1.5rem" }}
+          initial={reduceMotion ? undefined : { opacity: 0, y: "1.5rem" }}
           layout
           transition={sceneTransition}
         >

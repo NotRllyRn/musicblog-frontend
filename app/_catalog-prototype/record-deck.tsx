@@ -287,6 +287,21 @@ export function RecordDeck({
     target: EventTarget | null,
     point?: { x: number; y: number }
   ) => {
+    const pulledRecord = deck.current?.querySelector<HTMLElement>(
+      '.deck-record[data-hovered="true"]'
+    )
+    const pulledBounds = pulledRecord?.getBoundingClientRect()
+    if (
+      point &&
+      pulledRecord &&
+      pulledBounds &&
+      point.x >= pulledBounds.left &&
+      point.x <= pulledBounds.right &&
+      point.y >= pulledBounds.top &&
+      point.y <= pulledBounds.bottom
+    )
+      return Number(pulledRecord.dataset.visualIndex)
+
     const elements = target instanceof Element ? [target] : []
     if (point) elements.push(...document.elementsFromPoint(point.x, point.y))
 
@@ -392,7 +407,10 @@ export function RecordDeck({
     if (isTouch) return
     onExitInteraction()
     if (scrolling.current) return
-    const foundIndex = visualIndexAt(event.target)
+    const foundIndex = visualIndexAt(event.target, {
+      x: event.clientX,
+      y: event.clientY,
+    })
     const visualIndex =
       foundIndex !== null && albums[foundIndex] ? foundIndex : null
     if (visualIndex !== hoveredVisualIndex && prefetchTimer.current)
