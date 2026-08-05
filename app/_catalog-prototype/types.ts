@@ -45,4 +45,8 @@ export interface AlbumPage {
   totalPages: number
 }
 
+export interface AlbumSearchPage extends AlbumPage {
+  query: string
+}
+
 export type DeckCount = 3 | 5 | 7

@@ -6,6 +6,7 @@ import type {
   AlbumDetail,
   AlbumPage,
   AlbumPost,
+  AlbumSearchPage,
   AlbumTrack,
 } from "@/app/_catalog-prototype/types"
 
@@ -102,7 +103,7 @@ function requestHeaders() {
   }
 }
 
-async function requestPage(page: number) {
+async function requestPage(page: number, search?: string) {
   const url = URL.parse(`${apiRoot()}/posts`)
 
   if (!url) throw new Error("WordPress API URL is invalid")
@@ -111,6 +112,10 @@ async function requestPage(page: number) {
   url.searchParams.set("per_page", "100")
   url.searchParams.set("_embed", "wp:featuredmedia,wp:term")
   url.searchParams.set("_fields", "id,date,link,title,_links,_embedded")
+  if (search) {
+    url.searchParams.set("search", search)
+    url.searchParams.set("orderby", "relevance")
+  }
 
   const response = await fetch(url, {
     headers: requestHeaders(),
@@ -281,6 +286,26 @@ export async function getAlbumPage(page = 1): Promise<AlbumPage> {
   return {
     albums: toAlbums(response.posts),
     page,
+    total: response.total,
+    totalPages: response.totalPages,
+  }
+}
+
+export function normalizeAlbumQuery(value: string) {
+  return value.normalize("NFKC").replace(/\s+/gu, " ").trim()
+}
+
+export async function getAlbumSearchPage(
+  rawQuery: string,
+  page = 1
+): Promise<AlbumSearchPage> {
+  const query = normalizeAlbumQuery(rawQuery)
+  const response = await requestPage(page, query)
+
+  return {
+    albums: toAlbums(response.posts),
+    page,
+    query,
     total: response.total,
     totalPages: response.totalPages,
   }
