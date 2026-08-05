@@ -20,3 +20,18 @@ compact widths the sleeve and equally wide panel stack into one scrollable
 page, with a short crossfade when a live resize changes arrangements. The
 floating switcher is development-only and the losing layouts should be deleted
 after a winner is selected.
+
+## Catalog search
+
+Search uses the existing responsive record field rather than a second browsing
+model. It waits for two normalized characters, debounces for 280ms, aborts stale
+requests, and progressively fetches WordPress relevance pages. The archive
+field remains mounted but hidden so clearing a query restores every lane's prior
+position.
+
+Result changes reconcile only focal sleeves through temporary flat proxies.
+The proxy set is limited by rendered pixel area, interruptions continue from
+current proxy positions, resizing cancels safely, and broad result sets,
+reduced-motion, or very large viewports replace results immediately. This
+prevents a nominally bounded animation from becoming an expensive full-screen
+compositing pass at 4K.

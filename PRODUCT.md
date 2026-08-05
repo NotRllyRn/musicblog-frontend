@@ -46,6 +46,13 @@ dimmed in the background. WordPress is strictly read-only from this frontend.
   that sleeve again to open its in-catalog review, or tap anywhere else to
   dismiss it.
 - Starting another scroll dismisses the current preview.
+- A centered live search starts after two characters and a short debounce,
+  cancels obsolete requests, and applies only the latest response.
+- Search results use the same finite responsive lanes, progressively load later
+  result pages, and restore the archive's prior lane positions when cleared.
+- Search reconciliation is interruptible and pixel-bounded: focal sleeves move,
+  enter, or leave through temporary flat proxies while broad result sets,
+  reduced motion, and very large rendering surfaces update immediately.
 - Detail activation fades the preview label and flies the selected sleeve into
   a flat presentation. Wide screens place a content-sized review on the right;
   compact screens center an equally wide sleeve and panel vertically in one
