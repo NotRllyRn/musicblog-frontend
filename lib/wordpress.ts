@@ -61,6 +61,33 @@ interface WordPressPost {
   }
 }
 
+interface SearchDocument {
+  album: AlbumPost
+  artists: string
+  genres: string
+  index: number
+  text: string
+  title: string
+}
+
+interface CatalogIndex {
+  builtAt: number
+  documents: SearchDocument[]
+  pages: WordPressPost[][]
+  total: number
+  totalPages: number
+}
+
+interface CatalogCacheState {
+  pendingCatalogIndex: Promise<CatalogIndex> | null
+  pendingPages: Map<number, Promise<Awaited<ReturnType<typeof requestPage>>>>
+  readyCatalogIndex: CatalogIndex | null
+}
+
+const CATALOG_REVALIDATE_SECONDS = 3600
+const SEARCH_PAGE_SIZE = 50
+const WARMUP_CONCURRENCY = 3
+
 const entityMap: Record<string, string> = {
   amp: "&",
   apos: "'",
@@ -103,27 +130,23 @@ function requestHeaders() {
   }
 }
 
-async function requestPage(page: number, search?: string) {
+async function requestPage(page: number) {
   const url = URL.parse(`${apiRoot()}/posts`)
 
   if (!url) throw new Error("WordPress API URL is invalid")
 
   url.searchParams.set("page", String(page))
-  url.searchParams.set("per_page", search ? "50" : "100")
+  url.searchParams.set("per_page", "100")
   url.searchParams.set("_embed", "wp:featuredmedia,wp:term")
-  url.searchParams.set("_fields", "id,date,link,title,_links,_embedded")
-  if (search) {
-    url.searchParams.set("search", search)
-    url.searchParams.set("orderby", "relevance")
-  }
+  url.searchParams.set("_fields", "id,date,link,title,acf,_links,_embedded")
 
   const response = await fetch(url, {
     headers: requestHeaders(),
-    // Arbitrary public queries must not create an unbounded persistent cache.
-    ...(search
-      ? { cache: "no-store" as const }
-      : { next: { revalidate: 3600, tags: ["wordpress-albums"] } }),
-    signal: AbortSignal.timeout(15_000),
+    next: {
+      revalidate: CATALOG_REVALIDATE_SECONDS,
+      tags: ["wordpress-albums"],
+    },
+    signal: AbortSignal.timeout(30_000),
   })
 
   if (!response.ok) throw new Error(`WordPress returned ${response.status}`)
@@ -205,6 +228,125 @@ function toAlbums(posts: WordPressPost[]): AlbumPost[] {
   })
 }
 
+const catalogGlobal = globalThis as typeof globalThis & {
+  musicblogCatalogCache?: CatalogCacheState
+}
+const catalogCache = (catalogGlobal.musicblogCatalogCache ??= {
+  pendingCatalogIndex: null,
+  pendingPages: new Map(),
+  readyCatalogIndex: null,
+})
+
+function getCatalogPage(page: number) {
+  const pending = catalogCache.pendingPages.get(page)
+  if (pending) return pending
+
+  const request = requestPage(page).finally(() =>
+    catalogCache.pendingPages.delete(page)
+  )
+  catalogCache.pendingPages.set(page, request)
+  return request
+}
+
+function searchable(value: string) {
+  return normalizeAlbumQuery(value).toLowerCase()
+}
+
+function toSearchDocument(post: WordPressPost, index: number) {
+  const album = toAlbum(post)
+  if (!album) return null
+
+  const artistTerms = termsFor({ post, taxonomy: "artist" })
+  const artists = artistTerms.length
+    ? artistTerms
+    : termsFor({ post, taxonomy: "post_tag" }).slice(0, 1)
+  const genres = termsFor({ post, taxonomy: "genre" })
+  const title = searchable(album.title)
+  const normalizedArtists = searchable(artists.join(" "))
+  const normalizedGenres = searchable(genres.join(" "))
+
+  return {
+    album,
+    artists: normalizedArtists,
+    genres: normalizedGenres,
+    index,
+    text: `${title} ${normalizedArtists} ${normalizedGenres}`,
+    title,
+  } satisfies SearchDocument
+}
+
+async function buildCatalogIndex(): Promise<CatalogIndex> {
+  const first = await getCatalogPage(1)
+  const pages = [first.posts]
+
+  for (let start = 2; start <= first.totalPages; start += WARMUP_CONCURRENCY) {
+    const end = Math.min(first.totalPages, start + WARMUP_CONCURRENCY - 1)
+    const batch = await Promise.all(
+      Array.from({ length: end - start + 1 }, (_, index) =>
+        getCatalogPage(start + index)
+      )
+    )
+    pages.push(...batch.map(({ posts }) => posts))
+  }
+
+  const documents = pages.flat().flatMap((post, index) => {
+    const document = toSearchDocument(post, index)
+    return document ? [document] : []
+  })
+
+  return {
+    builtAt: Date.now(),
+    documents,
+    pages,
+    total: first.total,
+    totalPages: first.totalPages,
+  }
+}
+
+function catalogIndexIsFresh(index: CatalogIndex) {
+  return Date.now() - index.builtAt < CATALOG_REVALIDATE_SECONDS * 1000
+}
+
+function refreshCatalogIndex() {
+  if (catalogCache.pendingCatalogIndex) return catalogCache.pendingCatalogIndex
+
+  const request = buildCatalogIndex()
+    .then((index) => {
+      catalogCache.readyCatalogIndex = index
+      return index
+    })
+    .finally(() => {
+      if (catalogCache.pendingCatalogIndex === request)
+        catalogCache.pendingCatalogIndex = null
+    })
+  catalogCache.pendingCatalogIndex = request
+  return request
+}
+
+function getCatalogIndex() {
+  const ready = catalogCache.readyCatalogIndex
+  if (!ready) return refreshCatalogIndex()
+  if (!catalogIndexIsFresh(ready))
+    void refreshCatalogIndex().catch(() => undefined)
+  return Promise.resolve(ready)
+}
+
+export function warmAlbumCatalog() {
+  void getCatalogIndex().catch(() => undefined)
+}
+
+function searchScore(document: SearchDocument, query: string) {
+  const tokens = query.split(" ")
+  if (!tokens.every((token) => document.text.includes(token))) return -1
+  if (document.title === query) return 6
+  if (document.artists === query || document.genres === query) return 5
+  if (document.title.startsWith(query)) return 4
+  if (document.title.includes(query)) return 3
+  if (document.artists.includes(query)) return 2
+  if (document.genres.includes(query)) return 1
+  return 0
+}
+
 function optionalNumber(value: unknown) {
   if (value === "" || value === null || value === undefined) return null
   const number = Number(value)
@@ -284,7 +426,20 @@ function toTrack(track: WordPressTrack): AlbumTrack | null {
 }
 
 export async function getAlbumPage(page = 1): Promise<AlbumPage> {
-  const response = await requestPage(page)
+  const index = catalogCache.readyCatalogIndex
+  const indexedPosts = index?.pages[page - 1]
+  if (index && indexedPosts) {
+    if (!catalogIndexIsFresh(index)) warmAlbumCatalog()
+    return {
+      albums: toAlbums(indexedPosts),
+      page,
+      total: index.total,
+      totalPages: index.totalPages,
+    }
+  }
+
+  const response = await getCatalogPage(page)
+  if (page === 1) warmAlbumCatalog()
 
   return {
     albums: toAlbums(response.posts),
@@ -302,15 +457,25 @@ export async function getAlbumSearchPage(
   rawQuery: string,
   page = 1
 ): Promise<AlbumSearchPage> {
-  const query = normalizeAlbumQuery(rawQuery)
-  const response = await requestPage(page, query)
+  const query = searchable(rawQuery)
+  const index = await getCatalogIndex()
+  const matches = index.documents
+    .map((document) => ({ document, score: searchScore(document, query) }))
+    .filter(({ score }) => score >= 0)
+    .sort(
+      (left, right) =>
+        right.score - left.score || left.document.index - right.document.index
+    )
+  const offset = (page - 1) * SEARCH_PAGE_SIZE
 
   return {
-    albums: toAlbums(response.posts),
+    albums: matches
+      .slice(offset, offset + SEARCH_PAGE_SIZE)
+      .map(({ document }) => document.album),
     page,
     query,
-    total: response.total,
-    totalPages: response.totalPages,
+    total: matches.length,
+    totalPages: Math.ceil(matches.length / SEARCH_PAGE_SIZE),
   }
 }
 
