@@ -85,7 +85,7 @@ export function useAlbumSearch() {
   const [error, setError] = useState(false)
   const cache = useRef(new Map<string, AlbumSearchPage>())
   const latestRequest = useRef(0)
-  const loadingMore = useRef(false)
+  const loadingMore = useRef<string | null>(null)
   const { commitResult, isTransitioning } = useResultTransition(setResult)
 
   const remember = useCallback((key: string, page: AlbumSearchPage) => {
@@ -97,12 +97,12 @@ export function useAlbumSearch() {
   const setQuery = useCallback(
     (next: string) => {
       const isSearchable = normalizeQuery(next).length >= MIN_QUERY_LENGTH
+      latestRequest.current += 1
       setRawQuery(next)
       setError(false)
       setIsSearching(isSearchable)
       if (isSearchable) return
 
-      latestRequest.current += 1
       if (result) commitResult(null)
     },
     [commitResult, result]
@@ -112,7 +112,7 @@ export function useAlbumSearch() {
     const normalized = normalizeQuery(query)
     if (normalized.length < MIN_QUERY_LENGTH) return
 
-    const request = ++latestRequest.current
+    const request = latestRequest.current
     const cached = cache.current.get(`${normalized}:1`)
     const controller = new AbortController()
 
@@ -148,7 +148,7 @@ export function useAlbumSearch() {
   const loadMore = useCallback(async () => {
     if (
       !result ||
-      loadingMore.current ||
+      loadingMore.current === result.query ||
       isSearching ||
       result.page >= result.totalPages
     )
@@ -158,7 +158,7 @@ export function useAlbumSearch() {
     const nextPage = result.page + 1
     const key = `${result.query}:${nextPage}`
     const controller = new AbortController()
-    loadingMore.current = true
+    loadingMore.current = result.query
     setIsSearching(true)
 
     try {
@@ -173,10 +173,13 @@ export function useAlbumSearch() {
       for (const album of page.albums) albums.set(album.id, album)
       setResult({ ...page, albums: [...albums.values()] })
     } catch (reason) {
-      if (!(reason instanceof Error && reason.name === "AbortError"))
+      if (
+        request === latestRequest.current &&
+        !(reason instanceof Error && reason.name === "AbortError")
+      )
         setError(true)
     } finally {
-      loadingMore.current = false
+      if (loadingMore.current === result.query) loadingMore.current = null
       if (request === latestRequest.current) setIsSearching(false)
     }
   }, [isSearching, remember, result])

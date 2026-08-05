@@ -529,7 +529,7 @@ export function RecordDeck({
               (openedAlbumId === null || album?.id === openedAlbumId)
             }
             trackSearchTransition={
-              Boolean(album) && Math.abs(visualIndex - activeIndex) <= 2
+              Boolean(album) && Math.abs(visualIndex - activeIndex) <= 1
             }
             visualIndex={visualIndex}
           />
