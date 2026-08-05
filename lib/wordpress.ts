@@ -109,7 +109,7 @@ async function requestPage(page: number, search?: string) {
   if (!url) throw new Error("WordPress API URL is invalid")
 
   url.searchParams.set("page", String(page))
-  url.searchParams.set("per_page", "100")
+  url.searchParams.set("per_page", search ? "50" : "100")
   url.searchParams.set("_embed", "wp:featuredmedia,wp:term")
   url.searchParams.set("_fields", "id,date,link,title,_links,_embedded")
   if (search) {
