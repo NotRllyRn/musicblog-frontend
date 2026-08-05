@@ -47,7 +47,9 @@ dimmed in the background. WordPress is strictly read-only from this frontend.
   dismiss it.
 - Starting another scroll dismisses the current preview.
 - A centered live search starts after two characters and a short debounce,
-  cancels obsolete requests, and applies only the latest response.
+  cancels obsolete browser requests, and applies only the latest response.
+- Search runs against the server-local catalog index across titles, all artist
+  terms, and all genre terms; it makes no query-time WordPress request.
 - Search results use the same finite responsive lanes, progressively load later
   result pages, and restore the archive's prior lane positions when cleared.
 - Search reconciliation is interruptible and pixel-bounded: focal sleeves move,
@@ -68,7 +70,10 @@ dimmed in the background. WordPress is strictly read-only from this frontend.
   omitted.
 - Existing WordPress posts and featured images are the source of truth.
 - The first cached WordPress page supplies both initial albums and the
-  authoritative total; later pages load only near a lane boundary.
+  authoritative total. Server startup warms every remaining 100-post page with
+  bounded concurrency while the browser continues loading lanes progressively.
+- Warm catalog pages include ACF plus embedded artist and genre terms, but raw
+  metadata and the complete search index remain server-only.
 - Responsive placeholder sleeves reserve the finite 3D layout while album data
   loads, and full-resolution WordPress artwork uses responsive Next Image
   optimization.

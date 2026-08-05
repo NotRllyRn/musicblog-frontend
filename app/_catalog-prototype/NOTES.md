@@ -24,10 +24,16 @@ after a winner is selected.
 ## Catalog search
 
 Search uses the existing responsive record field rather than a second browsing
-model. It waits for two normalized characters, debounces for 280ms, aborts stale
-requests, and progressively fetches WordPress relevance pages. The archive
-field remains mounted but hidden so clearing a query restores every lane's prior
-position.
+model. Server startup first obtains the normal 100-post page, then warms the
+remaining ACF-and-taxonomy catalog pages three at a time into a process-local
+index backed by Next's one-hour per-page cache. The browser never receives that
+raw index.
+
+After two normalized characters and a 280ms debounce, search filters titles and
+all artist/genre terms locally, then returns lightweight 50-record result pages.
+Only browser requests are aborted; no query-time request reaches WordPress. The
+archive field remains mounted but hidden so clearing a query restores every
+lane's prior position.
 
 Result changes reconcile only focal sleeves through temporary flat proxies.
 The proxy set is limited by rendered pixel area, interruptions continue from
