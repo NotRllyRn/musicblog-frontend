@@ -55,9 +55,6 @@ export function CatalogBrowser({ initialPage }: CatalogBrowserProps) {
   const isLoading = useRef(false)
   const detailCache = useRef(new Map<number, AlbumDetail>())
   const detailRequests = useRef(new Map<number, Promise<AlbumDetail>>())
-  const catalogAlbums = search.result?.albums ?? albums
-  const catalogTotal = search.result?.total ?? initialPage.total
-  const catalogKey = search.result ? `search:${search.result.query}` : "archive"
   const requestAlbumDetail = useCallback((album: AlbumPost) => {
     const cached = detailRequests.current.get(album.id)
     if (cached) return cached
@@ -158,19 +155,36 @@ export function CatalogBrowser({ initialPage }: CatalogBrowserProps) {
             resultCount={search.result?.total ?? null}
           />
           <RecordField
-            albums={catalogAlbums}
+            albums={albums}
             deckCount={deckCount}
             detailVisible={detailVisible || search.isTransitioning}
+            isHidden={search.result !== null}
             openedAlbumId={opened?.album.id ?? null}
-            key={`${catalogKey}:${deckCount}`}
+            key={`archive:${deckCount}`}
             onExitInteraction={interruptDetailExit}
-            onNeedMore={search.result ? search.loadMore : loadMore}
+            onNeedMore={loadMore}
             onOpenAlbum={openAlbum}
             onPrefetchAlbum={(album) => void requestAlbumDetail(album)}
-            searchQuery={search.result?.query ?? null}
+            searchQuery={null}
             searchTransitioning={search.isTransitioning}
-            total={catalogTotal}
+            total={initialPage.total}
           />
+          {search.result && (
+            <RecordField
+              albums={search.result.albums}
+              deckCount={deckCount}
+              detailVisible={detailVisible || search.isTransitioning}
+              openedAlbumId={opened?.album.id ?? null}
+              key={`search:${search.result.query}:${deckCount}`}
+              onExitInteraction={interruptDetailExit}
+              onNeedMore={search.loadMore}
+              onOpenAlbum={openAlbum}
+              onPrefetchAlbum={(album) => void requestAlbumDetail(album)}
+              searchQuery={search.result.query}
+              searchTransitioning={search.isTransitioning}
+              total={search.result.total}
+            />
+          )}
           <AnimatePresence
             onExitComplete={() => {
               if (detailVisibleRef.current) return

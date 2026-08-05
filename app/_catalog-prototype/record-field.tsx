@@ -10,6 +10,7 @@ interface RecordFieldProps {
   albums: AlbumPost[]
   deckCount: DeckCount
   detailVisible: boolean
+  isHidden?: boolean
   openedAlbumId: number | null
   onExitInteraction: () => void
   onNeedMore: (loadedCount: number) => void
@@ -24,6 +25,7 @@ export function RecordField({
   albums,
   deckCount,
   detailVisible,
+  isHidden = false,
   openedAlbumId,
   onExitInteraction,
   onNeedMore,
@@ -67,9 +69,10 @@ export function RecordField({
           ? `${total} search results in ${deckCount} groups`
           : `Scrollable album catalog in ${deckCount} groups`
       }
+      data-catalog-hidden={isHidden ? true : undefined}
       data-deck-count={deckCount}
       data-search-results={searchQuery ? true : undefined}
-      inert={detailVisible ? true : undefined}
+      inert={detailVisible || isHidden ? true : undefined}
     >
       {stacks.map((records, index) => (
         <RecordDeck
@@ -91,11 +94,12 @@ export function RecordField({
             )
           }
           selectionActive={activeSelection !== null}
-          searchTransitioning={searchTransitioning}
+          searchTransitioning={searchTransitioning || isHidden}
           selectedVisualIndex={
             activeSelection?.deck === index ? activeSelection.visualIndex : null
           }
           startsAtFirst={searchQuery !== null}
+          suppressSearchTransition={isHidden}
           totalRecords={Math.ceil((total - index) / deckCount)}
         />
       ))}

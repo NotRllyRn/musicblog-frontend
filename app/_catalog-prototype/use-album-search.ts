@@ -11,10 +11,13 @@ import {
   useState,
 } from "react"
 
+import { startSearchTransition } from "./search-transition"
 import type { AlbumSearchPage } from "./types"
 
 const DEBOUNCE_MS = 280
 const MAX_CACHED_PAGES = 40
+const MAX_QUERY_LENGTH = 80
+const MAX_TRANSITION_RECORDS = 20
 const MIN_QUERY_LENGTH = 2
 
 const normalizeQuery = (value: string) =>
@@ -35,32 +38,39 @@ function useResultTransition(
   setResult: Dispatch<SetStateAction<AlbumSearchPage | null>>
 ) {
   const [isTransitioning, setIsTransitioning] = useState(false)
-  const transition = useRef<ViewTransition>(null)
+  const transition = useRef<ReturnType<typeof startSearchTransition>>(null)
+  const renderedRecordCount = useRef(0)
   const reduceMotion = Boolean(useReducedMotion())
 
   const commitResult = useCallback(
     (next: AlbumSearchPage | null) => {
-      transition.current?.skipTransition()
-      if (reduceMotion || !document.startViewTransition) {
-        flushSync(() => setResult(next))
+      const nextRecordCount = next?.albums.length ?? 0
+      const shouldReplaceImmediately =
+        reduceMotion ||
+        Math.max(renderedRecordCount.current, nextRecordCount) >
+          MAX_TRANSITION_RECORDS
+      renderedRecordCount.current = nextRecordCount
+      if (shouldReplaceImmediately) {
+        transition.current?.cancel()
+        flushSync(() => {
+          setIsTransitioning(false)
+          setResult(next)
+        })
         return
       }
 
-      document.documentElement.classList.add("catalog-search-transition")
-      const nextTransition = document.startViewTransition(() =>
+      const nextTransition = startSearchTransition((animated) =>
         flushSync(() => {
-          setIsTransitioning(true)
+          setIsTransitioning(animated)
           setResult(next)
         })
       )
       transition.current = nextTransition
-      const finish = () => {
+      void nextTransition.finished.then(() => {
         if (transition.current !== nextTransition) return
         transition.current = null
-        document.documentElement.classList.remove("catalog-search-transition")
         setIsTransitioning(false)
-      }
-      void nextTransition.finished.then(finish, finish)
+      })
     },
     [reduceMotion, setResult]
   )
@@ -69,8 +79,7 @@ function useResultTransition(
     () => () => {
       const activeTransition = transition.current
       transition.current = null
-      activeTransition?.skipTransition()
-      document.documentElement.classList.remove("catalog-search-transition")
+      activeTransition?.cancel()
     },
     []
   )
@@ -86,6 +95,7 @@ export function useAlbumSearch() {
   const cache = useRef(new Map<string, AlbumSearchPage>())
   const latestRequest = useRef(0)
   const loadingMore = useRef<string | null>(null)
+  const paginationRequest = useRef<AbortController>(null)
   const { commitResult, isTransitioning } = useResultTransition(setResult)
 
   const remember = useCallback((key: string, page: AlbumSearchPage) => {
@@ -96,9 +106,13 @@ export function useAlbumSearch() {
 
   const setQuery = useCallback(
     (next: string) => {
-      const isSearchable = normalizeQuery(next).length >= MIN_QUERY_LENGTH
+      const value = next.slice(0, MAX_QUERY_LENGTH)
+      const isSearchable = normalizeQuery(value).length >= MIN_QUERY_LENGTH
       latestRequest.current += 1
-      setRawQuery(next)
+      paginationRequest.current?.abort()
+      paginationRequest.current = null
+      loadingMore.current = null
+      setRawQuery(value)
       setError(false)
       setIsSearching(isSearchable)
       if (isSearchable) return
@@ -158,6 +172,7 @@ export function useAlbumSearch() {
     const nextPage = result.page + 1
     const key = `${result.query}:${nextPage}`
     const controller = new AbortController()
+    paginationRequest.current = controller
     loadingMore.current = result.query
     setIsSearching(true)
 
@@ -179,7 +194,10 @@ export function useAlbumSearch() {
       )
         setError(true)
     } finally {
-      if (loadingMore.current === result.query) loadingMore.current = null
+      if (paginationRequest.current === controller) {
+        paginationRequest.current = null
+        loadingMore.current = null
+      }
       if (request === latestRequest.current) setIsSearching(false)
     }
   }, [isSearching, remember, result])
@@ -187,6 +205,7 @@ export function useAlbumSearch() {
   useEffect(
     () => () => {
       latestRequest.current += 1
+      paginationRequest.current?.abort()
     },
     []
   )

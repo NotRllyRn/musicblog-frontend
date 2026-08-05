@@ -106,6 +106,16 @@
   height: clamp(1rem, 1vw, 2rem);
 }
 
+.catalog-search .astryx-field-status {
+  width: max-content;
+  max-width: 100%;
+  margin-inline: auto;
+  padding-inline: var(--spacing-2);
+  border-radius: var(--radius-element);
+  background: var(--color-background-popover);
+  box-shadow: var(--shadow-low);
+}
+
 .catalog-search > .astryx-text {
   margin-block-start: 0.3rem;
   color: var(--catalog-ink);
@@ -121,6 +131,11 @@
   margin-inline: auto;
   gap: clamp(0.18rem, 0.5vw, 1.15rem);
   padding-inline: var(--catalog-gutter);
+}
+
+.record-field[data-catalog-hidden="true"] {
+  visibility: hidden;
+  content-visibility: hidden;
 }
 
 .loading-field {
@@ -457,8 +472,29 @@ body:has(.deck-record[data-hovered="true"]) .theme-toggle {
   box-shadow: var(--record-hover-shadow);
 }
 
-.record-figure[data-search-transition] {
-  view-transition-name: attr(data-search-transition type(<custom-ident>), none);
+.catalog-search-proxy-layer {
+  position: fixed;
+  z-index: 60;
+  inset: 0;
+  pointer-events: none;
+}
+
+.record-figure.catalog-search-proxy {
+  position: fixed;
+  top: var(--proxy-top);
+  left: var(--proxy-left);
+  box-sizing: border-box;
+  width: var(--proxy-width);
+  height: var(--proxy-height);
+  margin: 0;
+  background-position: center;
+  background-size: cover;
+  transition: none;
+  will-change: transform, opacity;
+}
+
+.record-figure[data-search-proxy-target="true"] {
+  opacity: 0;
 }
 
 .record-art {
@@ -991,40 +1027,6 @@ body:has(.deck-record[data-hovered="true"]) .theme-toggle {
   translate: 50%;
 }
 
-@keyframes catalog-search-out {
-  to {
-    opacity: 0;
-    transform: translateY(-0.5rem) scale(0.96);
-  }
-}
-
-@keyframes catalog-search-in {
-  from {
-    opacity: 0;
-    transform: translateY(0.5rem) scale(0.96);
-  }
-}
-
-.catalog-search-transition::view-transition-group(*) {
-  animation-duration: var(--duration-medium-min);
-  animation-timing-function: var(--ease-standard);
-}
-
-.catalog-search-transition::view-transition-old(*) {
-  animation: catalog-search-out var(--duration-fast) var(--ease-standard) both;
-}
-
-.catalog-search-transition::view-transition-new(*) {
-  animation: catalog-search-in var(--duration-fast-max) var(--ease-standard)
-    both;
-}
-
-.catalog-search-transition::view-transition-old(root),
-.catalog-search-transition::view-transition-new(root) {
-  animation: none;
-  mix-blend-mode: normal;
-}
-
 @keyframes detail-loading-spin {
   to {
     rotate: 1turn;
@@ -1341,12 +1343,6 @@ body:has(.deck-record[data-hovered="true"]) .theme-toggle {
   .album-detail-content {
     animation: none;
     transition: none;
-  }
-
-  .catalog-search-transition::view-transition-group(*),
-  .catalog-search-transition::view-transition-old(*),
-  .catalog-search-transition::view-transition-new(*) {
-    animation-duration: 0.01ms;
   }
 
   .deck-record {

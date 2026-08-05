@@ -54,16 +54,24 @@ export function CatalogSearch({
         placeholder="Search albums…"
         size="lg"
         startIcon="search"
-        status={error ? { type: "error" } : undefined}
+        status={
+          error
+            ? {
+                type: "error",
+                message:
+                  "Search could not load. Change the query to try again.",
+              }
+            : undefined
+        }
         value={query}
       />
       <VisuallyHidden as="div" aria-live="polite">
-        {status}
+        {error ? null : status}
       </VisuallyHidden>
-      {query && !isSearching && (
+      {resultCount !== null && !isSearching && (
         <Text
           as="p"
-          color={error ? "primary" : "secondary"}
+          color="secondary"
           display="block"
           justify="center"
           type="supporting"

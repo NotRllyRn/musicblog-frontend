@@ -43,6 +43,7 @@ interface RecordDeckProps {
   selectionActive: boolean
   selectedVisualIndex: number | null
   startsAtFirst: boolean
+  suppressSearchTransition: boolean
   totalRecords: number
 }
 
@@ -178,6 +179,7 @@ export function RecordDeck({
   selectionActive,
   selectedVisualIndex,
   startsAtFirst,
+  suppressSearchTransition,
   totalRecords,
 }: RecordDeckProps) {
   const settings = mechanicSettings
@@ -526,10 +528,16 @@ export function RecordDeck({
             reduceMotion={reduceMotion}
             trackLayout={
               !searchTransitioning &&
-              (openedAlbumId === null || album?.id === openedAlbumId)
+              Boolean(album) &&
+              (album?.id === openedAlbumId ||
+                (openedAlbumId === null &&
+                  (visualIndex === activeIndex ||
+                    visualIndex === previewVisualIndex)))
             }
             trackSearchTransition={
-              Boolean(album) && Math.abs(visualIndex - activeIndex) <= 1
+              !suppressSearchTransition &&
+              Boolean(album) &&
+              visualIndex === activeIndex
             }
             visualIndex={visualIndex}
           />
