@@ -39,8 +39,10 @@ interface RecordDeckProps {
   onOpenAlbum: (album: AlbumPost, invoker: HTMLElement) => void
   onPrefetchAlbum: (album: AlbumPost) => void
   onSelectionChange: (visualIndex: number | null) => void
+  searchTransitioning: boolean
   selectionActive: boolean
   selectedVisualIndex: number | null
+  startsAtFirst: boolean
   totalRecords: number
 }
 
@@ -54,6 +56,7 @@ interface AnimatedRecordProps {
   position: MotionValue<number>
   reduceMotion: boolean
   trackLayout: boolean
+  trackSearchTransition: boolean
   visualIndex: number
 }
 
@@ -67,6 +70,7 @@ const AnimatedRecord = memo(function AnimatedRecord({
   position,
   reduceMotion,
   trackLayout,
+  trackSearchTransition,
   visualIndex,
 }: AnimatedRecordProps) {
   const pullTarget = useMotionValue(0)
@@ -107,6 +111,9 @@ const AnimatedRecord = memo(function AnimatedRecord({
           className={`record-figure${album ? "" : " record-placeholder"}`}
           data-album-id={album?.id}
           data-loading={album ? undefined : true}
+          data-search-transition={
+            album && trackSearchTransition ? `album-${album.id}` : undefined
+          }
           layoutId={
             album && trackLayout ? `album-cover-${album.id}` : undefined
           }
@@ -167,15 +174,19 @@ export function RecordDeck({
   onOpenAlbum,
   onPrefetchAlbum,
   onSelectionChange,
+  searchTransitioning,
   selectionActive,
   selectedVisualIndex,
+  startsAtFirst,
   totalRecords,
 }: RecordDeckProps) {
   const settings = mechanicSettings
   const radius = Math.floor(settings.window / 2)
   const recordsAbove = radius - 4
   const recordsBelow = radius
-  const initialIndex = Math.min(albums.length - 1, radius + 2 + (index % 3))
+  const initialIndex = startsAtFirst
+    ? 0
+    : Math.min(albums.length - 1, radius + 2 + (index % 3))
   const [activeIndex, setActiveIndex] = useState(initialIndex)
   const [hoveredVisualIndex, setHoveredVisualIndex] = useState<number | null>(
     null
@@ -513,7 +524,13 @@ export function RecordDeck({
             key={album?.id ?? `placeholder-${visualIndex}`}
             position={position}
             reduceMotion={reduceMotion}
-            trackLayout={openedAlbumId === null || album?.id === openedAlbumId}
+            trackLayout={
+              !searchTransitioning &&
+              (openedAlbumId === null || album?.id === openedAlbumId)
+            }
+            trackSearchTransition={
+              Boolean(album) && Math.abs(visualIndex - activeIndex) <= 2
+            }
             visualIndex={visualIndex}
           />
         ))}

@@ -76,6 +76,42 @@
   white-space: normal;
 }
 
+.catalog-search {
+  position: absolute;
+  z-index: 25;
+  top: 1rem;
+  left: 50%;
+  width: 50%;
+  color: var(--catalog-ink);
+  translate: -50% 0;
+}
+
+.catalog-search .astryx-field {
+  width: 100%;
+}
+
+.catalog-search-input {
+  min-height: clamp(2.25rem, 2.5vw, 5rem);
+  border-radius: var(--radius-full);
+  background: color-mix(in oklch, var(--catalog-paper) 92%, transparent);
+  box-shadow: var(--shadow-med);
+}
+
+.catalog-search-input input {
+  font-size: clamp(0.875rem, 0.8vw, 1.75rem);
+}
+
+.catalog-search-input .astryx-icon {
+  width: clamp(1rem, 1vw, 2rem);
+  height: clamp(1rem, 1vw, 2rem);
+}
+
+.catalog-search > .astryx-text {
+  margin-block-start: 0.3rem;
+  color: var(--catalog-ink);
+  font-size: clamp(0.75rem, 0.65vw, 1.5rem);
+}
+
 .record-field {
   position: absolute;
   inset: 0;
@@ -419,6 +455,10 @@ body:has(.deck-record[data-hovered="true"]) .theme-toggle {
 
 .deck-record[data-hovered="true"] .record-figure {
   box-shadow: var(--record-hover-shadow);
+}
+
+.record-figure[data-search-transition] {
+  view-transition-name: attr(data-search-transition type(<custom-ident>), none);
 }
 
 .record-art {
@@ -951,6 +991,40 @@ body:has(.deck-record[data-hovered="true"]) .theme-toggle {
   translate: 50%;
 }
 
+@keyframes catalog-search-out {
+  to {
+    opacity: 0;
+    transform: translateY(-0.5rem) scale(0.96);
+  }
+}
+
+@keyframes catalog-search-in {
+  from {
+    opacity: 0;
+    transform: translateY(0.5rem) scale(0.96);
+  }
+}
+
+.catalog-search-transition::view-transition-group(*) {
+  animation-duration: var(--duration-medium-min);
+  animation-timing-function: var(--ease-standard);
+}
+
+.catalog-search-transition::view-transition-old(*) {
+  animation: catalog-search-out var(--duration-fast) var(--ease-standard) both;
+}
+
+.catalog-search-transition::view-transition-new(*) {
+  animation: catalog-search-in var(--duration-fast-max) var(--ease-standard)
+    both;
+}
+
+.catalog-search-transition::view-transition-old(root),
+.catalog-search-transition::view-transition-new(root) {
+  animation: none;
+  mix-blend-mode: normal;
+}
+
 @keyframes detail-loading-spin {
   to {
     rotate: 1turn;
@@ -1055,6 +1129,10 @@ body:has(.deck-record[data-hovered="true"]) .theme-toggle {
 }
 
 @media (max-width: 69.99rem) {
+  .catalog-search {
+    top: 3.5rem;
+  }
+
   .record-field {
     grid-template-columns: repeat(5, minmax(0, 1fr));
   }
@@ -1076,6 +1154,11 @@ body:has(.deck-record[data-hovered="true"]) .theme-toggle {
 
   .catalog-header > :last-child {
     display: none;
+  }
+
+  .catalog-search {
+    top: 3.25rem;
+    width: calc(100% - 1rem);
   }
 
   .record-field {
@@ -1258,6 +1341,12 @@ body:has(.deck-record[data-hovered="true"]) .theme-toggle {
   .album-detail-content {
     animation: none;
     transition: none;
+  }
+
+  .catalog-search-transition::view-transition-group(*),
+  .catalog-search-transition::view-transition-old(*),
+  .catalog-search-transition::view-transition-new(*) {
+    animation-duration: 0.01ms;
   }
 
   .deck-record {

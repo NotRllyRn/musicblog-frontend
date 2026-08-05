@@ -7,8 +7,10 @@ import { useCallback, useEffect, useRef, useState } from "react"
 
 import { AlbumDetailOverlay } from "./album-detail"
 import { CatalogLoading } from "./catalog-loading"
+import { CatalogSearch } from "./catalog-search"
 import { RecordField } from "./record-field"
 import { ThemeToggle } from "./theme-toggle"
+import { useAlbumSearch } from "./use-album-search"
 import type { AlbumDetail, AlbumPage, AlbumPost, DeckCount } from "./types"
 
 interface CatalogBrowserProps {
@@ -38,6 +40,7 @@ function useDeckCount() {
 
 export function CatalogBrowser({ initialPage }: CatalogBrowserProps) {
   const [albums, setAlbums] = useState(initialPage.albums)
+  const search = useAlbumSearch()
   const [opened, setOpened] = useState<{
     album: AlbumPost
     detail: AlbumDetail | null
@@ -52,6 +55,9 @@ export function CatalogBrowser({ initialPage }: CatalogBrowserProps) {
   const isLoading = useRef(false)
   const detailCache = useRef(new Map<number, AlbumDetail>())
   const detailRequests = useRef(new Map<number, Promise<AlbumDetail>>())
+  const catalogAlbums = search.result?.albums ?? albums
+  const catalogTotal = search.result?.total ?? initialPage.total
+  const catalogKey = search.result ? `search:${search.result.query}` : "archive"
   const requestAlbumDetail = useCallback((album: AlbumPost) => {
     const cached = detailRequests.current.get(album.id)
     if (cached) return cached
@@ -143,16 +149,27 @@ export function CatalogBrowser({ initialPage }: CatalogBrowserProps) {
               {initialPage.total} records · hinged by hand
             </Text>
           </header>
+          <CatalogSearch
+            error={search.error}
+            isDisabled={opened !== null}
+            isSearching={search.isSearching}
+            onChange={search.setQuery}
+            query={search.query}
+            resultCount={search.result?.total ?? null}
+          />
           <RecordField
-            albums={albums}
+            albums={catalogAlbums}
             deckCount={deckCount}
-            detailVisible={detailVisible}
+            detailVisible={detailVisible || search.isTransitioning}
             openedAlbumId={opened?.album.id ?? null}
+            key={`${catalogKey}:${deckCount}`}
             onExitInteraction={interruptDetailExit}
-            onNeedMore={loadMore}
+            onNeedMore={search.result ? search.loadMore : loadMore}
             onOpenAlbum={openAlbum}
             onPrefetchAlbum={(album) => void requestAlbumDetail(album)}
-            total={initialPage.total}
+            searchQuery={search.result?.query ?? null}
+            searchTransitioning={search.isTransitioning}
+            total={catalogTotal}
           />
           <AnimatePresence
             onExitComplete={() => {

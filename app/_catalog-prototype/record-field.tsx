@@ -15,6 +15,8 @@ interface RecordFieldProps {
   onNeedMore: (loadedCount: number) => void
   onOpenAlbum: (album: AlbumPost, invoker: HTMLElement) => void
   onPrefetchAlbum: (album: AlbumPost) => void
+  searchQuery: string | null
+  searchTransitioning: boolean
   total: number
 }
 
@@ -27,6 +29,8 @@ export function RecordField({
   onNeedMore,
   onOpenAlbum,
   onPrefetchAlbum,
+  searchQuery,
+  searchTransitioning,
   total,
 }: RecordFieldProps) {
   const [selection, setSelection] = useState<{
@@ -58,8 +62,13 @@ export function RecordField({
   return (
     <section
       className="record-field"
-      aria-label={`Scrollable album catalog in ${deckCount} groups`}
+      aria-label={
+        searchQuery
+          ? `${total} search results in ${deckCount} groups`
+          : `Scrollable album catalog in ${deckCount} groups`
+      }
       data-deck-count={deckCount}
+      data-search-results={searchQuery ? true : undefined}
       inert={detailVisible ? true : undefined}
     >
       {stacks.map((records, index) => (
@@ -82,9 +91,11 @@ export function RecordField({
             )
           }
           selectionActive={activeSelection !== null}
+          searchTransitioning={searchTransitioning}
           selectedVisualIndex={
             activeSelection?.deck === index ? activeSelection.visualIndex : null
           }
+          startsAtFirst={searchQuery !== null}
           totalRecords={Math.ceil((total - index) / deckCount)}
         />
       ))}
