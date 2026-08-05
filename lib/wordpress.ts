@@ -119,7 +119,10 @@ async function requestPage(page: number, search?: string) {
 
   const response = await fetch(url, {
     headers: requestHeaders(),
-    next: { revalidate: 3600, tags: ["wordpress-albums"] },
+    // Arbitrary public queries must not create an unbounded persistent cache.
+    ...(search
+      ? { cache: "no-store" as const }
+      : { next: { revalidate: 3600, tags: ["wordpress-albums"] } }),
     signal: AbortSignal.timeout(15_000),
   })
 
