@@ -45,8 +45,40 @@ export interface AlbumPage {
   totalPages: number
 }
 
+export type AlbumExplicitFilter = "any" | "clean" | "explicit"
+export type AlbumRatingOperator = "eq" | "gte" | "lte"
+
+export interface AlbumDateBounds {
+  start: string | null
+  end: string | null
+}
+
+export interface AlbumSearchFilters {
+  artists: string[]
+  explicit: AlbumExplicitFilter
+  genres: string[]
+  listenedDate: AlbumDateBounds
+  rating: number | null
+  ratingOperator: AlbumRatingOperator | null
+  releaseDate: AlbumDateBounds
+  releaseTypes: string[]
+  unreleased: boolean
+}
+
+export interface AlbumFilterFacets {
+  artists: string[]
+  genres: string[]
+  listenedDate: AlbumDateBounds
+  rating: { min: number; max: number } | null
+  releaseDate: AlbumDateBounds
+  releaseTypes: string[]
+  unreleasedCount: number
+  version: number
+}
+
 export interface AlbumSearchPage extends AlbumPage {
   query: string
+  version: number
 }
 
 export type DeckCount = 3 | 5 | 7

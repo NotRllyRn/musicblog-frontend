@@ -2,10 +2,13 @@ import "server-only"
 
 import sanitizeHtml from "sanitize-html"
 
+import { normalizeAlbumSearchText } from "@/app/_catalog-prototype/search-filters"
 import type {
   AlbumDetail,
+  AlbumFilterFacets,
   AlbumPage,
   AlbumPost,
+  AlbumSearchFilters,
   AlbumSearchPage,
   AlbumTrack,
 } from "@/app/_catalog-prototype/types"
@@ -63,16 +66,29 @@ interface WordPressPost {
 
 interface SearchDocument {
   album: AlbumPost
+  artistKeys: string[]
+  artistLabels: string[]
   artists: string
+  explicit: boolean
+  genreKeys: string[]
+  genreLabels: string[]
   genres: string
   index: number
+  listenedAt: string | null
+  rating: number | null
+  releaseDate: string | null
+  releaseTypeKeys: string[]
+  releaseTypeLabels: string[]
   text: string
   title: string
+  unreleased: boolean
+  words: string[]
 }
 
 interface CatalogIndex {
   builtAt: number
   documents: SearchDocument[]
+  facets: AlbumFilterFacets
   pages: WordPressPost[][]
   total: number
   totalPages: number
@@ -138,7 +154,10 @@ async function requestPage(page: number) {
   url.searchParams.set("page", String(page))
   url.searchParams.set("per_page", "100")
   url.searchParams.set("_embed", "wp:featuredmedia,wp:term")
-  url.searchParams.set("_fields", "id,date,link,title,acf,_links,_embedded")
+  url.searchParams.set(
+    "_fields",
+    "id,date,link,status,password,title,content.protected,acf,_links,_embedded"
+  )
 
   const response = await fetch(url, {
     headers: requestHeaders(),
@@ -199,7 +218,16 @@ function termsFor({
   return names
 }
 
+function isPublicPost(post: WordPressPost) {
+  return (
+    (post.status === undefined || post.status === "publish") &&
+    !post.password &&
+    !post.content?.protected
+  )
+}
+
 function toAlbum(post: WordPressPost): AlbumPost | null {
+  if (!isPublicPost(post)) return null
   const media = post._embedded?.["wp:featuredmedia"]?.[0]
   if (!media?.source_url) return null
 
@@ -248,8 +276,16 @@ function getCatalogPage(page: number) {
   return request
 }
 
-function searchable(value: string) {
-  return normalizeAlbumQuery(value).toLowerCase()
+const searchable = normalizeAlbumSearchText
+
+function uniqueTerms(values: string[]) {
+  return [
+    ...new Map(values.map((value) => [searchable(value), value])).values(),
+  ]
+}
+
+function booleanValue(value: unknown) {
+  return value === true || value === 1 || value === "1" || value === "true"
 }
 
 function toSearchDocument(post: WordPressPost, index: number) {
@@ -257,22 +293,94 @@ function toSearchDocument(post: WordPressPost, index: number) {
   if (!album) return null
 
   const artistTerms = termsFor({ post, taxonomy: "artist" })
-  const artists = artistTerms.length
-    ? artistTerms
-    : termsFor({ post, taxonomy: "post_tag" }).slice(0, 1)
-  const genres = termsFor({ post, taxonomy: "genre" })
+  const artistLabels = uniqueTerms(
+    artistTerms.length
+      ? artistTerms
+      : termsFor({ post, taxonomy: "post_tag" }).slice(0, 1)
+  )
+  const genreLabels = uniqueTerms(termsFor({ post, taxonomy: "genre" }))
+  const releaseTypeLabels = uniqueTerms(
+    termsFor({ post, taxonomy: "release_type" })
+  )
+  const artistKeys = artistLabels.map(searchable)
+  const genreKeys = genreLabels.map(searchable)
+  const releaseTypeKeys = releaseTypeLabels.map(searchable)
   const title = searchable(album.title)
-  const normalizedArtists = searchable(artists.join(" "))
-  const normalizedGenres = searchable(genres.join(" "))
+  const artists = artistKeys.join(" ")
+  const genres = genreKeys.join(" ")
+  const text = `${title} ${artists} ${genres}`
+  const acf = post.acf ?? {}
+  const releaseDate = compactDate(acf.music_release_date)
+  const listenedAt = compactDate(acf.music_listened_at)
+  const rawRating = optionalNumber(acf.music_rating)
+  const rating = rawRating === null ? null : Math.round(rawRating)
 
   return {
     album,
-    artists: normalizedArtists,
-    genres: normalizedGenres,
+    artistKeys,
+    artistLabels,
+    artists,
+    explicit: booleanValue(acf.music_explicit),
+    genreKeys,
+    genreLabels,
+    genres,
     index,
-    text: `${title} ${normalizedArtists} ${normalizedGenres}`,
+    listenedAt,
+    rating,
+    releaseDate,
+    releaseTypeKeys,
+    releaseTypeLabels,
+    text,
     title,
+    unreleased: Boolean(releaseDate && listenedAt && releaseDate > listenedAt),
+    words: [
+      ...new Set([
+        ...text.split(" "),
+        title.replaceAll(" ", ""),
+        artists.replaceAll(" ", ""),
+        genres.replaceAll(" ", ""),
+      ]),
+    ],
   } satisfies SearchDocument
+}
+
+function facetLabels(
+  documents: SearchDocument[],
+  key: "artistLabels" | "genreLabels" | "releaseTypeLabels"
+) {
+  return uniqueTerms(documents.flatMap((document) => document[key])).sort(
+    (left, right) =>
+      left.localeCompare(right, undefined, { sensitivity: "base" })
+  )
+}
+
+function dateBounds(
+  documents: SearchDocument[],
+  key: "listenedAt" | "releaseDate"
+) {
+  const dates = documents
+    .flatMap((document) => (document[key] ? [document[key]] : []))
+    .sort()
+  return { start: dates[0] ?? null, end: dates.at(-1) ?? null }
+}
+
+function catalogFacets(documents: SearchDocument[], version: number) {
+  const ratings = documents
+    .flatMap(({ rating }) => (rating === null ? [] : [rating]))
+    .sort((left, right) => left - right)
+
+  return {
+    artists: facetLabels(documents, "artistLabels"),
+    genres: facetLabels(documents, "genreLabels"),
+    listenedDate: dateBounds(documents, "listenedAt"),
+    rating: ratings.length
+      ? { min: ratings[0], max: ratings.at(-1) ?? ratings[0] }
+      : null,
+    releaseDate: dateBounds(documents, "releaseDate"),
+    releaseTypes: facetLabels(documents, "releaseTypeLabels"),
+    unreleasedCount: documents.filter(({ unreleased }) => unreleased).length,
+    version,
+  } satisfies AlbumFilterFacets
 }
 
 async function buildCatalogIndex(): Promise<CatalogIndex> {
@@ -294,9 +402,11 @@ async function buildCatalogIndex(): Promise<CatalogIndex> {
     return document ? [document] : []
   })
 
+  const builtAt = Date.now()
   return {
-    builtAt: Date.now(),
+    builtAt,
     documents,
+    facets: catalogFacets(documents, builtAt),
     pages,
     total: first.total,
     totalPages: first.totalPages,
@@ -335,16 +445,112 @@ export function warmAlbumCatalog() {
   void getCatalogIndex().catch(() => undefined)
 }
 
+function editDistanceWithin(left: string, right: string, limit: number) {
+  if (Math.abs(left.length - right.length) > limit) return limit + 1
+  if (left.length === right.length) {
+    const mismatch = [...left].flatMap((character, index) =>
+      character === right[index] ? [] : [index]
+    )
+    if (
+      mismatch.length === 2 &&
+      left[mismatch[0]] === right[mismatch[1]] &&
+      left[mismatch[1]] === right[mismatch[0]]
+    )
+      return 1
+  }
+
+  let previous = Array.from({ length: right.length + 1 }, (_, index) => index)
+  for (let leftIndex = 1; leftIndex <= left.length; leftIndex += 1) {
+    const current = [leftIndex]
+    let rowMinimum = leftIndex
+    for (let rightIndex = 1; rightIndex <= right.length; rightIndex += 1) {
+      const value = Math.min(
+        (current[rightIndex - 1] ?? 0) + 1,
+        (previous[rightIndex] ?? 0) + 1,
+        (previous[rightIndex - 1] ?? 0) +
+          Number(left[leftIndex - 1] !== right[rightIndex - 1])
+      )
+      current.push(value)
+      rowMinimum = Math.min(rowMinimum, value)
+    }
+    if (rowMinimum > limit) return limit + 1
+    previous = current
+  }
+  return previous.at(-1) ?? limit + 1
+}
+
+function fuzzyTokenDistance(token: string, words: string[]) {
+  const limit = token.length < 4 ? 0 : token.length < 7 ? 1 : 2
+  let best = limit + 1
+  for (const word of words) {
+    if (word.includes(token)) return 0
+    const distance = editDistanceWithin(token, word, limit)
+    best = Math.min(best, distance - (token[0] === word[0] ? 0.25 : 0))
+    if (best === 0) return 0
+  }
+  return best
+}
+
 function searchScore(document: SearchDocument, query: string) {
-  const tokens = query.split(" ")
-  if (!tokens.every((token) => document.text.includes(token))) return -1
-  if (document.title === query) return 6
-  if (document.artists === query || document.genres === query) return 5
-  if (document.title.startsWith(query)) return 4
-  if (document.title.includes(query)) return 3
-  if (document.artists.includes(query)) return 2
-  if (document.genres.includes(query)) return 1
-  return 0
+  if (!query) return 0
+  if (document.title === query) return 1000
+  if (document.artists === query || document.genres === query) return 950
+  if (document.title.startsWith(query)) return 900
+  if (document.title.includes(query)) return 850
+  if (document.artists.includes(query)) return 800
+  if (document.genres.includes(query)) return 750
+
+  let distance = 0
+  for (const token of query.split(" ")) {
+    const tokenDistance = fuzzyTokenDistance(token, document.words)
+    if (tokenDistance > (token.length < 4 ? 0 : token.length < 7 ? 1 : 2))
+      return -1
+    distance += tokenDistance
+  }
+  return 500 - distance
+}
+
+function includesSelected(keys: string[], selected: string[]) {
+  return selected.length === 0 || selected.some((value) => keys.includes(value))
+}
+
+function withinDateRange(
+  value: string | null,
+  { start, end }: AlbumSearchFilters["releaseDate"]
+) {
+  if (!start && !end) return true
+  return Boolean(value && (!start || value >= start) && (!end || value <= end))
+}
+
+function normalizeFiltersForMatching(
+  filters: AlbumSearchFilters
+): AlbumSearchFilters {
+  return {
+    ...filters,
+    artists: filters.artists.map(searchable),
+    genres: filters.genres.map(searchable),
+    releaseTypes: filters.releaseTypes.map(searchable),
+  }
+}
+
+function matchesFilters(document: SearchDocument, filters: AlbumSearchFilters) {
+  if (
+    !includesSelected(document.artistKeys, filters.artists) ||
+    !includesSelected(document.genreKeys, filters.genres) ||
+    !includesSelected(document.releaseTypeKeys, filters.releaseTypes) ||
+    (filters.unreleased && !document.unreleased) ||
+    (filters.explicit === "explicit" && !document.explicit) ||
+    (filters.explicit === "clean" && document.explicit) ||
+    !withinDateRange(document.releaseDate, filters.releaseDate) ||
+    !withinDateRange(document.listenedAt, filters.listenedDate)
+  )
+    return false
+
+  if (filters.rating === null || filters.ratingOperator === null) return true
+  if (document.rating === null) return false
+  if (filters.ratingOperator === "eq") return document.rating === filters.rating
+  if (filters.ratingOperator === "gte") return document.rating >= filters.rating
+  return document.rating <= filters.rating
 }
 
 function optionalNumber(value: unknown) {
@@ -357,11 +563,26 @@ function optionalString(value: unknown) {
   return typeof value === "string" && value.trim() ? value.trim() : null
 }
 
+function isCalendarDate(value: string) {
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value)
+  if (!match) return false
+  const [, year, month, day] = match
+  const date = new Date(Date.UTC(Number(year), Number(month) - 1, Number(day)))
+  return date.toISOString().slice(0, 10) === value
+}
+
 function compactDate(value: unknown) {
-  const date = optionalString(value)
-  return date && /^\d{8}$/.test(date)
-    ? `${date.slice(0, 4)}-${date.slice(4, 6)}-${date.slice(6)}`
-    : null
+  const raw = optionalString(value)
+  if (!raw) return null
+
+  const compact = /^(\d{4})(\d{2})(\d{2})$/.exec(raw)
+  const european = /^(\d{2})\/(\d{2})\/(\d{4})$/.exec(raw)
+  const date = compact
+    ? `${compact[1]}-${compact[2]}-${compact[3]}`
+    : european
+      ? `${european[3]}-${european[2]}-${european[1]}`
+      : raw
+  return isCalendarDate(date) ? date : null
 }
 
 function trustedExternalUrl(value: unknown, allowedHostname: string) {
@@ -420,7 +641,7 @@ function toTrack(track: WordPressTrack): AlbumTrack | null {
     discNumber: optionalNumber(track.disc_number) ?? 1,
     trackNumber: optionalNumber(track.track_number) ?? 0,
     durationMs: optionalNumber(track.duration_ms),
-    explicit: Boolean(track.explicit),
+    explicit: booleanValue(track.explicit),
     spotifyId: spotifyId && /^[\da-z]+$/i.test(spotifyId) ? spotifyId : null,
   }
 }
@@ -449,17 +670,20 @@ export async function getAlbumPage(page = 1): Promise<AlbumPage> {
   }
 }
 
-export function normalizeAlbumQuery(value: string) {
-  return value.normalize("NFKC").replace(/\s+/gu, " ").trim()
+export async function getAlbumFilterFacets() {
+  return (await getCatalogIndex()).facets
 }
 
 export async function getAlbumSearchPage(
   rawQuery: string,
+  filters: AlbumSearchFilters,
   page = 1
 ): Promise<AlbumSearchPage> {
   const query = searchable(rawQuery)
+  const normalizedFilters = normalizeFiltersForMatching(filters)
   const index = await getCatalogIndex()
   const matches = index.documents
+    .filter((document) => matchesFilters(document, normalizedFilters))
     .map((document) => ({ document, score: searchScore(document, query) }))
     .filter(({ score }) => score >= 0)
     .sort(
@@ -476,6 +700,7 @@ export async function getAlbumSearchPage(
     query,
     total: matches.length,
     totalPages: Math.ceil(matches.length / SEARCH_PAGE_SIZE),
+    version: index.builtAt,
   }
 }
 
@@ -483,13 +708,7 @@ export async function getAlbumDetail(id: number): Promise<AlbumDetail | null> {
   if (!Number.isInteger(id) || id < 1) return null
 
   const post = await requestPost(id)
-  if (
-    !post ||
-    post.status !== "publish" ||
-    Boolean(post.password) ||
-    post.content?.protected
-  )
-    return null
+  if (!post || !isPublicPost(post)) return null
 
   const album = toAlbum(post)
   if (!album) return null
@@ -513,7 +732,7 @@ export async function getAlbumDetail(id: number): Promise<AlbumDetail | null> {
     }),
     durationMs: optionalNumber(acf.music_length_ms),
     averageTrackMs: optionalNumber(acf.music_avg_track_ms),
-    explicit: Boolean(acf.music_explicit),
+    explicit: booleanValue(acf.music_explicit),
     totalTracks: optionalNumber(acf.music_total_tracks),
     listenCount: optionalNumber(acf.listen_count),
     spotifyUrl: trustedExternalUrl(acf.spotify_album_url, "open.spotify.com"),
