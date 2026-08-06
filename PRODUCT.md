@@ -46,10 +46,21 @@ dimmed in the background. WordPress is strictly read-only from this frontend.
   that sleeve again to open its in-catalog review, or tap anywhere else to
   dismiss it.
 - Starting another scroll dismisses the current preview.
-- A centered live search starts after two characters and a short debounce,
-  cancels obsolete browser requests, and applies only the latest response.
-- Search runs against the server-local catalog index across titles, all artist
-  terms, and all genre terms; it makes no query-time WordPress request.
+- A centered typo-tolerant search starts after two characters and a short
+  debounce, cancels obsolete browser requests, and applies only the latest
+  response.
+- A responsive filter panel supports multiple artists, genres, and release
+  types; explicit or clean releases; unreleased-at-listen records; rating
+  comparisons; and release/listened date ranges. Filters work with no keyword.
+- Artist and genre choices search instantly from lightweight server-provided
+  text facets. Date and rating controls stop at the catalog's actual bounds,
+  and compact date controls remain picker-only.
+- Search and filtering run against the server-local catalog index across titles,
+  all artist terms, all genre terms, release taxonomy, and indexed ACF fields;
+  they make no query-time WordPress request.
+- On compact screens, filter opening reversibly shifts the record field below
+  the controls; wide layouts keep the costly 3D field stationary. Closed filter
+  controls show the number of selected constraints.
 - Search results use the same finite responsive lanes, progressively load later
   result pages, and restore the archive's prior lane positions when cleared.
 - Search reconciliation is interruptible and pixel-bounded: focal sleeves move,

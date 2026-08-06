@@ -7,35 +7,49 @@ import {
   type SetStateAction,
   useCallback,
   useEffect,
+  useMemo,
   useRef,
   useState,
 } from "react"
 
+import {
+  albumSearchCriteriaKey,
+  countActiveAlbumFilters,
+  createEmptyAlbumFilters,
+} from "./search-filters"
 import { startSearchTransition } from "./search-transition"
-import type { AlbumSearchPage } from "./types"
+import type {
+  AlbumFilterFacets,
+  AlbumSearchFilters,
+  AlbumSearchPage,
+} from "./types"
 
 const DEBOUNCE_MS = 280
 const MAX_CACHED_PAGES = 40
 const MAX_QUERY_LENGTH = 80
 const MAX_TRANSITION_RECORDS = 20
-const MIN_QUERY_LENGTH = 2
 
-const normalizeQuery = (value: string) =>
-  value.normalize("NFKC").replace(/\s+/gu, " ").trim().toLowerCase()
+interface AlbumSearchResult extends AlbumSearchPage {
+  criteria: string
+}
 
-const requestSearchPage = async (
-  query: string,
+async function requestSearchPage(
+  criteria: string,
   page: number,
   signal: AbortSignal
-) => {
-  const parameters = new URLSearchParams({ q: query, page: String(page) })
+) {
+  const parameters = new URLSearchParams(criteria)
+  if (page > 1) parameters.set("page", String(page))
   const response = await fetch(`/api/albums/search?${parameters}`, { signal })
   if (!response.ok) throw new Error("Search could not load")
-  return response.json() as Promise<AlbumSearchPage>
+  return {
+    ...(await response.json()),
+    criteria,
+  } as AlbumSearchResult
 }
 
 function useResultTransition(
-  setResult: Dispatch<SetStateAction<AlbumSearchPage | null>>
+  setResult: Dispatch<SetStateAction<AlbumSearchResult | null>>
 ) {
   const [isTransitioning, setIsTransitioning] = useState(false)
   const transition = useRef<ReturnType<typeof startSearchTransition>>(null)
@@ -43,7 +57,7 @@ function useResultTransition(
   const reduceMotion = Boolean(useReducedMotion())
 
   const commitResult = useCallback(
-    (next: AlbumSearchPage | null) => {
+    (next: AlbumSearchResult | null) => {
       const nextRecordCount = next?.albums.length ?? 0
       const shouldReplaceImmediately =
         reduceMotion ||
@@ -89,48 +103,119 @@ function useResultTransition(
 
 export function useAlbumSearch() {
   const [query, setRawQuery] = useState("")
-  const [result, setResult] = useState<AlbumSearchPage | null>(null)
+  const [filters, setFilters] = useState(createEmptyAlbumFilters)
+  const [result, setResult] = useState<AlbumSearchResult | null>(null)
+  const [facets, setFacets] = useState<AlbumFilterFacets | null>(null)
   const [isSearching, setIsSearching] = useState(false)
+  const [isLoadingFacets, setIsLoadingFacets] = useState(false)
   const [error, setError] = useState(false)
-  const cache = useRef(new Map<string, AlbumSearchPage>())
+  const [facetsError, setFacetsError] = useState(false)
+  const cache = useRef(new Map<string, AlbumSearchResult>())
+  const facetsRequest = useRef<Promise<AlbumFilterFacets> | null>(null)
   const latestRequest = useRef(0)
   const loadingMore = useRef<string | null>(null)
   const paginationRequest = useRef<AbortController>(null)
+  const criteria = albumSearchCriteriaKey(query, filters)
+  const activeFilterCount = countActiveAlbumFilters(filters)
+  const criteriaRef = useRef(criteria)
+  const filtersRef = useRef(filters)
+  const queryRef = useRef(query)
   const { commitResult, isTransitioning } = useResultTransition(setResult)
 
-  const remember = useCallback((key: string, page: AlbumSearchPage) => {
+  const remember = useCallback((key: string, page: AlbumSearchResult) => {
     cache.current.set(key, page)
     if (cache.current.size > MAX_CACHED_PAGES)
       cache.current.delete(cache.current.keys().next().value ?? "")
   }, [])
 
+  const cancelPagination = useCallback(() => {
+    paginationRequest.current?.abort()
+    paginationRequest.current = null
+    loadingMore.current = null
+  }, [])
+
+  const invalidateCriteria = useCallback(
+    (nextCriteria: string) => {
+      if (criteriaRef.current === nextCriteria) return
+      criteriaRef.current = nextCriteria
+      latestRequest.current += 1
+      cancelPagination()
+    },
+    [cancelPagination]
+  )
+
   const setQuery = useCallback(
     (next: string) => {
       const value = next.slice(0, MAX_QUERY_LENGTH)
-      const isSearchable = normalizeQuery(value).length >= MIN_QUERY_LENGTH
-      latestRequest.current += 1
-      paginationRequest.current?.abort()
-      paginationRequest.current = null
-      loadingMore.current = null
+      queryRef.current = value
+      invalidateCriteria(albumSearchCriteriaKey(value, filtersRef.current))
       setRawQuery(value)
       setError(false)
-      setIsSearching(isSearchable)
-      if (isSearchable) return
-
-      if (result) commitResult(null)
     },
-    [commitResult, result]
+    [invalidateCriteria]
   )
 
+  const updateFilters = useCallback(
+    (next: SetStateAction<AlbumSearchFilters>) => {
+      const value = typeof next === "function" ? next(filtersRef.current) : next
+      filtersRef.current = value
+      invalidateCriteria(albumSearchCriteriaKey(queryRef.current, value))
+      setError(false)
+      setFilters(value)
+    },
+    [invalidateCriteria]
+  )
+
+  const clearFilters = useCallback(
+    () => updateFilters(createEmptyAlbumFilters()),
+    [updateFilters]
+  )
+
+  const loadFacets = useCallback(() => {
+    if (facets) return Promise.resolve(facets)
+    if (facetsRequest.current) return facetsRequest.current
+
+    setFacetsError(false)
+    setIsLoadingFacets(true)
+    const request = fetch("/api/albums/filters")
+      .then((response) => {
+        if (!response.ok) throw new Error("Filters could not load")
+        return response.json() as Promise<AlbumFilterFacets>
+      })
+      .then((next) => {
+        setFacets(next)
+        return next
+      })
+      .catch((reason: unknown) => {
+        setFacetsError(true)
+        throw reason
+      })
+      .finally(() => {
+        if (facetsRequest.current === request) facetsRequest.current = null
+        setIsLoadingFacets(false)
+      })
+    facetsRequest.current = request
+    return request
+  }, [facets])
+
   useEffect(() => {
-    const normalized = normalizeQuery(query)
-    if (normalized.length < MIN_QUERY_LENGTH) return
+    const request = ++latestRequest.current
+    cancelPagination()
 
-    const request = latestRequest.current
-    const cached = cache.current.get(`${normalized}:1`)
+    if (!criteria) {
+      const clearTimer = window.setTimeout(() => {
+        if (request !== latestRequest.current) return
+        setIsSearching(false)
+        commitResult(null)
+      })
+      return () => window.clearTimeout(clearTimer)
+    }
+
+    const key = `${criteria}:1`
+    const cached = cache.current.get(key)
     const controller = new AbortController()
-
     const timer = window.setTimeout(() => {
+      setIsSearching(true)
       if (cached) {
         if (request === latestRequest.current) {
           commitResult(cached)
@@ -139,9 +224,9 @@ export function useAlbumSearch() {
         return
       }
 
-      void requestSearchPage(normalized, 1, controller.signal)
+      void requestSearchPage(criteria, 1, controller.signal)
         .then((page) => {
-          remember(`${normalized}:1`, page)
+          remember(key, page)
           if (request === latestRequest.current) commitResult(page)
         })
         .catch((reason: unknown) => {
@@ -157,12 +242,12 @@ export function useAlbumSearch() {
       window.clearTimeout(timer)
       controller.abort()
     }
-  }, [commitResult, query, remember])
+  }, [cancelPagination, commitResult, criteria, remember])
 
   const loadMore = useCallback(async () => {
     if (
       !result ||
-      loadingMore.current === result.query ||
+      loadingMore.current === result.criteria ||
       isSearching ||
       result.page >= result.totalPages
     )
@@ -170,19 +255,40 @@ export function useAlbumSearch() {
 
     const request = latestRequest.current
     const nextPage = result.page + 1
-    const key = `${result.query}:${nextPage}`
+    const key = `${result.criteria}:${nextPage}`
     const controller = new AbortController()
     paginationRequest.current = controller
-    loadingMore.current = result.query
+    loadingMore.current = result.criteria
     setIsSearching(true)
 
     try {
-      const page =
-        cache.current.get(key) ??
-        (await requestSearchPage(result.query, nextPage, controller.signal))
+      let page = cache.current.get(key)
+      if (page && page.version !== result.version) {
+        cache.current.delete(key)
+        page = undefined
+      }
+      page ??= await requestSearchPage(
+        result.criteria,
+        nextPage,
+        controller.signal
+      )
       remember(key, page)
-      if (request !== latestRequest.current || result.query !== page.query)
+      if (
+        request !== latestRequest.current ||
+        result.criteria !== page.criteria
+      )
         return
+
+      if (page.version !== result.version) {
+        const first = await requestSearchPage(
+          result.criteria,
+          1,
+          controller.signal
+        )
+        remember(`${result.criteria}:1`, first)
+        if (request === latestRequest.current) commitResult(first)
+        return
+      }
 
       const albums = new Map(result.albums.map((album) => [album.id, album]))
       for (const album of page.albums) albums.set(album.id, album)
@@ -200,7 +306,7 @@ export function useAlbumSearch() {
       }
       if (request === latestRequest.current) setIsSearching(false)
     }
-  }, [isSearching, remember, result])
+  }, [commitResult, isSearching, remember, result])
 
   useEffect(
     () => () => {
@@ -210,13 +316,40 @@ export function useAlbumSearch() {
     []
   )
 
-  return {
-    error,
-    isSearching,
-    isTransitioning,
-    loadMore,
-    query,
-    result,
-    setQuery,
-  }
+  return useMemo(
+    () => ({
+      activeFilterCount,
+      clearFilters,
+      error,
+      facets,
+      facetsError,
+      filters,
+      isLoadingFacets,
+      isSearching,
+      isTransitioning,
+      loadFacets,
+      loadMore,
+      query,
+      result,
+      setFilters: updateFilters,
+      setQuery,
+    }),
+    [
+      activeFilterCount,
+      clearFilters,
+      error,
+      facets,
+      facetsError,
+      filters,
+      isLoadingFacets,
+      isSearching,
+      isTransitioning,
+      loadFacets,
+      loadMore,
+      query,
+      result,
+      setQuery,
+      updateFilters,
+    ]
+  )
 }

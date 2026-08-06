@@ -147,10 +147,18 @@ export function CatalogBrowser({ initialPage }: CatalogBrowserProps) {
             </Text>
           </header>
           <CatalogSearch
+            activeFilterCount={search.activeFilterCount}
             error={search.error}
+            facets={search.facets}
+            facetsError={search.facetsError}
+            filters={search.filters}
             isDisabled={opened !== null}
+            isLoadingFacets={search.isLoadingFacets}
             isSearching={search.isSearching}
             onChange={search.setQuery}
+            onClearFilters={search.clearFilters}
+            onFilterChange={search.setFilters}
+            onLoadFacets={search.loadFacets}
             query={search.query}
             resultCount={search.result?.total ?? null}
           />
@@ -175,12 +183,12 @@ export function CatalogBrowser({ initialPage }: CatalogBrowserProps) {
               deckCount={deckCount}
               detailVisible={detailVisible || search.isTransitioning}
               openedAlbumId={opened?.album.id ?? null}
-              key={`search:${search.result.query}:${deckCount}`}
+              key={`search:${search.result.criteria}:${deckCount}`}
               onExitInteraction={interruptDetailExit}
               onNeedMore={search.loadMore}
               onOpenAlbum={openAlbum}
               onPrefetchAlbum={(album) => void requestAlbumDetail(album)}
-              searchQuery={search.result.query}
+              searchQuery={search.result.query || "Filtered catalog"}
               searchTransitioning={search.isTransitioning}
               total={search.result.total}
             />

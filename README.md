@@ -14,15 +14,22 @@ its dark palette uses the warm record-shop treatment. The initial mode follows
 the operating system and can be changed with the theme switch.
 
 The centered search bar queries a server-local catalog index after two
-characters and a 280ms pause. It matches titles plus every embedded artist and
-genre taxonomy without making query-time WordPress requests. Browser requests
-remain abortable and latest-query-wins; current results remain visible while
-replacements load. Results retain the same finite three, five, or seven lane
-browser and progressively request later pages near a lane boundary. Clearing
-search restores the archive at its exact prior scroll positions. Search
-reconciliation animates only a pixel-bounded set of focal sleeves, cancels
-cleanly on interruption or resize, and switches immediately for broad result
-sets, reduced motion, or very large rendering surfaces.
+characters and a 280ms pause. Keyword matching is typo-tolerant across titles
+plus every embedded artist and genre taxonomy. Its filter button opens a
+responsive panel for multi-artist, multi-genre, release type, unreleased-at-
+listen, explicit-content, rating, release-date, and listened-date criteria.
+Filters work without keywords; artist and genre options filter instantly in the
+browser from a lightweight facet list while album matching remains server-only.
+Date and rating controls are bounded by values that actually exist in the
+catalog. No search or filter makes a query-time WordPress request.
+
+Browser requests remain abortable and latest-query-wins; current results remain
+visible while replacements load. Results retain the same finite three, five, or
+seven lane browser and progressively request later pages near a lane boundary.
+Clearing search and filters restores the archive at its exact prior scroll
+positions. Search reconciliation animates only a pixel-bounded set of focal
+sleeves, cancels cleanly on interruption or resize, and switches immediately for
+broad result sets, reduced motion, or very large rendering surfaces.
 
 With a mouse, hover a record’s exposed resting edge to preview it and click to
 open its review without leaving the catalog. The preview label fades while the

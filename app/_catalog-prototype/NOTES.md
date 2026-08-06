@@ -29,11 +29,23 @@ remaining ACF-and-taxonomy catalog pages three at a time into a process-local
 index backed by Next's one-hour per-page cache. The browser never receives that
 raw index.
 
-After two normalized characters and a 280ms debounce, search filters titles and
-all artist/genre terms locally, then returns lightweight 50-record result pages.
-Only browser requests are aborted; no query-time request reaches WordPress. The
-archive field remains mounted but hidden so clearing a query restores every
-lane's prior position.
+After two normalized characters and a 280ms debounce, typo-tolerant search
+matches titles and all artist/genre terms, then returns lightweight 50-record
+result pages. The same endpoint accepts filter-only requests with no keyword.
+Filters use exact OR matching within selected artists, genres, and release types,
+then AND those groups with explicit status, rounded rating comparison,
+release/listened date ranges, and whether listening preceded release.
+
+`/api/albums/filters` exposes only sorted artist/genre/release-type labels,
+actual date/rating bounds, and the unreleased count. Those derived browsing
+facets and filter outcomes are intentionally public; raw posts and ACF stay
+server-only. Search responses carry the catalog-index version so pagination
+restarts safely if an hourly index
+refresh lands between pages. Only browser requests are aborted; no query-time
+request reaches WordPress. The archive field remains mounted but hidden so
+clearing all criteria restores every lane's prior position. Compact layouts
+shift the catalog reversibly below the open filter surface; wide layouts leave
+the costly 3D field stationary beneath the opaque panel.
 
 Result changes reconcile only focal sleeves through temporary flat proxies.
 The proxy set is limited by rendered pixel area, interruptions continue from
