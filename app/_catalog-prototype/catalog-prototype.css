@@ -201,6 +201,17 @@
   place-items: center;
 }
 
+.catalog-filter-panel
+  :is(
+    label,
+    legend,
+    [role="radio"],
+    .astryx-text[data-color="secondary"],
+    .catalog-filter-unreleased span
+  ) {
+  color: var(--catalog-ink);
+}
+
 .catalog-filter-panel fieldset {
   min-width: 0;
   margin: 0;
