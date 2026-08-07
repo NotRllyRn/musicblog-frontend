@@ -19,7 +19,7 @@ const nextConfig: NextConfig = {
         ]
       : [],
   },
-  allowedDevOrigins: ["10.17.11.4", "test.callita.day"],
+  allowedDevOrigins: ["10.17.11.4", "test.callita.day", "blogtest.tanningcat.com"],
 }
 
 export default nextConfig
