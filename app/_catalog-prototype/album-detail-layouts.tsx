@@ -112,11 +112,11 @@ function Review({ detail }: DetailLayoutProps) {
           dangerouslySetInnerHTML={{ __html: detail.contentHtml }}
         />
       ) : detail.notes ? (
-        <Text as="p" color="inherit">
+        <Text as="p" className="detail-review-copy" color="inherit">
           {detail.notes}
         </Text>
       ) : (
-        <Text as="p" color="secondary">
+        <Text as="p" className="detail-review-empty" color="secondary">
           No written review.
         </Text>
       )}

@@ -822,7 +822,7 @@ body:has(.deck-record[data-hovered="true"]) .theme-toggle {
 
 .detail-heading > .astryx-link .astryx-text {
   color: var(--spotify-green) !important;
-  font-size: clamp(0.9rem, 0.65vw, 2.4rem);
+  font-size: clamp(1rem, 0.72vw, 2.6rem);
 }
 
 .detail-score {
@@ -893,7 +893,7 @@ body:has(.deck-record[data-hovered="true"]) .theme-toggle {
 
 .detail-dates dt {
   color: var(--detail-muted);
-  font-size: clamp(0.72rem, 0.5vw, 2rem);
+  font-size: clamp(0.78rem, 0.55vw, 2.2rem);
   font-weight: 700;
   letter-spacing: 0.08em;
   text-transform: uppercase;
@@ -901,7 +901,7 @@ body:has(.deck-record[data-hovered="true"]) .theme-toggle {
 
 .detail-dates dd {
   margin: 0;
-  font-size: clamp(1rem, 0.65vw, 2.6rem);
+  font-size: clamp(1.08rem, 0.75vw, 2.8rem);
   font-variant-numeric: tabular-nums;
 }
 
@@ -911,9 +911,13 @@ body:has(.deck-record[data-hovered="true"]) .theme-toggle {
   line-height: 1.65;
 }
 
-.detail-review .astryx-text,
-.detail-review-copy {
+.detail-review .astryx-text {
   font-size: inherit !important;
+}
+
+.detail-review .detail-review-copy {
+  font-size: clamp(1.1rem, 1.35vw, 3.2rem) !important;
+  line-height: 1.65;
 }
 
 .detail-review-copy > :first-child,
@@ -953,7 +957,7 @@ body:has(.deck-record[data-hovered="true"]) .theme-toggle {
 
 .detail-highlight-track .astryx-text,
 .detail-highlights > .astryx-text {
-  font-size: clamp(0.85rem, 0.6vw, 2.2rem) !important;
+  font-size: clamp(0.9rem, 0.65vw, 2.4rem) !important;
 }
 
 .detail-facts {
@@ -964,7 +968,7 @@ body:has(.deck-record[data-hovered="true"]) .theme-toggle {
 .detail-facts dt,
 .detail-facts dd,
 .detail-genre-cloud .astryx-text {
-  font-size: clamp(0.8rem, 0.55vw, 2.3rem) !important;
+  font-size: clamp(0.9rem, 0.65vw, 2.5rem) !important;
 }
 
 .detail-a-hero {
