@@ -6,8 +6,6 @@ import { CheckboxInput } from "@astryxdesign/core/CheckboxInput"
 import { DateInput } from "@astryxdesign/core/DateInput"
 import { Grid } from "@astryxdesign/core/Grid"
 import { HStack } from "@astryxdesign/core/HStack"
-import { Icon } from "@astryxdesign/core/Icon"
-import { IconButton } from "@astryxdesign/core/IconButton"
 import { MultiSelector } from "@astryxdesign/core/MultiSelector"
 import { NumberInput } from "@astryxdesign/core/NumberInput"
 import { Section } from "@astryxdesign/core/Section"
@@ -62,7 +60,7 @@ function DateBoundsFilter({
     return (
       <fieldset className="catalog-filter-date-group">
         <legend className="catalog-filter-legend">{label}</legend>
-        <HStack gap={1}>
+        <Grid columns={2} gap={1}>
           <DateInput
             hasClear
             isLabelHidden
@@ -85,23 +83,18 @@ function DateBoundsFilter({
             size="sm"
             value={asIso(value.end)}
           />
-        </HStack>
+        </Grid>
       </fieldset>
     )
 
   const preventMobileDateTyping = (event: KeyboardEvent<HTMLInputElement>) => {
-    if (
-      event.key.length === 1 ||
-      event.key === "Backspace" ||
-      event.key === "Delete"
-    )
-      event.preventDefault()
+    if (event.key.length === 1) event.preventDefault()
   }
 
   return (
     <fieldset className="catalog-filter-date-group">
       <legend className="catalog-filter-legend">{label}</legend>
-      <HStack align="center" gap={1}>
+      <Grid columns={2} gap={1}>
         <label className="catalog-filter-date-endpoint">
           From
           <input
@@ -134,17 +127,7 @@ function DateBoundsFilter({
             value={value.end ?? ""}
           />
         </label>
-        {(value.start || value.end) && (
-          <IconButton
-            icon={<Icon icon="close" />}
-            label={`Clear ${label.toLowerCase()}`}
-            onClick={() => onChange({ start: null, end: null })}
-            size="sm"
-            tooltip={`Clear ${label.toLowerCase()}`}
-            variant="ghost"
-          />
-        )}
-      </HStack>
+      </Grid>
     </fieldset>
   )
 }
