@@ -18,6 +18,7 @@ import {
 import { Selector } from "@astryxdesign/core/Selector"
 import { Spinner } from "@astryxdesign/core/Spinner"
 import { Text } from "@astryxdesign/core/Text"
+import { useMediaQuery } from "@astryxdesign/core/hooks"
 import type { Dispatch, KeyboardEvent, SetStateAction } from "react"
 
 import type {
@@ -54,20 +55,12 @@ function DateBoundsFilter({
   onChange: (value: AlbumDateBounds) => void
   value: AlbumDateBounds
 }) {
+  const isCompact = useMediaQuery("(max-width: 47.99rem)")
   if (!bounds.start || !bounds.end) return null
 
-  const preventMobileDateTyping = (event: KeyboardEvent<HTMLInputElement>) => {
-    if (
-      event.key.length === 1 ||
-      event.key === "Backspace" ||
-      event.key === "Delete"
-    )
-      event.preventDefault()
-  }
-
-  return (
-    <>
-      <fieldset className="catalog-filter-date-group catalog-filter-date-wide">
+  if (!isCompact)
+    return (
+      <fieldset className="catalog-filter-date-group">
         <legend className="catalog-filter-legend">{label}</legend>
         <HStack gap={1}>
           <DateInput
@@ -94,54 +87,65 @@ function DateBoundsFilter({
           />
         </HStack>
       </fieldset>
-      <fieldset className="catalog-filter-date-group catalog-filter-date-compact">
-        <legend className="catalog-filter-legend">{label}</legend>
-        <HStack align="center" gap={1}>
-          <label className="catalog-filter-date-endpoint">
-            From
-            <input
-              aria-label={`${label} from`}
-              className="catalog-filter-date-input"
-              inputMode="none"
-              max={value.end ?? bounds.end}
-              min={bounds.start}
-              onChange={(event) =>
-                onChange({ ...value, start: event.currentTarget.value || null })
-              }
-              onKeyDown={preventMobileDateTyping}
-              type="date"
-              value={value.start ?? ""}
-            />
-          </label>
-          <label className="catalog-filter-date-endpoint">
-            To
-            <input
-              aria-label={`${label} to`}
-              className="catalog-filter-date-input"
-              inputMode="none"
-              max={bounds.end}
-              min={value.start ?? bounds.start}
-              onChange={(event) =>
-                onChange({ ...value, end: event.currentTarget.value || null })
-              }
-              onKeyDown={preventMobileDateTyping}
-              type="date"
-              value={value.end ?? ""}
-            />
-          </label>
-          {(value.start || value.end) && (
-            <IconButton
-              icon={<Icon icon="close" />}
-              label={`Clear ${label.toLowerCase()}`}
-              onClick={() => onChange({ start: null, end: null })}
-              size="sm"
-              tooltip={`Clear ${label.toLowerCase()}`}
-              variant="ghost"
-            />
-          )}
-        </HStack>
-      </fieldset>
-    </>
+    )
+
+  const preventMobileDateTyping = (event: KeyboardEvent<HTMLInputElement>) => {
+    if (
+      event.key.length === 1 ||
+      event.key === "Backspace" ||
+      event.key === "Delete"
+    )
+      event.preventDefault()
+  }
+
+  return (
+    <fieldset className="catalog-filter-date-group">
+      <legend className="catalog-filter-legend">{label}</legend>
+      <HStack align="center" gap={1}>
+        <label className="catalog-filter-date-endpoint">
+          From
+          <input
+            aria-label={`${label} from`}
+            className="catalog-filter-date-input"
+            inputMode="none"
+            max={value.end ?? bounds.end}
+            min={bounds.start}
+            onChange={(event) =>
+              onChange({ ...value, start: event.currentTarget.value || null })
+            }
+            onKeyDown={preventMobileDateTyping}
+            type="date"
+            value={value.start ?? ""}
+          />
+        </label>
+        <label className="catalog-filter-date-endpoint">
+          To
+          <input
+            aria-label={`${label} to`}
+            className="catalog-filter-date-input"
+            inputMode="none"
+            max={bounds.end}
+            min={value.start ?? bounds.start}
+            onChange={(event) =>
+              onChange({ ...value, end: event.currentTarget.value || null })
+            }
+            onKeyDown={preventMobileDateTyping}
+            type="date"
+            value={value.end ?? ""}
+          />
+        </label>
+        {(value.start || value.end) && (
+          <IconButton
+            icon={<Icon icon="close" />}
+            label={`Clear ${label.toLowerCase()}`}
+            onClick={() => onChange({ start: null, end: null })}
+            size="sm"
+            tooltip={`Clear ${label.toLowerCase()}`}
+            variant="ghost"
+          />
+        )}
+      </HStack>
+    </fieldset>
   )
 }
 

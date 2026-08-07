@@ -232,10 +232,6 @@
   flex: 1;
 }
 
-.catalog-filter-date-compact {
-  display: none;
-}
-
 .catalog-filter-date-endpoint {
   display: grid;
   min-width: 0;
@@ -1337,14 +1333,6 @@ body:has(.deck-record[data-hovered="true"]) .theme-toggle {
 
   .catalog-filter-panel-inner .astryx-section {
     max-height: min(40dvh, 24rem);
-  }
-
-  .catalog-filter-date-wide {
-    display: none;
-  }
-
-  .catalog-filter-date-compact {
-    display: block;
   }
 
   .catalog-filter-group,
