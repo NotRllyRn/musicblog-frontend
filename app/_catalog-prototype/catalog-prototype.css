@@ -604,22 +604,20 @@
   transition: opacity 180ms ease;
 }
 
-.record-deck:has(.deck-record[data-hovered="true"])
+.variant-shell:has(.deck-record[data-hovered="true"])
   .deck-record:not([data-hovered="true"])
   .record-figure::after {
   opacity: 1;
 }
 
-.catalog-header,
-.catalog-search,
-.theme-toggle {
-  transition: filter 180ms ease;
+.variant-shell:has(.deck-record[data-hovered="true"]) .record-field {
+  z-index: 6;
 }
 
-.variant-shell:has(.deck-record[data-hovered="true"]) .catalog-header,
-.variant-shell:has(.deck-record[data-hovered="true"]) .catalog-search,
+.variant-shell:has(.deck-record[data-hovered="true"])
+  :is(.catalog-header, .catalog-search),
 body:has(.deck-record[data-hovered="true"]) .theme-toggle {
-  filter: brightness(0.65);
+  z-index: 4;
 }
 
 .record-figure {
