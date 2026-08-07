@@ -25,6 +25,7 @@ interface CatalogSearchProps {
   onChange: (query: string) => void
   onClearFilters: () => void
   onFilterChange: Dispatch<SetStateAction<AlbumSearchFilters>>
+  onInteract: () => void
   onLoadFacets: () => Promise<AlbumFilterFacets>
   query: string
   resultCount: number | null
@@ -42,6 +43,7 @@ export function CatalogSearch({
   onChange,
   onClearFilters,
   onFilterChange,
+  onInteract,
   onLoadFacets,
   query,
   resultCount,
@@ -99,6 +101,7 @@ export function CatalogSearch({
       data-filters-open={isFiltersOpen || undefined}
       inert={isDisabled ? true : undefined}
       onKeyDownCapture={onKeyDownCapture}
+      onPointerDownCapture={onInteract}
     >
       <section className="catalog-search-controls">
         <TextInput

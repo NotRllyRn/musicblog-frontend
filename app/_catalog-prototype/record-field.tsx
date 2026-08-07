@@ -18,6 +18,7 @@ interface RecordFieldProps {
   onPrefetchAlbum: (album: AlbumPost) => void
   searchQuery: string | null
   searchTransitioning: boolean
+  selectionEpoch: number
   total: number
 }
 
@@ -33,11 +34,13 @@ export function RecordField({
   onPrefetchAlbum,
   searchQuery,
   searchTransitioning,
+  selectionEpoch,
   total,
 }: RecordFieldProps) {
   const [selection, setSelection] = useState<{
     deck: number
     deckCount: DeckCount
+    epoch: number
     visualIndex: number
   } | null>(null)
   const [endState, setEndState] = useState<{
@@ -46,7 +49,10 @@ export function RecordField({
   }>({ deckCount, decks: {} })
   const stacks = Array.from({ length: deckCount }, () => [] as AlbumPost[])
   albums.forEach((album, index) => stacks[index % stacks.length].push(album))
-  const activeSelection = selection?.deckCount === deckCount ? selection : null
+  const activeSelection =
+    selection?.deckCount === deckCount && selection.epoch === selectionEpoch
+      ? selection
+      : null
   const allDecksEnded =
     endState.deckCount === deckCount &&
     stacks.every((_, index) => endState.decks[index])
@@ -90,7 +96,7 @@ export function RecordField({
             setSelection(
               visualIndex === null
                 ? null
-                : { deck: index, deckCount, visualIndex }
+                : { deck: index, deckCount, epoch: selectionEpoch, visualIndex }
             )
           }
           selectionActive={activeSelection !== null}

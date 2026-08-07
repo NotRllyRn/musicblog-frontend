@@ -41,6 +41,7 @@ function useDeckCount() {
 export function CatalogBrowser({ initialPage }: CatalogBrowserProps) {
   const [albums, setAlbums] = useState(initialPage.albums)
   const search = useAlbumSearch()
+  const [selectionEpoch, setSelectionEpoch] = useState(0)
   const [opened, setOpened] = useState<{
     album: AlbumPost
     detail: AlbumDetail | null
@@ -158,6 +159,7 @@ export function CatalogBrowser({ initialPage }: CatalogBrowserProps) {
             onChange={search.setQuery}
             onClearFilters={search.clearFilters}
             onFilterChange={search.setFilters}
+            onInteract={() => setSelectionEpoch((current) => current + 1)}
             onLoadFacets={search.loadFacets}
             query={search.query}
             resultCount={search.result?.total ?? null}
@@ -175,6 +177,7 @@ export function CatalogBrowser({ initialPage }: CatalogBrowserProps) {
             onPrefetchAlbum={(album) => void requestAlbumDetail(album)}
             searchQuery={null}
             searchTransitioning={search.isTransitioning}
+            selectionEpoch={selectionEpoch}
             total={initialPage.total}
           />
           {search.result && (
@@ -190,6 +193,7 @@ export function CatalogBrowser({ initialPage }: CatalogBrowserProps) {
               onPrefetchAlbum={(album) => void requestAlbumDetail(album)}
               searchQuery={search.result.query || "Filtered catalog"}
               searchTransitioning={search.isTransitioning}
+              selectionEpoch={selectionEpoch}
               total={search.result.total}
             />
           )}
