@@ -259,7 +259,9 @@
 .catalog-filter-date-input {
   width: 100%;
   min-width: 0;
+  max-inline-size: 100%;
   min-height: 2rem;
+  appearance: none;
   flex: 1;
   padding-inline: var(--spacing-2);
   border: 0.08rem solid var(--color-border);
@@ -1368,6 +1370,7 @@ body:has(.deck-record[data-hovered="true"]) .theme-toggle {
   .record-field {
     grid-template-columns: repeat(3, minmax(0, 1fr));
     gap: 0.18rem;
+    transform: translateY(max(var(--spacing-3), calc(9rem - 13dvh)));
   }
 
   .loading-deck:nth-child(n + 4),
@@ -1539,6 +1542,10 @@ body:has(.deck-record[data-hovered="true"]) .theme-toggle {
 }
 
 @media (max-width: 47.99rem) and (orientation: landscape) {
+  .record-field {
+    transform: translateY(13rem);
+  }
+
   .variant-shell:has(.catalog-filter-panel[data-open="true"]) .record-field {
     transform: translateY(23rem);
   }

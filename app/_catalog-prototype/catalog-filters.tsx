@@ -94,7 +94,7 @@ function DateBoundsFilter({
   return (
     <fieldset className="catalog-filter-date-group">
       <legend className="catalog-filter-legend">{label}</legend>
-      <Grid columns={2} gap={1}>
+      <Grid columns={2} gap={2}>
         <label className="catalog-filter-date-endpoint">
           From
           <input
