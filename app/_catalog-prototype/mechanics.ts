@@ -1,10 +1,4 @@
-interface RecordVisual {
-  opacity: number
-  transform: string
-}
-
 export const mechanicSettings = {
-  snap: "mandatory" as const,
   step: 72,
   window: 19,
 }
@@ -42,12 +36,12 @@ const responsiveTail = (amount: number) => {
   return `clamp(${minimum}, ${preferred}, ${maximum})`
 }
 
-export function getRecordVisual(
+export function getRecordTransform(
   rawDistance: number,
   visualIndex: number,
   reduceMotion: boolean,
   pull = 0
-): RecordVisual {
+) {
   const distance = reduceMotion ? Math.round(rawDistance) : rawDistance
   const magnitude = Math.abs(distance)
   const direction = Math.sign(distance) || 1
@@ -76,7 +70,7 @@ export function getRecordVisual(
   const rotateZ = mix(mix(-0.6, tilt, focus), 0, pull)
   const scale = mix(0.92, mix(1.092, 1.05, focus), pull)
   const anchor = mix(-72, -50, focus)
-  const transform = [
+  return [
     `translate3d(${responsivePx(x)}, calc(${anchor.toFixed(2)}% + ${firstPercent.toFixed(2)}% + ${responsivePx(firstY)} + ${tailY} + ${pulledY} + ${pullCompensation} - ${focusLift} - ${(pullAmount * pullLift).toFixed(2)}%), ${responsivePx(z)})`,
     `rotateX(${rotateX.toFixed(2)}deg)`,
     "rotateY(0deg)",
@@ -84,6 +78,4 @@ export function getRecordVisual(
     `scaleX(${scale.toFixed(3)})`,
     `scaleY(${scale.toFixed(3)})`,
   ].join(" ")
-
-  return { opacity: 1, transform }
 }

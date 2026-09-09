@@ -25,7 +25,7 @@ import {
   useState,
 } from "react"
 
-import { getRecordVisual, mechanicSettings } from "./mechanics"
+import { getRecordTransform, mechanicSettings } from "./mechanics"
 import type { AlbumPost } from "./types"
 
 interface RecordDeckProps {
@@ -86,15 +86,10 @@ const AnimatedRecord = memo(function AnimatedRecord({
   }, [detailVisible, isDetailSource, isHovered, pullSpring, pullTarget])
 
   const distance = () => visualIndex - position.get()
-  const transform = useTransform(
-    () =>
-      getRecordVisual(distance(), visualIndex, reduceMotion, pull.get())
-        .transform
+  const transform = useTransform(() =>
+    getRecordTransform(distance(), visualIndex, reduceMotion, pull.get())
   )
-  const opacity = useTransform(
-    () => getRecordVisual(distance(), visualIndex, reduceMotion).opacity
-  )
-  const dynamicStyle = { opacity, transform }
+  const dynamicStyle = { transform }
 
   return (
     <motion.li
@@ -141,10 +136,8 @@ const RecordHitZone = memo(function RecordHitZone({
   reduceMotion,
   visualIndex,
 }: RecordHitZoneProps) {
-  const transform = useTransform(
-    () =>
-      getRecordVisual(visualIndex - position.get(), visualIndex, reduceMotion)
-        .transform
+  const transform = useTransform(() =>
+    getRecordTransform(visualIndex - position.get(), visualIndex, reduceMotion)
   )
   const hitStyle = { transform }
 
@@ -225,14 +218,13 @@ export function RecordDeck({
     stiffness: 280,
   })
   const previewPull = reduceMotion ? previewPullTarget : previewPullSpring
-  const previewTransform = useTransform(
-    () =>
-      getRecordVisual(
-        previewVisualIndex - position.get(),
-        previewVisualIndex,
-        reduceMotion,
-        previewPull.get()
-      ).transform
+  const previewTransform = useTransform(() =>
+    getRecordTransform(
+      previewVisualIndex - position.get(),
+      previewVisualIndex,
+      reduceMotion,
+      previewPull.get()
+    )
   )
   const previewStyle = { transform: previewTransform }
 
@@ -571,7 +563,7 @@ export function RecordDeck({
       </AnimatePresence>
 
       <ol
-        className={`record-scroll snap-${settings.snap}`}
+        className="record-scroll"
         aria-hidden="true"
         onScroll={onScroll}
         ref={setScroll}

@@ -539,6 +539,7 @@
   overflow-y: auto;
   overscroll-behavior: contain;
   pointer-events: none;
+  scroll-snap-type: y mandatory;
   scrollbar-width: none;
 }
 
@@ -562,18 +563,6 @@
   opacity: 0;
 }
 
-.snap-mandatory {
-  scroll-snap-type: y mandatory;
-}
-
-.snap-proximity {
-  scroll-snap-type: y proximity;
-}
-
-.snap-none {
-  scroll-snap-type: none;
-}
-
 .deck-record,
 .record-hit-zone {
   position: absolute;
@@ -587,7 +576,7 @@
 
 .deck-record {
   pointer-events: none;
-  will-change: transform, opacity;
+  will-change: transform;
 }
 
 .record-hit-zone {

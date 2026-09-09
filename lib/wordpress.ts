@@ -73,7 +73,6 @@ interface SearchDocument {
   releaseDate: string | null
   releaseTypeKeys: string[]
   releaseTypeLabels: string[]
-  text: string
   title: string
   unreleased: boolean
   words: string[]
@@ -308,7 +307,6 @@ function toSearchDocument(post: WordPressPost, index: number) {
     releaseDate,
     releaseTypeKeys,
     releaseTypeLabels,
-    text,
     title,
     unreleased: Boolean(releaseDate && listenedAt && releaseDate > listenedAt),
     words: [
