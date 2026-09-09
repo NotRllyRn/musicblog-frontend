@@ -26,10 +26,6 @@ interface WordPressMedia {
 interface WordPressTrack {
   title?: string
   highlight?: boolean
-  disc_number?: number | string
-  track_number?: number | string
-  duration_ms?: number | string
-  explicit?: boolean
   spotify_id?: string
 }
 
@@ -51,8 +47,6 @@ interface WordPressAcf {
 
 interface WordPressPost {
   id: number
-  date: string
-  link: string
   status?: string
   password?: string
   title: { rendered: string }
@@ -156,7 +150,7 @@ async function requestPage(page: number) {
   url.searchParams.set("_embed", "wp:featuredmedia,wp:term")
   url.searchParams.set(
     "_fields",
-    "id,date,link,status,password,title,content.protected,acf,_links,_embedded"
+    "id,status,password,title,content.protected,acf,_links,_embedded"
   )
 
   const response = await fetch(url, {
@@ -185,13 +179,13 @@ async function requestPost(id: number) {
   url.searchParams.set("_embed", "wp:featuredmedia,wp:term")
   url.searchParams.set(
     "_fields",
-    "id,date,link,status,password,title,content,acf,_links,_embedded"
+    "id,status,password,title,content,acf,_links,_embedded"
   )
 
   const response = await fetch(url, {
     headers: requestHeaders(),
     next: {
-      revalidate: 3600,
+      revalidate: CATALOG_REVALIDATE_SECONDS,
       tags: ["wordpress-albums", `wordpress-album-${id}`],
     },
     signal: AbortSignal.timeout(15_000),
@@ -203,19 +197,10 @@ async function requestPost(id: number) {
   return (await response.json()) as WordPressPost
 }
 
-function termsFor({
-  post,
-  taxonomy,
-}: {
-  post: WordPressPost
-  taxonomy: string
-}) {
-  const names: string[] = []
-
-  for (const term of post._embedded?.["wp:term"]?.flat() ?? [])
-    if (term.taxonomy === taxonomy) names.push(decodeEntities(term.name))
-
-  return names
+function termsFor(post: WordPressPost, taxonomy: string) {
+  return (post._embedded?.["wp:term"]?.flat() ?? []).flatMap((term) =>
+    term.taxonomy === taxonomy ? [decodeEntities(term.name)] : []
+  )
 }
 
 function isPublicPost(post: WordPressPost) {
@@ -233,17 +218,14 @@ function toAlbum(post: WordPressPost): AlbumPost | null {
 
   const title = decodeEntities(post.title.rendered)
   const artist =
-    termsFor({ post, taxonomy: "artist" })[0] ??
-    termsFor({ post, taxonomy: "post_tag" })[0] ??
+    termsFor(post, "artist")[0] ??
+    termsFor(post, "post_tag")[0] ??
     "Unknown artist"
 
   return {
     id: post.id,
     title,
     artist,
-    genre: termsFor({ post, taxonomy: "genre" })[0] ?? "Album",
-    year: post.date.slice(0, 4),
-    href: post.link,
     imageUrl: media.source_url,
     imageAlt: media.alt_text || `${title} album art`,
   }
@@ -292,16 +274,14 @@ function toSearchDocument(post: WordPressPost, index: number) {
   const album = toAlbum(post)
   if (!album) return null
 
-  const artistTerms = termsFor({ post, taxonomy: "artist" })
+  const artistTerms = termsFor(post, "artist")
   const artistLabels = uniqueTerms(
     artistTerms.length
       ? artistTerms
-      : termsFor({ post, taxonomy: "post_tag" }).slice(0, 1)
+      : termsFor(post, "post_tag").slice(0, 1)
   )
-  const genreLabels = uniqueTerms(termsFor({ post, taxonomy: "genre" }))
-  const releaseTypeLabels = uniqueTerms(
-    termsFor({ post, taxonomy: "release_type" })
-  )
+  const genreLabels = uniqueTerms(termsFor(post, "genre"))
+  const releaseTypeLabels = uniqueTerms(termsFor(post, "release_type"))
   const artistKeys = artistLabels.map(searchable)
   const genreKeys = genreLabels.map(searchable)
   const releaseTypeKeys = releaseTypeLabels.map(searchable)
@@ -638,10 +618,6 @@ function toTrack(track: WordPressTrack): AlbumTrack | null {
   return {
     title: decodeEntities(title),
     highlight: Boolean(track.highlight),
-    discNumber: optionalNumber(track.disc_number) ?? 1,
-    trackNumber: optionalNumber(track.track_number) ?? 0,
-    durationMs: optionalNumber(track.duration_ms),
-    explicit: booleanValue(track.explicit),
     spotifyId: spotifyId && /^[\da-z]+$/i.test(spotifyId) ? spotifyId : null,
   }
 }
@@ -723,8 +699,8 @@ export async function getAlbumDetail(id: number): Promise<AlbumDetail | null> {
     listenedAt: compactDate(acf.music_listened_at),
     rating: rating === null ? null : Math.round(rating),
     favorite: Boolean(acf.music_favorite),
-    genres: termsFor({ post, taxonomy: "genre" }),
-    releaseTypes: termsFor({ post, taxonomy: "release_type" }),
+    genres: termsFor(post, "genre"),
+    releaseTypes: termsFor(post, "release_type"),
     notes: optionalString(acf.music_notes),
     tracks: (acf.music_tracks ?? []).flatMap((track) => {
       const normalized = toTrack(track)

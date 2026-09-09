@@ -44,7 +44,7 @@ const responsiveTail = (amount: number) => {
 
 export function getRecordVisual(
   rawDistance: number,
-  index: number,
+  visualIndex: number,
   reduceMotion: boolean,
   pull = 0
 ): RecordVisual {
@@ -53,7 +53,7 @@ export function getRecordVisual(
   const direction = Math.sign(distance) || 1
   const focus = clamp(magnitude, 0, 1)
   const tail = Math.max(0, magnitude - 1)
-  const tilt = [-2.4, 1.4, -0.8, 2.1][index % 4]
+  const tilt = [-2.4, 1.4, -0.8, 2.1][visualIndex % 4]
   const stackedZ = direction < 0 ? -82 - tail * 9 : -138 + tail * 10
   const pullAmount = pull * focus
   const pullLift = direction < 0 ? 0 : 68

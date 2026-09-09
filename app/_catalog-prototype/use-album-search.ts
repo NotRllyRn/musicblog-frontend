@@ -7,7 +7,6 @@ import {
   type SetStateAction,
   useCallback,
   useEffect,
-  useMemo,
   useRef,
   useState,
 } from "react"
@@ -16,6 +15,7 @@ import {
   albumSearchCriteriaKey,
   countActiveAlbumFilters,
   createEmptyAlbumFilters,
+  MAX_SEARCH_QUERY_LENGTH,
 } from "./search-filters"
 import { startSearchTransition } from "./search-transition"
 import type {
@@ -26,7 +26,6 @@ import type {
 
 const DEBOUNCE_MS = 280
 const MAX_CACHED_PAGES = 40
-const MAX_QUERY_LENGTH = 80
 const MAX_TRANSITION_RECORDS = 20
 
 interface AlbumSearchResult extends AlbumSearchPage {
@@ -146,7 +145,7 @@ export function useAlbumSearch() {
 
   const setQuery = useCallback(
     (next: string) => {
-      const value = next.slice(0, MAX_QUERY_LENGTH)
+      const value = next.slice(0, MAX_SEARCH_QUERY_LENGTH)
       queryRef.current = value
       invalidateCriteria(albumSearchCriteriaKey(value, filtersRef.current))
       setRawQuery(value)
@@ -316,40 +315,21 @@ export function useAlbumSearch() {
     []
   )
 
-  return useMemo(
-    () => ({
-      activeFilterCount,
-      clearFilters,
-      error,
-      facets,
-      facetsError,
-      filters,
-      isLoadingFacets,
-      isSearching,
-      isTransitioning,
-      loadFacets,
-      loadMore,
-      query,
-      result,
-      setFilters: updateFilters,
-      setQuery,
-    }),
-    [
-      activeFilterCount,
-      clearFilters,
-      error,
-      facets,
-      facetsError,
-      filters,
-      isLoadingFacets,
-      isSearching,
-      isTransitioning,
-      loadFacets,
-      loadMore,
-      query,
-      result,
-      setQuery,
-      updateFilters,
-    ]
-  )
+  return {
+    activeFilterCount,
+    clearFilters,
+    error,
+    facets,
+    facetsError,
+    filters,
+    isLoadingFacets,
+    isSearching,
+    isTransitioning,
+    loadFacets,
+    loadMore,
+    query,
+    result,
+    setFilters: updateFilters,
+    setQuery,
+  }
 }

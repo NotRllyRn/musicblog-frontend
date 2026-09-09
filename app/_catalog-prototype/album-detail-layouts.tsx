@@ -116,7 +116,7 @@ function Review({ detail }: DetailLayoutProps) {
           {detail.notes}
         </Text>
       ) : (
-        <Text as="p" className="detail-review-empty" color="secondary">
+        <Text as="p" color="secondary">
           No written review.
         </Text>
       )}
@@ -135,7 +135,6 @@ function Highlights({ detail }: DetailLayoutProps) {
       </Text>
       <Carousel
         aria-label="Highlighted tracks"
-        className="detail-highlight-carousel"
         gap={1}
         hasSnap
         padding={0.5}

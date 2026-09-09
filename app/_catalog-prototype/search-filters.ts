@@ -1,6 +1,7 @@
 import type { AlbumSearchFilters } from "./types"
 
 export const MIN_SEARCH_QUERY_LENGTH = 2
+export const MAX_SEARCH_QUERY_LENGTH = 80
 
 export function createEmptyAlbumFilters(): AlbumSearchFilters {
   return {
@@ -44,21 +45,11 @@ export function normalizeAlbumSearchText(value: string) {
     .trim()
 }
 
-export function effectiveSearchQuery(value: string) {
+function effectiveSearchQuery(value: string) {
   const query = normalizeSearchQuery(value)
   return normalizeAlbumSearchText(query).length >= MIN_SEARCH_QUERY_LENGTH
     ? query
     : ""
-}
-
-export function hasAlbumSearchCriteria(
-  query: string,
-  filters: AlbumSearchFilters
-) {
-  return (
-    effectiveSearchQuery(query).length > 0 ||
-    countActiveAlbumFilters(filters) > 0
-  )
 }
 
 function appendMany(
@@ -72,7 +63,7 @@ function appendMany(
     parameters.append(name, value)
 }
 
-export function albumSearchParameters(
+function albumSearchParameters(
   query: string,
   filters: AlbumSearchFilters,
   page = 1

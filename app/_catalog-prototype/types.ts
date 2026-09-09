@@ -2,9 +2,6 @@ export interface AlbumPost {
   id: number
   title: string
   artist: string
-  genre: string
-  year: string
-  href: string
   imageUrl: string
   imageAlt: string
 }
@@ -12,10 +9,6 @@ export interface AlbumPost {
 export interface AlbumTrack {
   title: string
   highlight: boolean
-  discNumber: number
-  trackNumber: number
-  durationMs: number | null
-  explicit: boolean
   spotifyId: string | null
 }
 

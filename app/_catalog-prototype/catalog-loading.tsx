@@ -10,7 +10,7 @@ const sleeves = Array.from({ length: 9 }, (_, index) => index)
 export function CatalogLoading() {
   return (
     <>
-      <main className="variant-shell loading-shell" aria-busy="true">
+      <main className="variant-shell" aria-busy="true">
         <header className="catalog-header">
           <Heading level={1} color="inherit">
             Tim&apos;s Music Blog

@@ -76,8 +76,6 @@ export function RecordField({
           : `Scrollable album catalog in ${deckCount} groups`
       }
       data-catalog-hidden={isHidden ? true : undefined}
-      data-deck-count={deckCount}
-      data-search-results={searchQuery ? true : undefined}
       inert={detailVisible || isHidden ? true : undefined}
     >
       {stacks.map((records, index) => (

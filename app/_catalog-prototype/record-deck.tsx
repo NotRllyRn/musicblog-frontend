@@ -49,7 +49,6 @@ interface RecordDeckProps {
 
 interface AnimatedRecordProps {
   album?: AlbumPost
-  albumIndex: number
   detailVisible: boolean
   isActive: boolean
   isDetailSource: boolean
@@ -63,7 +62,6 @@ interface AnimatedRecordProps {
 
 const AnimatedRecord = memo(function AnimatedRecord({
   album,
-  albumIndex,
   detailVisible,
   isActive,
   isDetailSource,
@@ -90,19 +88,17 @@ const AnimatedRecord = memo(function AnimatedRecord({
   const distance = () => visualIndex - position.get()
   const transform = useTransform(
     () =>
-      getRecordVisual(distance(), albumIndex, reduceMotion, pull.get())
+      getRecordVisual(distance(), visualIndex, reduceMotion, pull.get())
         .transform
   )
   const opacity = useTransform(
-    () => getRecordVisual(distance(), albumIndex, reduceMotion).opacity
+    () => getRecordVisual(distance(), visualIndex, reduceMotion).opacity
   )
   const dynamicStyle = { opacity, transform }
 
   return (
     <motion.li
       className="deck-record"
-      data-active={isActive || undefined}
-      data-album-index={albumIndex}
       data-hovered={isHovered || undefined}
       data-visual-index={visualIndex}
       style={dynamicStyle}
@@ -111,7 +107,6 @@ const AnimatedRecord = memo(function AnimatedRecord({
         <motion.figure
           className={`record-figure${album ? "" : " record-placeholder"}`}
           data-album-id={album?.id}
-          data-loading={album ? undefined : true}
           data-search-transition={
             album && trackSearchTransition ? `album-${album.id}` : undefined
           }
@@ -136,21 +131,19 @@ const AnimatedRecord = memo(function AnimatedRecord({
 })
 
 interface RecordHitZoneProps {
-  albumIndex: number
   position: MotionValue<number>
   reduceMotion: boolean
   visualIndex: number
 }
 
 const RecordHitZone = memo(function RecordHitZone({
-  albumIndex,
   position,
   reduceMotion,
   visualIndex,
 }: RecordHitZoneProps) {
   const transform = useTransform(
     () =>
-      getRecordVisual(visualIndex - position.get(), albumIndex, reduceMotion)
+      getRecordVisual(visualIndex - position.get(), visualIndex, reduceMotion)
         .transform
   )
   const hitStyle = { transform }
@@ -471,11 +464,7 @@ export function RecordDeck({
   const end = Math.min(totalRecords, activeIndex + recordsBelow + 1)
   const windowed = Array.from({ length: end - start }, (_, offset) => {
     const visualIndex = start + offset
-    return {
-      album: albums[visualIndex],
-      albumIndex: visualIndex,
-      visualIndex,
-    }
+    return { album: albums[visualIndex], visualIndex }
   })
   const hovered =
     interactionVisualIndex !== null &&
@@ -483,7 +472,6 @@ export function RecordDeck({
       ? [
           {
             album: albums[interactionVisualIndex],
-            albumIndex: interactionVisualIndex,
             visualIndex: interactionVisualIndex,
           },
         ]
@@ -515,10 +503,9 @@ export function RecordDeck({
       tabIndex={0}
     >
       <ol className="record-stage" aria-hidden="true">
-        {visible.map(({ album, albumIndex, visualIndex }) => (
+        {visible.map(({ album, visualIndex }) => (
           <AnimatedRecord
             album={album}
-            albumIndex={albumIndex}
             detailVisible={detailVisible}
             isActive={visualIndex === activeIndex}
             isDetailSource={album?.id === openedAlbumId}
@@ -546,10 +533,9 @@ export function RecordDeck({
 
       <ol className="record-hit-stage" aria-hidden="true">
         {visible.map(
-          ({ album, albumIndex, visualIndex }) =>
+          ({ album, visualIndex }) =>
             album && (
               <RecordHitZone
-                albumIndex={albumIndex}
                 key={album.id}
                 position={position}
                 reduceMotion={reduceMotion}

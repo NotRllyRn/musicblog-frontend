@@ -1,6 +1,7 @@
 import {
   countActiveAlbumFilters,
   createEmptyAlbumFilters,
+  MAX_SEARCH_QUERY_LENGTH,
   MIN_SEARCH_QUERY_LENGTH,
   normalizeAlbumSearchText,
   normalizeSearchQuery,
@@ -12,7 +13,6 @@ import type {
 } from "@/app/_catalog-prototype/types"
 
 const MAX_PAGE = 10_000
-const MAX_QUERY_LENGTH = 80
 const MAX_SELECTED_VALUES = 50
 const MAX_TOTAL_SELECTED_VALUES = 75
 const MAX_TOTAL_SELECTED_LENGTH = 6_000
@@ -57,7 +57,7 @@ export function parseAlbumSearchParameters(parameters: URLSearchParams) {
   const searchableQuery = normalizeAlbumSearchText(query)
   if (
     (query.length > 0 && searchableQuery.length < MIN_SEARCH_QUERY_LENGTH) ||
-    query.length > MAX_QUERY_LENGTH ||
+    query.length > MAX_SEARCH_QUERY_LENGTH ||
     !Number.isSafeInteger(requestedPage) ||
     requestedPage < 1 ||
     requestedPage > MAX_PAGE
