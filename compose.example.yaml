@@ -1,0 +1,19 @@
+services:
+  website:
+    build:
+      context: .
+      args:
+        WORDPRESS_BASE_URL: ${WORDPRESS_BASE_URL:?Set WORDPRESS_BASE_URL in .env}
+      secrets:
+        - wordpress_env
+    env_file: .env
+    environment:
+      HOSTNAME: 0.0.0.0
+      PORT: "3000"
+    ports:
+      - "${MUSICBLOG_PORT:-3000}:3000"
+    restart: unless-stopped
+
+secrets:
+  wordpress_env:
+    file: .env

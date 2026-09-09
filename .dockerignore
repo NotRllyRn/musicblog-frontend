@@ -1,0 +1,12 @@
+.git
+.next
+node_modules
+.env*
+!.env.example
+.pi-subagents
+issues
+screenshots
+*.md
+tsconfig.tsbuildinfo
+Dockerfile*
+compose*.yaml

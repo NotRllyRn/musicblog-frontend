@@ -5,6 +5,8 @@ const wordpressUrl = process.env.WORDPRESS_BASE_URL
   : null
 
 const nextConfig: NextConfig = {
+  output:
+    process.env.NEXT_OUTPUT_MODE === "standalone" ? "standalone" : undefined,
   turbopack: { root: process.cwd() },
   images: {
     dangerouslyAllowLocalIP: true,
@@ -19,7 +21,11 @@ const nextConfig: NextConfig = {
         ]
       : [],
   },
-  allowedDevOrigins: ["10.17.11.4", "test.callita.day", "blogtest.tanningcat.com"],
+  allowedDevOrigins: [
+    "10.17.11.4",
+    "test.callita.day",
+    "blogtest.tanningcat.com",
+  ],
 }
 
 export default nextConfig

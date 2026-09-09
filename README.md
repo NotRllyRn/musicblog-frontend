@@ -2,11 +2,34 @@
 
 A responsive record-shop browser for the music blog’s album archive.
 
+## Local development
+
 ```bash
+cp .env.example .env
+pnpm install
 pnpm dev
 ```
 
-Open `http://localhost:3000/`. The catalog uses three groups on phones, five at
+Open `http://localhost:3000/`.
+
+## Docker
+
+```bash
+cp .env.example .env
+cp compose.example.yaml compose.yaml
+# Add the WordPress URL and credentials to .env.
+docker compose up --build -d
+```
+
+Open `http://localhost:3000/`; set `MUSICBLOG_PORT` in `.env` to use another
+host port. The WordPress server must be reachable while the image builds. Its
+origin is included in the image-optimization configuration, so rebuild the image
+when that origin changes. Compose supplies `.env` as a BuildKit secret, keeping
+WordPress credentials out of image layers.
+
+## Catalog behavior
+
+The catalog uses three groups on phones, five at
 medium widths, and seven on desktop. Desktop lanes and their vertical geometry
 scale with the viewport so 1080p and 4K displays keep the same composition. Its
 light palette follows the quiet listening-index style;
