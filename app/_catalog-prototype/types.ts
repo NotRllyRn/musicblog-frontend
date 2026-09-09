@@ -38,6 +38,8 @@ export interface AlbumPage {
   totalPages: number
 }
 
+export type DetailVariant = "A" | "B" | "C" | "D" | "E"
+
 export type AlbumExplicitFilter = "any" | "clean" | "explicit"
 export type AlbumRatingOperator = "eq" | "gte" | "lte"
 

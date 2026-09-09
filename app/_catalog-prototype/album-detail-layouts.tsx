@@ -8,9 +8,7 @@ import { Text } from "@astryxdesign/core/Text"
 import { VStack } from "@astryxdesign/core/VStack"
 
 import { DetailPrototypeSwitcher } from "./detail-prototype-switcher"
-import type { AlbumDetail } from "./types"
-
-export type DetailVariant = "A" | "B" | "C" | "D" | "E"
+import type { AlbumDetail, DetailVariant } from "./types"
 
 interface DetailLayoutProps {
   detail: AlbumDetail

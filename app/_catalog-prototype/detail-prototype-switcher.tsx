@@ -6,7 +6,7 @@ import { Text } from "@astryxdesign/core/Text"
 import { usePathname, useSearchParams } from "next/navigation"
 import { type ReactNode, useCallback, useEffect } from "react"
 
-import type { DetailVariant } from "./album-detail-layouts"
+import type { DetailVariant } from "./types"
 
 const definitions: { key: DetailVariant; name: string }[] = [
   { key: "A", name: "Editorial stack" },
