@@ -276,9 +276,7 @@ function toSearchDocument(post: WordPressPost, index: number) {
 
   const artistTerms = termsFor(post, "artist")
   const artistLabels = uniqueTerms(
-    artistTerms.length
-      ? artistTerms
-      : termsFor(post, "post_tag").slice(0, 1)
+    artistTerms.length ? artistTerms : termsFor(post, "post_tag").slice(0, 1)
   )
   const genreLabels = uniqueTerms(termsFor(post, "genre"))
   const releaseTypeLabels = uniqueTerms(termsFor(post, "release_type"))

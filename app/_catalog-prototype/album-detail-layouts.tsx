@@ -108,7 +108,7 @@ function Review({ detail }: DetailLayoutProps) {
       {detail.contentHtml ? (
         <section
           className="detail-review-copy"
-          // pi-lens-ignore: typescript.react.security.audit.react-dangerouslysetinnerhtml.react-dangerouslysetinnerhtml
+          // Sanitized by sanitizePostContent before reaching the client.
           dangerouslySetInnerHTML={{ __html: detail.contentHtml }}
         />
       ) : detail.notes ? (
@@ -133,12 +133,7 @@ function Highlights({ detail }: DetailLayoutProps) {
       <Text type="label" weight="semibold" color="inherit">
         Highlights
       </Text>
-      <Carousel
-        aria-label="Highlighted tracks"
-        gap={1}
-        hasSnap
-        padding={0.5}
-      >
+      <Carousel aria-label="Highlighted tracks" gap={1} hasSnap padding={0.5}>
         {highlights.map((track) => (
           <article
             className="detail-highlight-track"
