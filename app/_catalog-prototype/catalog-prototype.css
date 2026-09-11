@@ -751,16 +751,40 @@ body:has(.deck-record[data-hovered="true"]) .theme-toggle {
   max-width: 100%;
   aspect-ratio: 1;
   margin: 0;
-  overflow: hidden;
-  border: 0.12rem solid var(--detail-border);
-  border-radius: var(--record-radius);
-  background: var(--catalog-paper);
+  overflow: visible;
+  border: 0;
+  background: transparent;
+  perspective: max(48rem, 48vw);
   pointer-events: auto;
   transform: rotateX(0deg) rotateZ(0deg);
 }
 
+.album-cover-tilt {
+  position: absolute;
+  inset: 0;
+  display: block;
+  overflow: hidden;
+  border: 0.12rem solid var(--detail-border);
+  border-radius: var(--record-radius);
+  background: var(--catalog-paper);
+  box-shadow: 0 1.5rem 5rem rgb(0 0 0 / 24%);
+  transform-style: preserve-3d;
+  user-select: none;
+  will-change: transform;
+}
+
 .album-detail-cover img {
   object-fit: cover;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .album-cover-tilt {
+    cursor: grab;
+  }
+
+  .album-cover-tilt:active {
+    cursor: grabbing;
+  }
 }
 
 .album-detail-information {

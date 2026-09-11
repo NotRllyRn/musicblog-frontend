@@ -14,6 +14,7 @@ import {
   useState,
 } from "react"
 
+import { AlbumCoverTilt } from "./album-cover-tilt"
 import { AlbumDetailLayouts } from "./album-detail-layouts"
 import type { AlbumDetail, AlbumPost } from "./types"
 
@@ -154,13 +155,16 @@ export function AlbumDetailOverlay({
             layoutId={`album-cover-${album.id}`}
             transition={transition}
           >
-            <Image
-              alt={album.imageAlt}
-              fill
-              loading="eager"
-              sizes="(max-width: 47.99rem) 82vw, 640px"
-              src={album.imageUrl}
-            />
+            <AlbumCoverTilt reduceMotion={reduceMotion}>
+              <Image
+                alt={album.imageAlt}
+                draggable={false}
+                fill
+                loading="eager"
+                sizes="(max-width: 47.99rem) 82vw, 640px"
+                src={album.imageUrl}
+              />
+            </AlbumCoverTilt>
           </motion.figure>
         </motion.section>
 
