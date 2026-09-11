@@ -13,11 +13,13 @@ SETUP (once, in your app entry e.g. main.tsx) — without these, components rend
   import "@astryxdesign/core/astryx.css";
 
 WORKFLOW — discover, don't guess. Before writing UI:
+
 1. `astryx build "<idea>"` — START HERE: returns a kit (closest [page] + [block]s + [component]s). No args = full playbook.
 2. `astryx template <name> [--skeleton]` — scaffold the [page]/[block]s it named, or study their layout. Templates are reference code.
 3. `astryx component <Name>` — props + examples for every component you use.
 
 RULES:
+
 - No <div> — components do all layout/spacing. Full page → AppShell; sidebar nav → SideNav.
 - Frame first: pick the shell (AppShell / Layout+LayoutPanel) and budget regions in px BEFORE writing content (`astryx docs layout`).
 - Dense data = rows (Table, List/Item) edge-to-edge — never Card-wrapped list items. Card = dashboard widgets, galleries, settings groups only.

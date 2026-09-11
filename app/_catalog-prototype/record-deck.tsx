@@ -549,7 +549,11 @@ export function RecordDeck({
               className="record-preview-positioner"
               style={previewStyle}
             >
-              <aside className="record-preview" data-album-id={previewAlbum.id}>
+              <aside
+                className="record-preview"
+                data-album-id={previewAlbum.id}
+                data-visual-index={previewVisualIndex}
+              >
                 <Text type="label" color="inherit" maxLines={2}>
                   {previewAlbum.title}
                 </Text>

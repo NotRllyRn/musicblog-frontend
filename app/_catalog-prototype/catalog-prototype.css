@@ -684,7 +684,7 @@ body:has(.deck-record[data-hovered="true"]) .theme-toggle {
   background: color-mix(in oklch, var(--catalog-paper) 78%, transparent);
   box-shadow: 0 0.6rem 1.4rem oklch(0.03 0.01 255 / 0.22);
   color: var(--catalog-ink);
-  pointer-events: none;
+  pointer-events: auto;
   transform: translateZ(0.06rem);
 }
 
