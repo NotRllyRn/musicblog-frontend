@@ -25,6 +25,7 @@ import {
   useState,
 } from "react"
 
+import { requestAlbumTiltPermission } from "./album-cover-tilt"
 import { getRecordTransform, mechanicSettings } from "./mechanics"
 import type { AlbumPost } from "./types"
 
@@ -322,6 +323,7 @@ export function RecordDeck({
 
   const openAlbum = (album: AlbumPost) => {
     if (!deck.current) return
+    void requestAlbumTiltPermission()
     const invoker = deck.current
     if (openFrame.current !== null) cancelAnimationFrame(openFrame.current)
     openFrame.current = requestAnimationFrame(() => {

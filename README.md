@@ -57,8 +57,12 @@ broad result sets, reduced motion, or very large rendering surfaces.
 With a mouse, hover a record’s exposed resting edge to preview it and click to
 open its review without leaving the catalog. The preview label fades while the
 sleeve flies into a flat presentation beside a vertically centered,
-content-sized review panel. On touch screens, tap once to preview and prefetch,
-then tap the same sleeve again to open its review. At compact widths the sleeve
+content-sized review panel. Drag the detail sleeve with a mouse or pen to tilt it
+in 3D. On touch screens, tap once to preview and prefetch, then tap the same
+sleeve again to open its review; supported phones tilt the sleeve from device
+orientation. iOS requests motion access from that opening tap, and sensor motion
+requires HTTPS. Unsupported, denied, or reduced-motion clients remain flat. At
+compact widths the sleeve
 centers above an equally wide review panel, and the overlay scrolls as one
 continuous page. Crossing the compact breakpoint while details are open fades
 smoothly between arrangements while the catalog keeps its responsive three,
