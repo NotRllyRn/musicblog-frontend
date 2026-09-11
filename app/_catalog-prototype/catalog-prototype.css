@@ -756,6 +756,7 @@ body:has(.deck-record[data-hovered="true"]) .theme-toggle {
   background: transparent;
   perspective: max(48rem, 48vw);
   pointer-events: auto;
+  touch-action: none;
   transform: rotateX(0deg) rotateZ(0deg);
 }
 
@@ -775,16 +776,6 @@ body:has(.deck-record[data-hovered="true"]) .theme-toggle {
 
 .album-detail-cover img {
   object-fit: cover;
-}
-
-@media (hover: hover) and (pointer: fine) {
-  .album-cover-tilt {
-    cursor: grab;
-  }
-
-  .album-cover-tilt:active {
-    cursor: grabbing;
-  }
 }
 
 .album-detail-information {
@@ -1608,6 +1599,10 @@ body:has(.deck-record[data-hovered="true"]) .theme-toggle {
   .record-field {
     animation: none;
     transition: none;
+  }
+
+  .album-detail-cover {
+    touch-action: pan-y;
   }
 
   .album-cover-tilt {

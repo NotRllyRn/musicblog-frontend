@@ -57,11 +57,13 @@ broad result sets, reduced motion, or very large rendering surfaces.
 With a mouse, hover a record’s exposed resting edge to preview it and click to
 open its review without leaving the catalog. The preview label fades while the
 sleeve flies into a flat presentation beside a vertically centered,
-content-sized review panel. Drag the detail sleeve with a mouse or pen to tilt it
-in 3D. On touch screens, tap once to preview and prefetch, then tap the same
-sleeve again to open its review; supported phones tilt the sleeve from device
+content-sized review panel. Moving a mouse or pen over the detail sleeve tilts
+it in 3D. On touch screens, tap once to preview and prefetch, then tap the same
+sleeve again to open its review; dragging directly on the detail sleeve tilts it
+without scrolling, while supported phones can also tilt it from device
 orientation. iOS requests motion access from that opening tap, and sensor motion
-requires HTTPS. Unsupported, denied, or reduced-motion clients remain flat. At
+requires HTTPS. Denied and unsupported clients retain touch dragging, while
+reduced-motion clients remain flat. At
 compact widths the sleeve
 centers above an equally wide review panel, and the overlay scrolls as one
 continuous page. Crossing the compact breakpoint while details are open fades

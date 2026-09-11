@@ -14,7 +14,7 @@ import {
   useState,
 } from "react"
 
-import { AlbumCoverTilt } from "./album-cover-tilt"
+import { useAlbumCoverTilt } from "./album-cover-tilt"
 import { AlbumDetailLayouts } from "./album-detail-layouts"
 import type { AlbumDetail, AlbumPost } from "./types"
 
@@ -36,6 +36,7 @@ export function AlbumDetailOverlay({
   const overlay = useRef<HTMLElement>(null)
   const isCompact = useMediaQuery("(max-width: 47.99rem)")
   const reduceMotion = Boolean(useReducedMotion())
+  const coverTilt = useAlbumCoverTilt(reduceMotion)
 
   useEffect(() => {
     let active = true
@@ -154,8 +155,12 @@ export function AlbumDetailOverlay({
             layoutCrossfade={false}
             layoutId={`album-cover-${album.id}`}
             transition={transition}
+            {...coverTilt.handlers}
           >
-            <AlbumCoverTilt reduceMotion={reduceMotion}>
+            <motion.picture
+              className="album-cover-tilt"
+              style={coverTilt.style}
+            >
               <Image
                 alt={album.imageAlt}
                 draggable={false}
@@ -164,7 +169,7 @@ export function AlbumDetailOverlay({
                 sizes="(max-width: 47.99rem) 82vw, 640px"
                 src={album.imageUrl}
               />
-            </AlbumCoverTilt>
+            </motion.picture>
           </motion.figure>
         </motion.section>
 

@@ -69,9 +69,10 @@ dimmed in the background. WordPress is strictly read-only from this frontend.
 - Detail activation fades the preview label and flies the selected sleeve into
   a flat presentation. Wide screens place a content-sized review on the right;
   compact screens center an equally wide sleeve and panel vertically in one
-  scrollable overlay. Mouse and pen dragging tilt the detail sleeve in 3D;
-  supported HTTPS mobile browsers use device orientation after any required
-  permission, with a static reduced-motion and unsupported-device fallback.
+  scrollable overlay. Mouse and pen hover tilt the detail sleeve in 3D; touch
+  dragging provides the same effect without scrolling the page. Supported HTTPS
+  mobile browsers additionally use device orientation after any required
+  permission, while reduced-motion clients remain flat.
 - Live resizing crossfades between wide and compact detail arrangements while
   the catalog independently retains its responsive three, five, or seven lanes.
 - Empty backdrop space and Escape reverse the detail transition; catalog hover

@@ -2,19 +2,13 @@
 
 import { useMediaQuery } from "@astryxdesign/core"
 import {
-  motion,
   type MotionStyle,
   type MotionValue,
   useIsPresent,
   useSpring,
 } from "motion/react"
-import type { PointerEvent, ReactNode, RefObject } from "react"
+import type { PointerEvent, RefObject } from "react"
 import { useEffect, useRef } from "react"
-
-interface AlbumCoverTiltProps {
-  children: ReactNode
-  reduceMotion: boolean
-}
 
 const MAX_TILT = 12
 const SENSOR_RANGE = 18
@@ -78,7 +72,7 @@ function useOrientationTilt(
   enabled: boolean,
   rotateX: MotionValue<number>,
   rotateY: MotionValue<number>,
-  draggingRef: RefObject<boolean>,
+  pointerActiveRef: RefObject<boolean>,
   recalibrateRef: RefObject<() => void>
 ) {
   useEffect(() => {
@@ -101,7 +95,7 @@ function useOrientationTilt(
     }
     const applyOrientation = () => {
       frame = null
-      if (!latest || !baseline || draggingRef.current) return
+      if (!latest || !baseline || pointerActiveRef.current) return
       const tilt = (delta: number) =>
         (clamp(delta, SENSOR_RANGE) / SENSOR_RANGE) * MAX_TILT
       rotateX.set(-tilt(latest.y - baseline.y))
@@ -111,7 +105,7 @@ function useOrientationTilt(
     const onOrientation = (event: DeviceOrientationEvent) => {
       if (
         !active ||
-        draggingRef.current ||
+        pointerActiveRef.current ||
         event.beta === null ||
         event.gamma === null ||
         !Number.isFinite(event.beta) ||
@@ -155,14 +149,11 @@ function useOrientationTilt(
       document.removeEventListener("visibilitychange", onVisibilityChange)
       resetOrientation()
     }
-  }, [draggingRef, enabled, recalibrateRef, rotateX, rotateY])
+  }, [enabled, pointerActiveRef, recalibrateRef, rotateX, rotateY])
 }
 
-export function AlbumCoverTilt({
-  children,
-  reduceMotion,
-}: AlbumCoverTiltProps) {
-  const draggingRef = useRef(false)
+export function useAlbumCoverTilt(reduceMotion: boolean) {
+  const pointerActiveRef = useRef(false)
   const recalibrateRef = useRef<() => void>(() => undefined)
   const isPresent = useIsPresent()
   const prefersReducedMotion = useMediaQuery("(prefers-reduced-motion: reduce)")
@@ -172,7 +163,7 @@ export function AlbumCoverTilt({
   const tiltStyle: MotionStyle = { rotateX, rotateY }
 
   const reset = () => {
-    draggingRef.current = false
+    pointerActiveRef.current = false
     recalibrateRef.current()
     rotateX.set(0)
     rotateY.set(0)
@@ -182,13 +173,13 @@ export function AlbumCoverTilt({
     isPresent && !motionDisabled,
     rotateX,
     rotateY,
-    draggingRef,
+    pointerActiveRef,
     recalibrateRef
   )
 
   useEffect(() => {
     if (isPresent && !motionDisabled) return
-    draggingRef.current = false
+    pointerActiveRef.current = false
     recalibrateRef.current()
     if (motionDisabled) {
       rotateX.jump(0)
@@ -200,37 +191,44 @@ export function AlbumCoverTilt({
   }, [isPresent, motionDisabled, recalibrateRef, rotateX, rotateY])
 
   const onPointerMove = (event: PointerEvent<HTMLElement>) => {
-    if (!draggingRef.current || motionDisabled || !isPresent) return
-    const rect = event.currentTarget.parentElement?.getBoundingClientRect()
-    if (!rect) return
+    if (
+      motionDisabled ||
+      !isPresent ||
+      (event.pointerType === "touch" && !pointerActiveRef.current)
+    )
+      return
+    pointerActiveRef.current = true
+    const rect = event.currentTarget.getBoundingClientRect()
     const x = clamp((2 * (event.clientX - rect.left)) / rect.width - 1)
     const y = clamp((2 * (event.clientY - rect.top)) / rect.height - 1)
     rotateX.set(-y * MAX_TILT)
     rotateY.set(x * MAX_TILT)
   }
 
-  return (
-    <motion.picture
-      className="album-cover-tilt"
-      onLostPointerCapture={reset}
-      onPointerCancel={reset}
-      onPointerDown={(event) => {
+  return {
+    style: tiltStyle,
+    handlers: {
+      onLostPointerCapture: reset,
+      onPointerCancel: reset,
+      onPointerDown: (event: PointerEvent<HTMLElement>) => {
         if (
+          event.pointerType !== "touch" ||
           !isPresent ||
           motionDisabled ||
-          event.button !== 0 ||
-          event.pointerType === "touch"
+          event.button !== 0
         )
           return
-        draggingRef.current = true
+        pointerActiveRef.current = true
         event.currentTarget.setPointerCapture(event.pointerId)
         onPointerMove(event)
-      }}
-      onPointerMove={onPointerMove}
-      onPointerUp={reset}
-      style={tiltStyle}
-    >
-      {children}
-    </motion.picture>
-  )
+      },
+      onPointerLeave: (event: PointerEvent<HTMLElement>) => {
+        if (event.pointerType !== "touch") reset()
+      },
+      onPointerMove,
+      onPointerUp: (event: PointerEvent<HTMLElement>) => {
+        if (event.pointerType === "touch") reset()
+      },
+    },
+  }
 }
