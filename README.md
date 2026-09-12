@@ -55,8 +55,9 @@ sleeves, cancels cleanly on interruption or resize, and switches immediately for
 broad result sets, reduced motion, or very large rendering surfaces.
 
 With a mouse, hover a record’s exposed resting edge to preview it and click to
-open its review without leaving the catalog. The preview label fades while the
-sleeve flies into a flat presentation beside a vertically centered,
+open its review without leaving the catalog. Outer-lane previews move slightly
+toward the center so their sleeve and label remain fully visible. The preview
+label fades while the sleeve flies into a flat presentation beside a vertically centered,
 content-sized review panel. Moving a mouse or pen over the detail sleeve tilts
 it in 3D. On touch screens, tap once to preview and prefetch, then tap the same
 sleeve again to open its review; dragging directly on the detail sleeve tilts it

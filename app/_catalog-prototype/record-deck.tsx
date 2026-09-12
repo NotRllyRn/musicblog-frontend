@@ -32,6 +32,7 @@ import type { AlbumPost } from "./types"
 interface RecordDeckProps {
   albums: AlbumPost[]
   detailVisible: boolean
+  edgeDirection: number
   index: number
   openedAlbumId: number | null
   onEndChange: (index: number, ended: boolean) => void
@@ -51,6 +52,7 @@ interface RecordDeckProps {
 interface AnimatedRecordProps {
   album?: AlbumPost
   detailVisible: boolean
+  edgeDirection: number
   isActive: boolean
   isDetailSource: boolean
   isHovered: boolean
@@ -64,6 +66,7 @@ interface AnimatedRecordProps {
 const AnimatedRecord = memo(function AnimatedRecord({
   album,
   detailVisible,
+  edgeDirection,
   isActive,
   isDetailSource,
   isHovered,
@@ -88,7 +91,10 @@ const AnimatedRecord = memo(function AnimatedRecord({
 
   const distance = () => visualIndex - position.get()
   const transform = useTransform(() =>
-    getRecordTransform(distance(), visualIndex, reduceMotion, pull.get())
+    getRecordTransform(distance(), visualIndex, reduceMotion, {
+      edgeDirection,
+      pull: pull.get(),
+    })
   )
   const dynamicStyle = { transform }
 
@@ -154,6 +160,7 @@ const RecordHitZone = memo(function RecordHitZone({
 export function RecordDeck({
   albums,
   detailVisible,
+  edgeDirection,
   index,
   openedAlbumId,
   onEndChange,
@@ -224,7 +231,7 @@ export function RecordDeck({
       previewVisualIndex - position.get(),
       previewVisualIndex,
       reduceMotion,
-      previewPull.get()
+      { edgeDirection, pull: previewPull.get() }
     )
   )
   const previewStyle = { transform: previewTransform }
@@ -501,6 +508,7 @@ export function RecordDeck({
           <AnimatedRecord
             album={album}
             detailVisible={detailVisible}
+            edgeDirection={edgeDirection}
             isActive={visualIndex === activeIndex}
             isDetailSource={album?.id === openedAlbumId}
             isHovered={visualIndex === interactionVisualIndex}

@@ -36,11 +36,16 @@ const responsiveTail = (amount: number) => {
   return `clamp(${minimum}, ${preferred}, ${maximum})`
 }
 
+interface RecordTransformOptions {
+  edgeDirection?: number
+  pull?: number
+}
+
 export function getRecordTransform(
   rawDistance: number,
   visualIndex: number,
   reduceMotion: boolean,
-  pull = 0
+  { edgeDirection = 0, pull = 0 }: RecordTransformOptions = {}
 ) {
   const distance = reduceMotion ? Math.round(rawDistance) : rawDistance
   const magnitude = Math.abs(distance)
@@ -52,7 +57,7 @@ export function getRecordTransform(
   const pullAmount = pull * focus
   const pullLift = direction < 0 ? 0 : 68
   const baseAmount = direction < 0 ? 1 - pullAmount : 1
-  const x = 0
+  const x = edgeDirection * pull * 14
   const firstPercent = direction > 0 ? 46 * focus : 0
   const firstY = direction < 0 ? -124 * focus * baseAmount : 24 * focus
   const tailY = responsiveTail(direction * tail * baseAmount)
@@ -71,7 +76,7 @@ export function getRecordTransform(
   const scale = mix(0.92, mix(1.092, 1.05, focus), pull)
   const anchor = mix(-72, -50, focus)
   return [
-    `translate3d(${responsivePx(x)}, calc(${anchor.toFixed(2)}% + ${firstPercent.toFixed(2)}% + ${responsivePx(firstY)} + ${tailY} + ${pulledY} + ${pullCompensation} - ${focusLift} - ${(pullAmount * pullLift).toFixed(2)}%), ${responsivePx(z)})`,
+    `translate3d(${x.toFixed(2)}%, calc(${anchor.toFixed(2)}% + ${firstPercent.toFixed(2)}% + ${responsivePx(firstY)} + ${tailY} + ${pulledY} + ${pullCompensation} - ${focusLift} - ${(pullAmount * pullLift).toFixed(2)}%), ${responsivePx(z)})`,
     `rotateX(${rotateX.toFixed(2)}deg)`,
     "rotateY(0deg)",
     `rotateZ(${rotateZ.toFixed(2)}deg)`,

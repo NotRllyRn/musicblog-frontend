@@ -41,7 +41,8 @@ dimmed in the background. WordPress is strictly read-only from this frontend.
   surrounding records collapse into depth.
 - Reaching the final album in every lane reveals the floating end-of-catalog text.
 - Mouse users preview from stationary exposed-sleeve hit regions, so the hover
-  remains stable while the selected sleeve moves.
+  remains stable while the selected sleeve moves. The two outer lanes pull
+  previews slightly inward to keep their sleeves and labels fully visible.
 - Touch users have one global selection: tap once to preview and prefetch, tap
   that sleeve again to open its in-catalog review, or tap anywhere else to
   dismiss it.

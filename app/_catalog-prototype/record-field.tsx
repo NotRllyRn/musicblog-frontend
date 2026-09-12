@@ -82,6 +82,7 @@ export function RecordField({
         <RecordDeck
           albums={records}
           detailVisible={detailVisible}
+          edgeDirection={Number(index === 0) - Number(index === deckCount - 1)}
           index={index}
           key={index}
           openedAlbumId={openedAlbumId}
