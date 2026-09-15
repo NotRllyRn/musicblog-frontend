@@ -75,8 +75,9 @@ starts. Starting another catalog scroll dismisses a preview. Reaching the last
 album in every lane reveals the end-of-catalog message. WordPress access is
 server-only and read-only.
 
-The first 100 albums and WordPress's authoritative total are cached for one
-hour and render without waiting for the rest of the archive. Server startup then
+The first 100 albums and WordPress's authoritative total are cached for 24 hours
+between full reconciliations and render without waiting for the rest of the
+archive. Server startup then
 warms all remaining 100-post pages, including their ACF data and embedded
 artist/genre terms, with three requests at a time. Raw metadata remains
 server-only; the browser still receives lightweight album records. Every lane
@@ -84,10 +85,31 @@ reserves its finite length from the total, so readers can keep scrolling through
 placeholders while warmup finishes. WordPress's original artwork passes through
 responsive Next Image optimization, and an immediate vinyl shell reserves the
 layout while the initial data hydrates.
-Review bodies and track lists use the cached `/api/albums/[id]` endpoint. A
+Review bodies and track lists use the `/api/albums/[slug]` endpoint. A
 300ms desktop hover or the first touch selection starts prefetching, while a
 compact loading status remains available when activation wins that race.
 Allowed editorial HTML is sanitized on the server.
+
+### Publishing webhook
+
+After WordPress confirms an album publish, update, or deletion, the publishing
+service can update the running catalog without a full crawl:
+
+```bash
+curl -X POST http://localhost:3000/api/wordpress/webhook \
+  -H "Authorization: Bearer $WORDPRESS_WEBHOOK_SECRET" \
+  -H "Content-Type: application/json" \
+  -d '{"event":"published","postId":123}'
+```
+
+`published` and `updated` fetch only the specified post directly from WordPress;
+`deleted` removes it without a WordPress request. The endpoint waits until the
+in-memory pages, search index, totals, and filter facets are replaced atomically.
+Repeated deliveries are safe. Set the same long, random
+`WORDPRESS_WEBHOOK_SECRET` in this service and the caller, and call the endpoint
+only after all post fields, taxonomies, and featured media have been saved. A
+request after 24 hours still starts a full background reconciliation in case an
+event was missed.
 
 Five responsive detail layouts are temporarily available in development. Open
 an album, then use the floating arrows, the keyboard’s left/right arrows, or share
