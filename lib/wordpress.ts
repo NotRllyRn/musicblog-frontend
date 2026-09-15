@@ -84,17 +84,29 @@ interface CatalogIndex {
   documents: SearchDocument[]
   facets: AlbumFilterFacets
   pages: WordPressPost[][]
+  reconciledAt: number
   total: number
   totalPages: number
 }
 
 interface CatalogCacheState {
   pendingCatalogIndex: Promise<CatalogIndex> | null
+  pendingCatalogMutation: Promise<CatalogMutationResult> | null
   pendingPages: Map<number, Promise<Awaited<ReturnType<typeof requestPage>>>>
   readyCatalogIndex: CatalogIndex | null
 }
 
-const CATALOG_REVALIDATE_SECONDS = 3600
+export type CatalogMutationEvent = "published" | "updated" | "deleted"
+
+export interface CatalogMutationResult {
+  albumId: number
+  changed: boolean
+  event: CatalogMutationEvent
+  version: number
+}
+
+const CATALOG_REVALIDATE_SECONDS = 86_400
+const WORDPRESS_PAGE_SIZE = 100
 const SEARCH_PAGE_SIZE = 50
 const WARMUP_CONCURRENCY = 3
 
@@ -146,7 +158,7 @@ async function requestPage(page: number) {
   if (!url) throw new Error("WordPress API URL is invalid")
 
   url.searchParams.set("page", String(page))
-  url.searchParams.set("per_page", "100")
+  url.searchParams.set("per_page", String(WORDPRESS_PAGE_SIZE))
   url.searchParams.set("_embed", "wp:featuredmedia,wp:term")
   url.searchParams.set(
     "_fields",
@@ -171,7 +183,7 @@ async function requestPage(page: number) {
   }
 }
 
-async function requestPost(identifier: number | string) {
+async function requestPost(identifier: number | string, fresh = false) {
   const byId = typeof identifier === "number"
   const url = URL.parse(`${apiRoot()}/posts${byId ? `/${identifier}` : ""}`)
 
@@ -185,11 +197,14 @@ async function requestPost(identifier: number | string) {
   )
 
   const response = await fetch(url, {
+    cache: fresh ? "no-store" : undefined,
     headers: requestHeaders(),
-    next: {
-      revalidate: CATALOG_REVALIDATE_SECONDS,
-      tags: ["wordpress-albums", `wordpress-album-${identifier}`],
-    },
+    next: fresh
+      ? undefined
+      : {
+          revalidate: CATALOG_REVALIDATE_SECONDS,
+          tags: ["wordpress-albums", `wordpress-album-${identifier}`],
+        },
     signal: AbortSignal.timeout(15_000),
   })
 
@@ -247,6 +262,7 @@ const catalogGlobal = globalThis as typeof globalThis & {
 }
 const catalogCache = (catalogGlobal.musicblogCatalogCache ??= {
   pendingCatalogIndex: null,
+  pendingCatalogMutation: null,
   pendingPages: new Map(),
   readyCatalogIndex: null,
 })
@@ -364,6 +380,35 @@ function catalogFacets(documents: SearchDocument[], version: number) {
   } satisfies AlbumFilterFacets
 }
 
+function catalogFromPosts(
+  posts: WordPressPost[],
+  reconciledAt: number,
+  version = Date.now()
+): CatalogIndex {
+  const pages = Array.from(
+    { length: Math.max(1, Math.ceil(posts.length / WORDPRESS_PAGE_SIZE)) },
+    (_, index) =>
+      posts.slice(
+        index * WORDPRESS_PAGE_SIZE,
+        (index + 1) * WORDPRESS_PAGE_SIZE
+      )
+  )
+  const documents = posts.flatMap((post, index) => {
+    const document = toSearchDocument(post, index)
+    return document ? [document] : []
+  })
+
+  return {
+    builtAt: version,
+    documents,
+    facets: catalogFacets(documents, version),
+    pages,
+    reconciledAt,
+    total: posts.length,
+    totalPages: Math.max(1, pages.length),
+  }
+}
+
 async function buildCatalogIndex(): Promise<CatalogIndex> {
   const first = await getCatalogPage(1)
   const pages = [first.posts]
@@ -389,13 +434,14 @@ async function buildCatalogIndex(): Promise<CatalogIndex> {
     documents,
     facets: catalogFacets(documents, builtAt),
     pages,
+    reconciledAt: builtAt,
     total: first.total,
     totalPages: first.totalPages,
   }
 }
 
 function catalogIndexIsFresh(index: CatalogIndex) {
-  return Date.now() - index.builtAt < CATALOG_REVALIDATE_SECONDS * 1000
+  return Date.now() - index.reconciledAt < CATALOG_REVALIDATE_SECONDS * 1000
 }
 
 function refreshCatalogIndex() {
@@ -424,6 +470,55 @@ function getCatalogIndex() {
 
 export function warmAlbumCatalog() {
   void getCatalogIndex().catch(() => undefined)
+}
+
+async function applyCatalogMutation(
+  event: CatalogMutationEvent,
+  albumId: number
+): Promise<CatalogMutationResult> {
+  await getCatalogIndex()
+  if (catalogCache.pendingCatalogIndex) await catalogCache.pendingCatalogIndex
+
+  const index = catalogCache.readyCatalogIndex
+  if (!index) throw new Error("Album catalog is unavailable")
+
+  const posts = index.pages.flat()
+  const existingIndex = posts.findIndex(({ id }) => id === albumId)
+  const post = event === "deleted" ? null : await requestPost(albumId, true)
+
+  if (post && isPublicPost(post)) {
+    if (existingIndex === -1) posts.unshift(post)
+    else posts[existingIndex] = post
+  } else if (existingIndex !== -1) posts.splice(existingIndex, 1)
+
+  const changed = Boolean(post && isPublicPost(post)) || existingIndex !== -1
+  const version = Math.max(Date.now(), index.builtAt + Number(changed))
+  if (changed)
+    catalogCache.readyCatalogIndex = catalogFromPosts(
+      posts,
+      index.reconciledAt,
+      version
+    )
+
+  return { albumId, changed, event, version }
+}
+
+export function mutateAlbumCatalog(
+  event: CatalogMutationEvent,
+  albumId: number
+): Promise<CatalogMutationResult> {
+  const previous = catalogCache.pendingCatalogMutation?.catch(() => undefined)
+  const mutation = (previous ?? Promise.resolve()).then(() =>
+    applyCatalogMutation(event, albumId)
+  )
+  catalogCache.pendingCatalogMutation = mutation
+  void mutation
+    .finally(() => {
+      if (catalogCache.pendingCatalogMutation === mutation)
+        catalogCache.pendingCatalogMutation = null
+    })
+    .catch(() => undefined)
+  return mutation
 }
 
 function editDistanceWithin(left: string, right: string, limit: number) {
