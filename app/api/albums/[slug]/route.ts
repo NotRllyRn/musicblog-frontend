@@ -12,7 +12,7 @@ export async function GET(
       return Response.json({ error: "Album not found" }, { status: 404 })
 
     return Response.json(album, {
-      headers: { "Cache-Control": "public, max-age=3600" },
+      headers: { "Cache-Control": "private, no-store" },
     })
   } catch {
     return Response.json({ error: "Album could not load" }, { status: 502 })
