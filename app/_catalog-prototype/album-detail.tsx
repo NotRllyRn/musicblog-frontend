@@ -42,7 +42,8 @@ export function AlbumDetailOverlay({
     let active = true
     void detailRequest
       .then((albumDetail) => {
-        if (active) setDetail(albumDetail)
+        if (active && !overlay.current?.hasAttribute("data-closing"))
+          setDetail(albumDetail)
       })
       .catch(() => {
         if (active) setFailed(true)
@@ -184,13 +185,17 @@ export function AlbumDetailOverlay({
             <AlbumDetailLayouts detail={detail} />
           </motion.section>
         ) : (
-          <article className="album-detail-placeholder" data-detail-content>
+          <motion.article
+            className="album-detail-placeholder"
+            data-detail-content
+            exit={reduceMotion ? undefined : { opacity: 0, y: "1.5rem" }}
+          >
             <Text as="p" color="inherit">
               {failed
                 ? "Album details could not load."
                 : "Loading album notes…"}
             </Text>
-          </article>
+          </motion.article>
         )}
       </section>
     </motion.section>
