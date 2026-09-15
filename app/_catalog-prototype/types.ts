@@ -1,5 +1,6 @@
 export interface AlbumPost {
   id: number
+  slug: string
   title: string
   artist: string
   imageUrl: string

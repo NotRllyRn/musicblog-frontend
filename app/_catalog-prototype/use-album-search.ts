@@ -100,9 +100,14 @@ function useResultTransition(
   return { commitResult, isTransitioning }
 }
 
-export function useAlbumSearch() {
-  const [query, setRawQuery] = useState("")
-  const [filters, setFilters] = useState(createEmptyAlbumFilters)
+export function useAlbumSearch(
+  initialQuery = "",
+  initialFilters = createEmptyAlbumFilters()
+) {
+  const [query, setRawQuery] = useState(() =>
+    initialQuery.slice(0, MAX_SEARCH_QUERY_LENGTH)
+  )
+  const [filters, setFilters] = useState(initialFilters)
   const [result, setResult] = useState<AlbumSearchResult | null>(null)
   const [facets, setFacets] = useState<AlbumFilterFacets | null>(null)
   const [isSearching, setIsSearching] = useState(false)

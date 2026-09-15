@@ -2,11 +2,11 @@ import { getAlbumDetail } from "@/lib/wordpress"
 
 export async function GET(
   _request: Request,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ slug: string }> }
 ) {
   try {
-    const { id: rawId } = await params
-    const album = await getAlbumDetail(Number(rawId))
+    const { slug } = await params
+    const album = await getAlbumDetail(slug)
 
     if (!album)
       return Response.json({ error: "Album not found" }, { status: 404 })

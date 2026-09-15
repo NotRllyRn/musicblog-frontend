@@ -12,6 +12,7 @@ import type { AlbumDetail, DetailVariant } from "./types"
 
 interface DetailLayoutProps {
   detail: AlbumDetail
+  onSearchArtist?: (artist: string) => void
 }
 
 function formatDate(value: string | null) {
@@ -32,14 +33,31 @@ function formatDuration(value: number | null) {
   return hours ? `${hours} hr ${remainder} min` : `${minutes} min`
 }
 
-function DetailHeading({ detail }: DetailLayoutProps) {
+function DetailHeading({ detail, onSearchArtist }: DetailLayoutProps) {
   return (
     <header className="detail-heading">
       <Heading level={2} id="album-detail-title" color="inherit">
         {detail.title}
       </Heading>
       <Text type="large" color="inherit">
-        {detail.artist}
+        <Link
+          href={`/?artist=${encodeURIComponent(detail.artist)}`}
+          onClick={(event) => {
+            if (
+              event.button ||
+              event.metaKey ||
+              event.ctrlKey ||
+              event.shiftKey ||
+              event.altKey
+            )
+              return
+            event.preventDefault()
+            onSearchArtist?.(detail.artist)
+          }}
+          type="inherit"
+        >
+          {detail.artist}
+        </Link>
       </Text>
       {detail.spotifyUrl && (
         <Link href={detail.spotifyUrl} isExternalLink>
@@ -216,14 +234,14 @@ function Facts({ detail }: DetailLayoutProps) {
   )
 }
 
-function VariantA({ detail }: DetailLayoutProps) {
+function VariantA({ detail, onSearchArtist }: DetailLayoutProps) {
   return (
     <article
       className="album-detail-layout detail-layout-a"
       data-detail-content
     >
       <header className="detail-a-hero">
-        <DetailHeading detail={detail} />
+        <DetailHeading detail={detail} onSearchArtist={onSearchArtist} />
         <Score detail={detail} />
         <GenreCloud detail={detail} />
       </header>
@@ -235,7 +253,7 @@ function VariantA({ detail }: DetailLayoutProps) {
   )
 }
 
-function VariantB({ detail }: DetailLayoutProps) {
+function VariantB({ detail, onSearchArtist }: DetailLayoutProps) {
   return (
     <article
       className="album-detail-layout detail-layout-b"
@@ -247,7 +265,7 @@ function VariantB({ detail }: DetailLayoutProps) {
         <GenreCloud detail={detail} />
       </aside>
       <section className="detail-b-story">
-        <DetailHeading detail={detail} />
+        <DetailHeading detail={detail} onSearchArtist={onSearchArtist} />
         <Review detail={detail} />
         <Highlights detail={detail} />
       </section>
@@ -258,13 +276,13 @@ function VariantB({ detail }: DetailLayoutProps) {
   )
 }
 
-function VariantC({ detail }: DetailLayoutProps) {
+function VariantC({ detail, onSearchArtist }: DetailLayoutProps) {
   return (
     <article
       className="album-detail-layout detail-layout-c"
       data-detail-content
     >
-      <DetailHeading detail={detail} />
+      <DetailHeading detail={detail} onSearchArtist={onSearchArtist} />
       <section className="detail-c-constellation">
         <Score detail={detail} />
         <GenreCloud detail={detail} />
@@ -277,14 +295,14 @@ function VariantC({ detail }: DetailLayoutProps) {
   )
 }
 
-function VariantD({ detail }: DetailLayoutProps) {
+function VariantD({ detail, onSearchArtist }: DetailLayoutProps) {
   return (
     <article
       className="album-detail-layout detail-layout-d"
       data-detail-content
     >
       <header>
-        <DetailHeading detail={detail} />
+        <DetailHeading detail={detail} onSearchArtist={onSearchArtist} />
         <Score detail={detail} />
       </header>
       <section className="detail-d-columns">
@@ -300,14 +318,14 @@ function VariantD({ detail }: DetailLayoutProps) {
   )
 }
 
-function VariantE({ detail }: DetailLayoutProps) {
+function VariantE({ detail, onSearchArtist }: DetailLayoutProps) {
   return (
     <article
       className="album-detail-layout detail-layout-e"
       data-detail-content
     >
       <header>
-        <DetailHeading detail={detail} />
+        <DetailHeading detail={detail} onSearchArtist={onSearchArtist} />
         <GenreCloud detail={detail} />
       </header>
       <ol className="detail-e-timeline">
@@ -344,12 +362,15 @@ const variants: Record<
   E: VariantE,
 }
 
-export function AlbumDetailLayouts({ detail }: DetailLayoutProps) {
+export function AlbumDetailLayouts({
+  detail,
+  onSearchArtist,
+}: DetailLayoutProps) {
   return (
     <DetailPrototypeSwitcher>
       {(variant) => {
         const Layout = variants[variant]
-        return <Layout detail={detail} />
+        return <Layout detail={detail} onSearchArtist={onSearchArtist} />
       }}
     </DetailPrototypeSwitcher>
   )

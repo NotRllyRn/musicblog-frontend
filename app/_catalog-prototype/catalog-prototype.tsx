@@ -3,7 +3,13 @@
 import { Heading } from "@astryxdesign/core/Heading"
 import { Text } from "@astryxdesign/core/Text"
 import { AnimatePresence, LayoutGroup } from "motion/react"
-import { useCallback, useEffect, useRef, useState } from "react"
+import {
+  type SetStateAction,
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+} from "react"
 
 import { AlbumDetailOverlay } from "./album-detail"
 import { CatalogLoading } from "./catalog-loading"
@@ -11,10 +17,24 @@ import { CatalogSearch } from "./catalog-search"
 import { RecordField } from "./record-field"
 import { ThemeToggle } from "./theme-toggle"
 import { useAlbumSearch } from "./use-album-search"
-import type { AlbumDetail, AlbumPage, AlbumPost, DeckCount } from "./types"
+import {
+  ALBUM_SEARCH_PARAMETER_NAMES,
+  albumSearchParameters,
+  createEmptyAlbumFilters,
+} from "./search-filters"
+import type {
+  AlbumDetail,
+  AlbumPage,
+  AlbumPost,
+  AlbumSearchFilters,
+  DeckCount,
+} from "./types"
 
 interface CatalogBrowserProps {
+  initialAlbum: AlbumDetail | null
+  initialFilters: AlbumSearchFilters
   initialPage: AlbumPage
+  initialQuery: string
 }
 
 function useDeckCount() {
@@ -38,37 +58,61 @@ function useDeckCount() {
   return deckCount
 }
 
-export function CatalogBrowser({ initialPage }: CatalogBrowserProps) {
+export function CatalogBrowser({
+  initialAlbum,
+  initialFilters,
+  initialPage,
+  initialQuery,
+}: CatalogBrowserProps) {
   const [albums, setAlbums] = useState(initialPage.albums)
-  const search = useAlbumSearch()
+  const search = useAlbumSearch(initialQuery, initialFilters)
   const [selectionEpoch, setSelectionEpoch] = useState(0)
   const [opened, setOpened] = useState<{
     album: AlbumPost
     detail: AlbumDetail | null
     detailRequest: Promise<AlbumDetail>
-    invoker: HTMLElement
-  } | null>(null)
-  const [detailVisible, setDetailVisible] = useState(false)
-  const detailVisibleRef = useRef(false)
+    invoker: HTMLElement | null
+  } | null>(() =>
+    initialAlbum
+      ? {
+          album: initialAlbum,
+          detail: initialAlbum,
+          detailRequest: Promise.resolve(initialAlbum),
+          invoker: null,
+        }
+      : null
+  )
+  const [detailVisible, setDetailVisible] = useState(Boolean(initialAlbum))
+  const detailVisibleRef = useRef(Boolean(initialAlbum))
   const deckCount = useDeckCount()
   const loadedCount = useRef(initialPage.albums.length)
   const nextPage = useRef(initialPage.page + 1)
   const isLoading = useRef(false)
-  const detailCache = useRef(new Map<number, AlbumDetail>())
+  const detailCache = useRef(
+    new Map(initialAlbum ? [[initialAlbum.id, initialAlbum]] : [])
+  )
   const detailRequests = useRef(new Map<number, Promise<AlbumDetail>>())
   const requestAlbumDetail = useCallback((album: AlbumPost) => {
     const cached = detailRequests.current.get(album.id)
     if (cached) return cached
 
-    const request = fetch(`/api/albums/${album.id}`).then((response) => {
-      if (!response.ok) throw new Error("Album detail could not load")
-      return response.json() as Promise<AlbumDetail>
-    })
+    const request = fetch(`/api/albums/${encodeURIComponent(album.slug)}`).then(
+      (response) => {
+        if (!response.ok) throw new Error("Album detail could not load")
+        return response.json() as Promise<AlbumDetail>
+      }
+    )
     detailRequests.current.set(album.id, request)
     void request
       .then((detail) => detailCache.current.set(album.id, detail))
       .catch(() => detailRequests.current.delete(album.id))
     return request
+  }, [])
+
+  useEffect(() => {
+    const reload = () => window.location.reload()
+    window.addEventListener("popstate", reload)
+    return () => window.removeEventListener("popstate", reload)
   }, [])
   const loadMore = useCallback(
     async (knownCount: number) => {
@@ -133,6 +177,41 @@ export function CatalogBrowser({ initialPage }: CatalogBrowserProps) {
       invoker,
     })
     setDetailVisible(true)
+    const url = new URL(window.location.href)
+    url.searchParams.set("album", album.slug)
+    window.history.pushState(null, "", url)
+  }
+
+  const searchUrl = (query: string, filters: AlbumSearchFilters) => {
+    const url = new URL(window.location.href)
+    for (const name of ALBUM_SEARCH_PARAMETER_NAMES)
+      url.searchParams.delete(name)
+    for (const [name, value] of albumSearchParameters(query, filters))
+      if (name !== "q") url.searchParams.append(name, value)
+    if (query) url.searchParams.set("q", query)
+    return url
+  }
+
+  const setSearchQuery = (query: string) => {
+    search.setQuery(query)
+    window.history.replaceState(null, "", searchUrl(query, search.filters))
+  }
+
+  const setSearchFilters = (next: SetStateAction<AlbumSearchFilters>) => {
+    const filters = typeof next === "function" ? next(search.filters) : next
+    search.setFilters(filters)
+    window.history.replaceState(null, "", searchUrl(search.query, filters))
+  }
+
+  const searchArtist = (artist: string) => {
+    const filters = { ...createEmptyAlbumFilters(), artists: [artist] }
+    detailVisibleRef.current = false
+    setDetailVisible(false)
+    search.setQuery("")
+    search.setFilters(filters)
+    const url = searchUrl("", filters)
+    url.searchParams.delete("album")
+    window.history.pushState(null, "", url)
   }
 
   return (
@@ -156,9 +235,9 @@ export function CatalogBrowser({ initialPage }: CatalogBrowserProps) {
             isDisabled={opened !== null}
             isLoadingFacets={search.isLoadingFacets}
             isSearching={search.isSearching}
-            onChange={search.setQuery}
-            onClearFilters={search.clearFilters}
-            onFilterChange={search.setFilters}
+            onChange={setSearchQuery}
+            onClearFilters={() => setSearchFilters(createEmptyAlbumFilters())}
+            onFilterChange={setSearchFilters}
             onInteract={() => setSelectionEpoch((current) => current + 1)}
             onLoadFacets={search.loadFacets}
             query={search.query}
@@ -216,7 +295,11 @@ export function CatalogBrowser({ initialPage }: CatalogBrowserProps) {
                 onClose={() => {
                   detailVisibleRef.current = false
                   setDetailVisible(false)
+                  const url = new URL(window.location.href)
+                  url.searchParams.delete("album")
+                  window.history.replaceState(null, "", url)
                 }}
+                onSearchArtist={searchArtist}
               />
             )}
           </AnimatePresence>

@@ -47,6 +47,7 @@ interface WordPressAcf {
 
 interface WordPressPost {
   id: number
+  slug: string
   status?: string
   password?: string
   title: { rendered: string }
@@ -149,7 +150,7 @@ async function requestPage(page: number) {
   url.searchParams.set("_embed", "wp:featuredmedia,wp:term")
   url.searchParams.set(
     "_fields",
-    "id,status,password,title,content.protected,acf,_links,_embedded"
+    "id,slug,status,password,title,content.protected,acf,_links,_embedded"
   )
 
   const response = await fetch(url, {
@@ -170,22 +171,24 @@ async function requestPage(page: number) {
   }
 }
 
-async function requestPost(id: number) {
-  const url = URL.parse(`${apiRoot()}/posts/${id}`)
+async function requestPost(identifier: number | string) {
+  const byId = typeof identifier === "number"
+  const url = URL.parse(`${apiRoot()}/posts${byId ? `/${identifier}` : ""}`)
 
   if (!url) throw new Error("WordPress API URL is invalid")
 
+  if (typeof identifier === "string") url.searchParams.set("slug", identifier)
   url.searchParams.set("_embed", "wp:featuredmedia,wp:term")
   url.searchParams.set(
     "_fields",
-    "id,status,password,title,content,acf,_links,_embedded"
+    "id,slug,status,password,title,content,acf,_links,_embedded"
   )
 
   const response = await fetch(url, {
     headers: requestHeaders(),
     next: {
       revalidate: CATALOG_REVALIDATE_SECONDS,
-      tags: ["wordpress-albums", `wordpress-album-${id}`],
+      tags: ["wordpress-albums", `wordpress-album-${identifier}`],
     },
     signal: AbortSignal.timeout(15_000),
   })
@@ -193,7 +196,8 @@ async function requestPost(id: number) {
   if (response.status === 404) return null
   if (!response.ok) throw new Error(`WordPress returned ${response.status}`)
 
-  return (await response.json()) as WordPressPost
+  const result = (await response.json()) as WordPressPost | WordPressPost[]
+  return Array.isArray(result) ? (result[0] ?? null) : result
 }
 
 function termsFor(post: WordPressPost, taxonomy: string) {
@@ -223,6 +227,7 @@ function toAlbum(post: WordPressPost): AlbumPost | null {
 
   return {
     id: post.id,
+    slug: post.slug,
     title,
     artist,
     imageUrl: media.source_url,
@@ -676,10 +681,17 @@ export async function getAlbumSearchPage(
   }
 }
 
-export async function getAlbumDetail(id: number): Promise<AlbumDetail | null> {
-  if (!Number.isInteger(id) || id < 1) return null
+export async function getAlbumDetail(
+  identifier: number | string
+): Promise<AlbumDetail | null> {
+  if (
+    (typeof identifier === "number" &&
+      (!Number.isInteger(identifier) || identifier < 1)) ||
+    (typeof identifier === "string" && !identifier)
+  )
+    return null
 
-  const post = await requestPost(id)
+  const post = await requestPost(identifier)
   if (!post || !isPublicPost(post)) return null
 
   const album = toAlbum(post)

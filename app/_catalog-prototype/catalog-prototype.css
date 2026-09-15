@@ -708,6 +708,13 @@ body:has(.deck-record[data-hovered="true"]) .theme-toggle {
   display: none;
 }
 
+.album-detail-share {
+  position: fixed;
+  z-index: 2;
+  top: var(--spacing-4);
+  right: var(--spacing-4);
+}
+
 .album-detail-backdrop {
   position: fixed;
   z-index: 0;

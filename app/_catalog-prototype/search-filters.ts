@@ -63,7 +63,22 @@ function appendMany(
     parameters.append(name, value)
 }
 
-function albumSearchParameters(
+export const ALBUM_SEARCH_PARAMETER_NAMES = [
+  "q",
+  "artist",
+  "genre",
+  "releaseType",
+  "unreleased",
+  "explicit",
+  "rating",
+  "ratingOperator",
+  "releaseFrom",
+  "releaseTo",
+  "listenedFrom",
+  "listenedTo",
+] as const
+
+export function albumSearchParameters(
   query: string,
   filters: AlbumSearchFilters,
   page = 1

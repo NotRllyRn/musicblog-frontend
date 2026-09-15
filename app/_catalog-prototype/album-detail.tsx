@@ -23,6 +23,7 @@ interface AlbumDetailOverlayProps {
   detailRequest: Promise<AlbumDetail>
   initialDetail: AlbumDetail | null
   onClose: () => void
+  onSearchArtist: (artist: string) => void
 }
 
 export function AlbumDetailOverlay({
@@ -30,6 +31,7 @@ export function AlbumDetailOverlay({
   detailRequest,
   initialDetail,
   onClose,
+  onSearchArtist,
 }: AlbumDetailOverlayProps) {
   const [detail, setDetail] = useState<AlbumDetail | null>(initialDetail)
   const [failed, setFailed] = useState(false)
@@ -58,6 +60,20 @@ export function AlbumDetailOverlay({
   const close = () => {
     overlay.current?.setAttribute("data-closing", "")
     onClose()
+  }
+
+  const share = async () => {
+    const data = {
+      title: `${album.title} — ${album.artist}`,
+      url: window.location.href,
+    }
+    if (navigator.share) await navigator.share(data)
+    else await navigator.clipboard.writeText(data.url)
+  }
+
+  const searchArtist = (artist: string) => {
+    overlay.current?.setAttribute("data-closing", "")
+    onSearchArtist(artist)
   }
 
   const onKeyDown = (event: KeyboardEvent<HTMLElement>) => {
@@ -135,6 +151,16 @@ export function AlbumDetailOverlay({
           Close album details
         </Button>
       </VisuallyHidden>
+      <Button
+        className="album-detail-share"
+        clickAction={share}
+        data-detail-content
+        label="Share album"
+        size="sm"
+        variant="secondary"
+      >
+        Share
+      </Button>
       <section
         className="album-detail-content"
         data-compact={isCompact || undefined}
@@ -182,7 +208,7 @@ export function AlbumDetailOverlay({
             initial={reduceMotion ? undefined : { opacity: 0, y: "1.5rem" }}
             transition={sceneTransition}
           >
-            <AlbumDetailLayouts detail={detail} />
+            <AlbumDetailLayouts detail={detail} onSearchArtist={searchArtist} />
           </motion.section>
         ) : (
           <article className="album-detail-placeholder" data-detail-content>
