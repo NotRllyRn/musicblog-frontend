@@ -185,17 +185,13 @@ export function AlbumDetailOverlay({
             <AlbumDetailLayouts detail={detail} />
           </motion.section>
         ) : (
-          <motion.article
-            className="album-detail-placeholder"
-            data-detail-content
-            exit={reduceMotion ? undefined : { opacity: 0, y: "1.5rem" }}
-          >
+          <article className="album-detail-placeholder" data-detail-content>
             <Text as="p" color="inherit">
               {failed
                 ? "Album details could not load."
                 : "Loading album notes…"}
             </Text>
-          </motion.article>
+          </article>
         )}
       </section>
     </motion.section>

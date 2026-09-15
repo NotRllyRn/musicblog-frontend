@@ -704,6 +704,10 @@ body:has(.deck-record[data-hovered="true"]) .theme-toggle {
   pointer-events: none;
 }
 
+.album-detail-overlay[data-closing] .album-detail-placeholder {
+  display: none;
+}
+
 .album-detail-backdrop {
   position: fixed;
   z-index: 0;
