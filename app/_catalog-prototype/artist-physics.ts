@@ -60,8 +60,7 @@ export function findArtistNode(
   const active = nodes.find(({ artist }) => artist.id === activeId)
   if (
     active &&
-    Math.hypot(x - active.x, y - active.y) <=
-      active.renderRadius + exitPadding
+    Math.hypot(x - active.x, y - active.y) <= active.renderRadius + exitPadding
   )
     return active
 
@@ -80,12 +79,7 @@ export function findArtistNode(
 export function stepArtistPhysics(
   nodes: ArtistNode[],
   elapsedSeconds: number,
-  {
-    activeId,
-    damping = 2.8,
-    gap,
-    gravity = 0.035,
-  }: ArtistPhysicsOptions
+  { activeId, damping = 2.8, gap, gravity = 0.035 }: ArtistPhysicsOptions
 ) {
   const elapsed = Math.min(elapsedSeconds, 1 / 30)
   const drag = Math.exp(-damping * elapsed)
@@ -107,7 +101,8 @@ export function stepArtistPhysics(
     node.y += node.vy * elapsed
   }
 
-  const cellSize = Math.max(...nodes.map(({ renderRadius }) => renderRadius)) * 2 + gap
+  const cellSize =
+    Math.max(...nodes.map(({ renderRadius }) => renderRadius)) * 2 + gap
   const cells = new Map<string, number[]>()
   for (const [index, node] of nodes.entries()) {
     const key = `${Math.floor(node.x / cellSize)}:${Math.floor(node.y / cellSize)}`
@@ -121,8 +116,9 @@ export function stepArtistPhysics(
     const cellY = Math.floor(node.y / cellSize)
     for (let offsetX = -1; offsetX <= 1; offsetX += 1)
       for (let offsetY = -1; offsetY <= 1; offsetY += 1)
-        for (const otherIndex of
-          cells.get(`${cellX + offsetX}:${cellY + offsetY}`) ?? []) {
+        for (const otherIndex of cells.get(
+          `${cellX + offsetX}:${cellY + offsetY}`
+        ) ?? []) {
           if (otherIndex <= index) continue
           const other = nodes[otherIndex]
           let dx = other.x - node.x
@@ -131,7 +127,8 @@ export function stepArtistPhysics(
           const separation = node.renderRadius + other.renderRadius + gap
           if (distance >= separation) continue
           if (!distance) {
-            const angle = ((node.artist.id + other.artist.id) % 360) * (Math.PI / 180)
+            const angle =
+              ((node.artist.id + other.artist.id) % 360) * (Math.PI / 180)
             dx = Math.cos(angle)
             dy = Math.sin(angle)
             distance = 1
@@ -150,6 +147,7 @@ export function stepArtistPhysics(
         }
   }
 
-  for (const node of nodes) fastest = Math.max(fastest, Math.hypot(node.vx, node.vy))
+  for (const node of nodes)
+    fastest = Math.max(fastest, Math.hypot(node.vx, node.vy))
   return fastest
 }
