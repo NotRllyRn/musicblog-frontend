@@ -14,6 +14,11 @@ import {
   findArtistNode,
   stepArtistPhysics,
 } from "./artist-physics"
+import {
+  artistTapAction,
+  clampArtistZoom,
+  pinchCamera,
+} from "./artist-interaction"
 import type { ArtistProfile } from "./types"
 
 interface ArtistFieldProps {
@@ -71,8 +76,6 @@ const NODE_GAP = 10
 const IMAGE_CONCURRENCY = 4
 const IMAGE_CACHE_SIZE = 160
 const FIELD_HELP_ID = "artist-field-help"
-const MIN_ZOOM = 0.55
-const MAX_ZOOM = 1.8
 const ZOOM_STEP = 1.18
 
 const clamp = (value: number, min: number, max: number) =>
@@ -431,7 +434,7 @@ export function ArtistField({
       clientY: number,
       requestedZoom: number
     ) => {
-      const nextZoom = clamp(requestedZoom, MIN_ZOOM, MAX_ZOOM)
+      const nextZoom = clampArtistZoom(requestedZoom)
       if (nextZoom === state.zoom) return
       const bounds = element.getBoundingClientRect()
       const anchorX = clientX - bounds.left
@@ -487,23 +490,22 @@ export function ArtistField({
         const clientX = (first.x + second.x) / 2
         const clientY = (first.y + second.y) / 2
         const bounds = element.getBoundingClientRect()
-        state.zoom = clamp(
-          (state.pinchZoom *
-            Math.hypot(second.x - first.x, second.y - first.y)) /
-            state.pinchDistance,
-          MIN_ZOOM,
-          MAX_ZOOM
-        )
-        state.cameraX =
-          clientX -
-          bounds.left -
-          state.width / 2 -
-          state.pinchWorldX * state.zoom
-        state.cameraY =
-          clientY -
-          bounds.top -
-          state.height / 2 -
-          state.pinchWorldY * state.zoom
+        const camera = pinchCamera({
+          anchorX: state.pinchWorldX,
+          anchorY: state.pinchWorldY,
+          clientX,
+          clientY,
+          distance: Math.hypot(second.x - first.x, second.y - first.y),
+          height: state.height,
+          left: bounds.left,
+          startDistance: state.pinchDistance,
+          startZoom: state.pinchZoom,
+          top: bounds.top,
+          width: state.width,
+        })
+        state.zoom = camera.zoom
+        state.cameraX = camera.cameraX
+        state.cameraY = camera.cameraY
         clampCamera(state)
         requestFrame()
         return
@@ -555,19 +557,29 @@ export function ArtistField({
       if (event.pointerType === "mouse") {
         if (node) selectArtist.current(node.artist)
         else setActive(null)
-      } else if (node?.artist.id === state.activeId)
-        selectArtist.current(node.artist)
-      else setActive(node)
+      } else {
+        const action = artistTapAction(state.activeId, node?.artist.id ?? null)
+        if (action === "select" && node) selectArtist.current(node.artist)
+        else setActive(action === "preview" ? node : null)
+      }
     }
     const onPointerCancel = (event: PointerEvent) => {
       state.pointers.delete(event.pointerId)
-      if (!state.pointers.size) {
-        state.pointerId = null
+      if (state.pointers.size) {
+        const [pointerId, pointer] = [...state.pointers.entries()][0]
+        state.pointerId = pointerId
+        state.pointerStartX = pointer.x
+        state.pointerStartY = pointer.y
+        state.startCameraX = state.cameraX
+        state.startCameraY = state.cameraY
         state.dragging = false
-        state.pinched = false
-        delete element.dataset.dragging
-        setActive(null)
+        return
       }
+      state.pointerId = null
+      state.dragging = false
+      state.pinched = false
+      delete element.dataset.dragging
+      setActive(null)
     }
     const onPointerLeave = (event: PointerEvent) => {
       if (event.pointerType === "mouse" && state.pointerId === null) {
