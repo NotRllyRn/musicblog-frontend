@@ -26,6 +26,7 @@ const nextConfig: NextConfig = {
     "10.17.11.4",
     "test.callita.day",
     "blogtest.tanningcat.com",
+    "music.tanningcat.com",
   ],
 }
 
