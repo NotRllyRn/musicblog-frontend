@@ -84,18 +84,16 @@ dimmed in the background. WordPress is strictly read-only from this frontend.
   rating remains visible as `NA/100`; other missing optional sections are
   omitted.
 - Existing WordPress posts and featured images are the source of truth.
-- The first cached WordPress page supplies both initial albums and the
-  authoritative total. Server startup warms every remaining 100-post page with
-  bounded concurrency while the browser continues loading lanes progressively.
-- Warm catalog pages include ACF plus embedded artist and genre terms, but raw
-  metadata and the complete search index remain server-only.
+- Server startup caches every 100-post WordPress page with bounded concurrency
+  before accepting traffic.
+- Warm catalog pages include review bodies, ACF, and embedded artist and genre
+  terms, but raw metadata and the complete search index remain server-only.
 - Responsive placeholder sleeves reserve the finite 3D layout while album data
   loads, and full-resolution WordPress artwork uses responsive Next Image
   optimization.
-- Full review payloads use a one-hour cached detail endpoint and begin loading
-  after a 300ms desktop hover or the first touch selection; activation falls back
-  to a compact loading status when needed. Editorial HTML is reduced to a
-  server-side allowlist before rendering.
+- Full review payloads are sanitized during catalog warmup and use a local detail
+  endpoint without a click-time WordPress request. A 300ms desktop hover or the
+  first touch selection starts loading from the application server.
 - Five structurally distinct responsive detail layouts are under temporary
   development-only prototype selection.
 - The hinged record-shop interaction is the selected direction.
