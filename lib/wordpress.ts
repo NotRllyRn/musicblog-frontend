@@ -726,7 +726,7 @@ function catalogFromPosts(
 
 async function buildCatalogIndex(): Promise<CatalogIndex> {
   const first = await getCatalogPage(1)
-  const artistTerms = requestArtistTerms().catch(() => [])
+  const artistCatalog = getStandaloneArtistCatalog()
   const pages = [first.posts]
 
   for (let start = 2; start <= first.totalPages; start += WARMUP_CONCURRENCY) {
@@ -741,13 +741,11 @@ async function buildCatalogIndex(): Promise<CatalogIndex> {
 
   const posts = pages.flat()
   const builtAt = Date.now()
+  const artists = await artistCatalog.catch(() =>
+    artistProfiles(posts, Promise.resolve([]))
+  )
   return {
-    ...catalogFromPosts(
-      posts,
-      builtAt,
-      await artistProfiles(posts, artistTerms),
-      builtAt
-    ),
+    ...catalogFromPosts(posts, builtAt, artists, builtAt),
     total: first.total,
     totalPages: first.totalPages,
   }
