@@ -75,14 +75,16 @@ starts. Starting another catalog scroll dismisses a preview. Reaching the last
 album in every lane reveals the end-of-catalog message. WordPress access is
 server-only and read-only.
 
-Server startup caches every 100-post page for 24 hours between full
-reconciliations, including review bodies,
-WordPress's authoritative total, ACF data, and embedded artist/genre terms, with
-three requests at a time. Raw metadata remains
+Server startup waits only for the first 100-post page, then caches the remaining
+pages and original artwork in the background with bounded concurrency. The
+artwork source cache is stored under `.next/cache`, while Next Image stores its
+responsive derivatives alongside it. Catalog metadata is retained for 24 hours
+between full reconciliations, including review bodies, WordPress's authoritative
+total, ACF data, and embedded artist/genre terms. Raw metadata remains
 server-only; the browser still receives lightweight album records. Every lane
-reserves its finite length from the total. WordPress's original artwork passes
-through responsive Next Image optimization, and an immediate vinyl shell
-reserves the layout while the initial data hydrates.
+reserves its finite length from the total. After hydration, the browser quietly
+loads every remaining metadata page and preloads responsive artwork three at a
+time, while an immediate vinyl shell reserves the layout.
 Review bodies and track lists use the server-local catalog snapshot through the
 `/api/albums/[slug]` endpoint, so opening an album does not query WordPress. A
 300ms desktop hover or the first touch selection starts prefetching from the
