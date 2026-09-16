@@ -66,12 +66,14 @@ function requestArtistCatalog() {
   return artistCatalogRequest
 }
 
-function useArtworkPreloader(albums: AlbumPost[]) {
+function useArtworkPreloader(albums: AlbumPost[], enabled: boolean) {
   const active = useRef(0)
   const queued = useRef(new Set<string>())
   const queue = useRef<AlbumPost[]>([])
 
   useEffect(() => {
+    if (!enabled) return
+    let cancelled = false
     for (const album of albums)
       if (!queued.current.has(album.imageUrl)) {
         queued.current.add(album.imageUrl)
@@ -79,6 +81,7 @@ function useArtworkPreloader(albums: AlbumPost[]) {
       }
 
     const pump = () => {
+      if (cancelled) return
       while (
         active.current < ARTWORK_PRELOAD_CONCURRENCY &&
         queue.current.length
@@ -108,10 +111,11 @@ function useArtworkPreloader(albums: AlbumPost[]) {
     const idle = window.requestIdleCallback?.(pump, { timeout: 1_000 })
     const timer = idle === undefined ? window.setTimeout(pump, 500) : undefined
     return () => {
+      cancelled = true
       if (idle !== undefined) window.cancelIdleCallback(idle)
       if (timer !== undefined) window.clearTimeout(timer)
     }
-  }, [albums])
+  }, [albums, enabled])
 }
 
 function useDeckCount() {
@@ -142,8 +146,8 @@ export function CatalogBrowser({
   initialQuery,
 }: CatalogBrowserProps) {
   const [albums, setAlbums] = useState(initialPage.albums)
-  useArtworkPreloader(albums)
   const [catalogMode, setCatalogMode] = useState<CatalogMode>("albums")
+  useArtworkPreloader(albums, catalogMode === "albums")
   const [artists, setArtists] = useState<ArtistProfile[] | null>(null)
   const [artistsMounted, setArtistsMounted] = useState(false)
   const [artistsLoading, setArtistsLoading] = useState(false)
@@ -248,10 +252,10 @@ export function CatalogBrowser({
   )
 
   useEffect(() => {
-    if (albums.length >= initialPage.total) return
+    if (catalogMode !== "albums" || albums.length >= initialPage.total) return
     const timer = window.setTimeout(() => void loadMore(albums.length), 750)
     return () => window.clearTimeout(timer)
-  }, [albums.length, initialPage.total, loadMore])
+  }, [albums.length, catalogMode, initialPage.total, loadMore])
 
   if (!albums.length) {
     return (

@@ -125,6 +125,12 @@ interface CatalogCacheState {
   readyCatalogIndex: CatalogIndex | null
 }
 
+interface ArtistCacheState {
+  builtAt: number
+  pending: Promise<ArtistProfile[]> | null
+  ready: ArtistProfile[] | null
+}
+
 export type CatalogMutationEvent = "published" | "updated" | "deleted"
 
 export interface CatalogMutationResult {
@@ -139,6 +145,7 @@ const WORDPRESS_PAGE_SIZE = 100
 const WORDPRESS_ARTIST_PAGE_SIZE = 100
 const SEARCH_PAGE_SIZE = 50
 const WARMUP_CONCURRENCY = 3
+const ARTIST_WARMUP_CONCURRENCY = 6
 const ARTWORK_WARMUP_CONCURRENCY = 2
 const artworkCacheDirectory = path.join(
   process.cwd(),
@@ -262,6 +269,7 @@ async function requestArtistPage(page: number) {
 
   url.searchParams.set("page", String(page))
   url.searchParams.set("per_page", String(WORDPRESS_ARTIST_PAGE_SIZE))
+  url.searchParams.set("hide_empty", "true")
   url.searchParams.set("acf_format", "standard")
   url.searchParams.set("_fields", "id,slug,name,acf")
 
@@ -284,17 +292,12 @@ async function requestArtistPage(page: number) {
 
 async function requestArtistTerms() {
   const first = await requestArtistPage(1)
-  const pages = [first.terms]
-  for (let start = 2; start <= first.totalPages; start += WARMUP_CONCURRENCY) {
-    const end = Math.min(first.totalPages, start + WARMUP_CONCURRENCY - 1)
-    const batch = await Promise.all(
-      Array.from({ length: end - start + 1 }, (_, index) =>
-        requestArtistPage(start + index)
-      )
+  const remaining = await Promise.all(
+    Array.from({ length: first.totalPages - 1 }, (_, index) =>
+      requestArtistPage(index + 2)
     )
-    pages.push(...batch.map(({ terms }) => terms))
-  }
-  return pages.flat()
+  )
+  return [first.terms, ...remaining.map(({ terms }) => terms)].flat()
 }
 
 async function requestArtistMedia(ids: number[]) {
@@ -307,32 +310,38 @@ async function requestArtistMedia(ids: number[]) {
         (index + 1) * WORDPRESS_ARTIST_PAGE_SIZE
       )
   )
-  for (let start = 0; start < batches.length; start += WARMUP_CONCURRENCY) {
+  for (
+    let start = 0;
+    start < batches.length;
+    start += ARTIST_WARMUP_CONCURRENCY
+  ) {
     const responses = await Promise.all(
-      batches.slice(start, start + WARMUP_CONCURRENCY).map(async (batch) => {
-        const url = URL.parse(`${apiRoot()}/media`)
-        if (!url) throw new Error("WordPress API URL is invalid")
+      batches
+        .slice(start, start + ARTIST_WARMUP_CONCURRENCY)
+        .map(async (batch) => {
+          const url = URL.parse(`${apiRoot()}/media`)
+          if (!url) throw new Error("WordPress API URL is invalid")
 
-        url.searchParams.set("include", batch.join(","))
-        url.searchParams.set("orderby", "include")
-        url.searchParams.set("per_page", String(batch.length))
-        url.searchParams.set(
-          "_fields",
-          "id,alt_text,source_url,media_details.sizes"
-        )
-        const response = await fetch(url, {
-          cache: "force-cache",
-          headers: requestHeaders(),
-          next: {
-            revalidate: CATALOG_REVALIDATE_SECONDS,
-            tags: ["wordpress-artists"],
-          },
-          signal: AbortSignal.timeout(30_000),
+          url.searchParams.set("include", batch.join(","))
+          url.searchParams.set("orderby", "include")
+          url.searchParams.set("per_page", String(batch.length))
+          url.searchParams.set(
+            "_fields",
+            "id,alt_text,source_url,media_details.sizes"
+          )
+          const response = await fetch(url, {
+            cache: "force-cache",
+            headers: requestHeaders(),
+            next: {
+              revalidate: CATALOG_REVALIDATE_SECONDS,
+              tags: ["wordpress-artists"],
+            },
+            signal: AbortSignal.timeout(30_000),
+          })
+          if (!response.ok)
+            throw new Error(`WordPress returned ${response.status}`)
+          return (await response.json()) as WordPressMedia[]
         })
-        if (!response.ok)
-          throw new Error(`WordPress returned ${response.status}`)
-        return (await response.json()) as WordPressMedia[]
-      })
     )
     for (const item of responses.flat()) if (item.id) media.set(item.id, item)
   }
@@ -379,6 +388,10 @@ async function artistProfiles(
   )
     .filter(({ id }) => usedIds.has(id))
     .sort((left, right) => left.id - right.id)
+  return profilesForArtistTerms(terms)
+}
+
+async function profilesForArtistTerms(terms: WordPressArtistTerm[]) {
   const mediaIds = [
     ...new Set(
       terms.flatMap(({ acf }) =>
@@ -527,6 +540,36 @@ const catalogCache = (catalogGlobal.musicblogCatalogCache ??= {
   pendingPages: new Map(),
   readyCatalogIndex: null,
 })
+const artistGlobal = globalThis as typeof globalThis & {
+  musicblogArtistCache?: ArtistCacheState
+}
+const artistCache = (artistGlobal.musicblogArtistCache ??= {
+  builtAt: 0,
+  pending: null,
+  ready: null,
+})
+
+function getStandaloneArtistCatalog() {
+  if (
+    artistCache.ready &&
+    Date.now() - artistCache.builtAt < CATALOG_REVALIDATE_SECONDS * 1_000
+  )
+    return Promise.resolve(artistCache.ready)
+  if (artistCache.pending) return artistCache.pending
+
+  const request = requestArtistTerms()
+    .then(profilesForArtistTerms)
+    .then((artists) => {
+      artistCache.builtAt = Date.now()
+      artistCache.ready = artists
+      return artists
+    })
+    .finally(() => {
+      if (artistCache.pending === request) artistCache.pending = null
+    })
+  artistCache.pending = request
+  return request
+}
 
 function getCatalogPage(page: number) {
   const pending = catalogCache.pendingPages.get(page)
@@ -720,6 +763,8 @@ function refreshCatalogIndex() {
   const request = buildCatalogIndex()
     .then((index) => {
       catalogCache.readyCatalogIndex = index
+      artistCache.builtAt = index.builtAt
+      artistCache.ready = index.artists
       return index
     })
     .finally(() => {
@@ -1037,7 +1082,10 @@ export async function getAlbumFilterFacets() {
 }
 
 export async function getArtistCatalog() {
-  return (await getCatalogIndex()).artists
+  const index = catalogCache.readyCatalogIndex
+  return index && catalogIndexIsFresh(index)
+    ? index.artists
+    : getStandaloneArtistCatalog()
 }
 
 export async function getAlbumSearchPage(
