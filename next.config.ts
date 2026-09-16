@@ -10,6 +10,7 @@ const nextConfig: NextConfig = {
   turbopack: { root: process.cwd() },
   images: {
     dangerouslyAllowLocalIP: true,
+    minimumCacheTTL: 31_536_000,
     remotePatterns: wordpressUrl
       ? [
           {

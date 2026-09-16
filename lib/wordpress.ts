@@ -1,5 +1,9 @@
 import "server-only"
 
+import { createHash, randomUUID } from "node:crypto"
+import { mkdir, readFile, rename, writeFile } from "node:fs/promises"
+import path from "node:path"
+
 import sanitizeHtml from "sanitize-html"
 
 import { normalizeAlbumSearchText } from "@/app/_catalog-prototype/search-filters"
@@ -111,6 +115,16 @@ const CATALOG_REVALIDATE_SECONDS = 86_400
 const WORDPRESS_PAGE_SIZE = 100
 const SEARCH_PAGE_SIZE = 50
 const WARMUP_CONCURRENCY = 3
+const ARTWORK_WARMUP_CONCURRENCY = 2
+const artworkCacheDirectory = path.join(
+  process.cwd(),
+  ".next/cache/album-artwork"
+)
+const pendingArtwork = new Map<string, Promise<Uint8Array>>()
+const artworkGlobal = globalThis as typeof globalThis & {
+  musicblogArtworkUrls?: Map<string, string>
+}
+const artworkUrlsBySlug = (artworkGlobal.musicblogArtworkUrls ??= new Map())
 
 const entityMap: Record<string, string> = {
   amp: "&",
@@ -236,6 +250,7 @@ function toAlbum(post: WordPressPost): AlbumPost | null {
   if (!isPublicPost(post)) return null
   const media = post._embedded?.["wp:featuredmedia"]?.[0]
   if (!media?.source_url) return null
+  artworkUrlsBySlug.set(post.slug, media.source_url)
 
   const title = decodeEntities(post.title.rendered)
   const artist =
@@ -248,9 +263,72 @@ function toAlbum(post: WordPressPost): AlbumPost | null {
     slug: post.slug,
     title,
     artist,
-    imageUrl: media.source_url,
+    imageUrl: `/api/albums/${encodeURIComponent(post.slug)}/artwork/${createHash("sha256").update(media.source_url).digest("hex").slice(0, 12)}`,
     imageAlt: media.alt_text || `${title} album art`,
   }
+}
+
+function featuredImageUrl(post: WordPressPost) {
+  return post._embedded?.["wp:featuredmedia"]?.[0]?.source_url ?? null
+}
+
+function artworkFile(url: string) {
+  return path.join(
+    artworkCacheDirectory,
+    createHash("sha256").update(url).digest("hex")
+  )
+}
+
+function artworkContentType(url: string) {
+  const extension = path.extname(new URL(url).pathname).toLowerCase()
+  if (extension === ".png") return "image/png"
+  if (extension === ".gif") return "image/gif"
+  if (extension === ".webp") return "image/webp"
+  if (extension === ".avif") return "image/avif"
+  return "image/jpeg"
+}
+
+function cacheArtwork(url: string) {
+  const pending = pendingArtwork.get(url)
+  if (pending) return pending
+
+  const file = artworkFile(url)
+  const request = readFile(file).catch(async () => {
+    const source = new URL(url)
+    const wordpress = new URL(process.env.WORDPRESS_BASE_URL ?? "")
+    if (
+      source.origin !== wordpress.origin ||
+      !source.pathname.startsWith("/wp-content/uploads/")
+    )
+      throw new Error("Album artwork URL is not trusted")
+
+    const response = await fetch(source, {
+      signal: AbortSignal.timeout(30_000),
+    })
+    if (!response.ok) throw new Error(`Artwork returned ${response.status}`)
+    const body = new Uint8Array(await response.arrayBuffer())
+    const temporary = `${file}.${process.pid}.${randomUUID()}.tmp`
+    await mkdir(artworkCacheDirectory, { recursive: true })
+    await writeFile(temporary, body)
+    await rename(temporary, file)
+    return body
+  })
+  pendingArtwork.set(url, request)
+  void request.finally(() => pendingArtwork.delete(url)).catch(() => undefined)
+  return request
+}
+
+async function warmArtworkPosts(posts: WordPressPost[]) {
+  const urls = posts.flatMap((post) => {
+    const url = featuredImageUrl(post)
+    return url ? [url] : []
+  })
+  for (let index = 0; index < urls.length; index += ARTWORK_WARMUP_CONCURRENCY)
+    await Promise.all(
+      urls
+        .slice(index, index + ARTWORK_WARMUP_CONCURRENCY)
+        .map((url) => cacheArtwork(url).catch(() => undefined))
+    )
 }
 
 function toAlbums(posts: WordPressPost[]): AlbumPost[] {
@@ -474,6 +552,24 @@ function getCatalogIndex() {
 
 export function warmAlbumCatalog() {
   return getCatalogIndex()
+}
+
+export async function warmAlbumArtwork() {
+  const first = await getCatalogPage(1)
+  await warmArtworkPosts(first.posts)
+  const index = await getCatalogIndex()
+  await warmArtworkPosts(index.posts.slice(WORDPRESS_PAGE_SIZE))
+}
+
+export async function getAlbumArtwork(slug: string) {
+  let url: string | null | undefined = artworkUrlsBySlug.get(slug)
+  if (!url) {
+    const index = await getCatalogIndex()
+    const post = index.posts.find((candidate) => candidate.slug === slug)
+    url = post ? featuredImageUrl(post) : null
+  }
+  if (!url) return null
+  return { body: await cacheArtwork(url), contentType: artworkContentType(url) }
 }
 
 async function applyCatalogMutation(

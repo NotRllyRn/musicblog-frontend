@@ -3,6 +3,7 @@
 import { Heading } from "@astryxdesign/core/Heading"
 import { Text } from "@astryxdesign/core/Text"
 import { AnimatePresence, LayoutGroup } from "motion/react"
+import { getImageProps } from "next/image"
 import {
   type SetStateAction,
   useCallback,
@@ -37,6 +38,58 @@ interface CatalogBrowserProps {
   initialQuery: string
 }
 
+const ARTWORK_SIZES =
+  "(max-width: 47.99rem) 34vw, (max-width: 69.99rem) 21vw, 14vw"
+const ARTWORK_PRELOAD_CONCURRENCY = 3
+
+function useArtworkPreloader(albums: AlbumPost[]) {
+  const active = useRef(0)
+  const queued = useRef(new Set<string>())
+  const queue = useRef<AlbumPost[]>([])
+
+  useEffect(() => {
+    for (const album of albums)
+      if (!queued.current.has(album.imageUrl)) {
+        queued.current.add(album.imageUrl)
+        queue.current.push(album)
+      }
+
+    const pump = () => {
+      while (
+        active.current < ARTWORK_PRELOAD_CONCURRENCY &&
+        queue.current.length
+      ) {
+        const album = queue.current.shift()
+        if (!album) return
+        const { props } = getImageProps({
+          alt: "",
+          fill: true,
+          sizes: ARTWORK_SIZES,
+          src: album.imageUrl,
+        })
+        const image = new window.Image()
+        const finished = () => {
+          active.current -= 1
+          queueMicrotask(pump)
+        }
+        active.current += 1
+        image.onload = finished
+        image.onerror = finished
+        image.sizes = props.sizes ?? ""
+        image.srcset = props.srcSet ?? ""
+        image.src = props.src
+      }
+    }
+
+    const idle = window.requestIdleCallback?.(pump, { timeout: 1_000 })
+    const timer = idle === undefined ? window.setTimeout(pump, 500) : undefined
+    return () => {
+      if (idle !== undefined) window.cancelIdleCallback(idle)
+      if (timer !== undefined) window.clearTimeout(timer)
+    }
+  }, [albums])
+}
+
 function useDeckCount() {
   const [deckCount, setDeckCount] = useState<DeckCount | null>(null)
 
@@ -65,6 +118,7 @@ export function CatalogBrowser({
   initialQuery,
 }: CatalogBrowserProps) {
   const [albums, setAlbums] = useState(initialPage.albums)
+  useArtworkPreloader(albums)
   const search = useAlbumSearch(initialQuery, initialFilters)
   const [selectionEpoch, setSelectionEpoch] = useState(0)
   const [opened, setOpened] = useState<{
@@ -137,6 +191,12 @@ export function CatalogBrowser({
     },
     [initialPage.totalPages]
   )
+
+  useEffect(() => {
+    if (albums.length >= initialPage.total) return
+    const timer = window.setTimeout(() => void loadMore(albums.length), 750)
+    return () => window.clearTimeout(timer)
+  }, [albums.length, initialPage.total, loadMore])
 
   if (!albums.length) {
     return (
