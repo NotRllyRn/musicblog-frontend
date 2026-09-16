@@ -64,15 +64,18 @@ compositing pass at 4K.
 Artists are a second mode inside the catalog shell, not a route. The album panel
 stays mounted and inert while it slides left, preserving search, filters, and
 every deck position. Artist metadata prefetches through `/api/artists`; the
-portrait component bundle and its roughly 550 bubbles mount only on first use.
+portrait canvas bundle mounts only on first use.
 
-The server filters WordPress artist taxonomy terms against IDs embedded in the
-cached release posts. It accepts an SCF Image Array directly and currently
+The artist endpoint uses non-empty WordPress taxonomy terms directly instead of
+waiting for the complete album search index. It accepts an SCF Image Array and
 supports the live site's numeric attachment IDs by resolving media in bounded
-batches. Only normalized IDs, names, slugs, image URLs, and alt text reach the
-browser.
+parallel batches. The normalized response is shared by the server and browser
+caches; only IDs, names, slugs, image URLs, and alt text reach the browser.
 
-The field uses fixed ID-ordered hex positions and drags one parent world.
-Hovering, focusing, or tapping calculates one O(N) radial displacement map;
-CSS interpolates nested push and scale transforms with no animation-frame loop.
-Reduced-motion mode removes the sweeping panel motion and displacement timing.
+The field draws deterministic ID-ordered nodes on one high-DPI-capped canvas.
+A spatial grid limits collision checks while light center gravity settles the
+cluster; the animation loop sleeps after a bounded number of frames. Portraits
+load four at a time only within the viewport and use a bounded decoded-image
+cache. One hit-test path, an expanded active boundary, and a pinned active node
+prevent hover oscillation. Reduced-motion mode renders the settled layout
+without physics.

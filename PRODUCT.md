@@ -89,11 +89,14 @@ dimmed in the background. WordPress is strictly read-only from this frontend.
 - Only artist terms attached to catalog releases appear. Portraits come from the
   artist taxonomy's SCF image field, with initials retained as a missing-image
   fallback.
-- Artist positions are deterministic and hex-packed. Activating one portrait
-  scales it in place and calculates one bounded radial displacement for nearby
-  portraits; there is no force-simulation loop.
-- Artist metadata prefetches at low priority, while the field and lazy portrait
-  images mount only after first use.
+- Artist positions form a deterministic free-floating cluster. A bounded,
+  spatially indexed simulation applies light center gravity and collisions,
+  then sleeps after settling.
+- The field is one canvas with stable centralized hit testing. Activating a
+  portrait pins and enlarges it, avoiding per-artist DOM rerenders and pointer
+  flicker.
+- Artist metadata prefetches at low priority through its own cached index, while
+  only viewport portraits decode after the field's first use.
 - Server startup caches every 100-post WordPress page with bounded concurrency
   before accepting traffic.
 - Authenticated publish, update, and delete events update one catalog record at
