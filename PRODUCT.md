@@ -84,6 +84,16 @@ dimmed in the background. WordPress is strictly read-only from this frontend.
   rating remains visible as `NA/100`; other missing optional sections are
   omitted.
 - Existing WordPress posts and featured images are the source of truth.
+- An Artists/Albums control swaps the hinged catalog for a free-panning field of
+  equal-size artist portraits without losing album browsing state.
+- Only artist terms attached to catalog releases appear. Portraits come from the
+  artist taxonomy's SCF image field, with initials retained as a missing-image
+  fallback.
+- Artist positions are deterministic and hex-packed. Activating one portrait
+  scales it in place and calculates one bounded radial displacement for nearby
+  portraits; there is no force-simulation loop.
+- Artist metadata prefetches at low priority, while the field and lazy portrait
+  images mount only after first use.
 - Server startup caches every 100-post WordPress page with bounded concurrency
   before accepting traffic.
 - Authenticated publish, update, and delete events update one catalog record at
@@ -106,7 +116,8 @@ dimmed in the background. WordPress is strictly read-only from this frontend.
 
 The product is a personal music blog rooted in vinyl collecting, record shops,
 and older cover-flow music players. Keep the implementation minimal and let the
-selected hinged interaction remain the product's single browsing model.
+selected hinged interaction remain the primary album browsing model; the artist
+field is a focused alternate view rather than a second catalog application.
 
 ## Evidence on Hand
 

@@ -58,3 +58,21 @@ current proxy positions, resizing cancels safely, and broad result sets,
 reduced-motion, or very large viewports replace results immediately. This
 prevents a nominally bounded animation from becoming an expensive full-screen
 compositing pass at 4K.
+
+## Artists view
+
+Artists are a second mode inside the catalog shell, not a route. The album panel
+stays mounted and inert while it slides left, preserving search, filters, and
+every deck position. Artist metadata prefetches through `/api/artists`; the
+portrait component bundle and its roughly 550 bubbles mount only on first use.
+
+The server filters WordPress artist taxonomy terms against IDs embedded in the
+cached release posts. It accepts an SCF Image Array directly and currently
+supports the live site's numeric attachment IDs by resolving media in bounded
+batches. Only normalized IDs, names, slugs, image URLs, and alt text reach the
+browser.
+
+The field uses fixed ID-ordered hex positions and drags one parent world.
+Hovering, focusing, or tapping calculates one O(N) radial displacement map;
+CSS interpolates nested push and scale transforms with no animation-frame loop.
+Reduced-motion mode removes the sweeping panel motion and displacement timing.

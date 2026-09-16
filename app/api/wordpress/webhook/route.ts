@@ -41,6 +41,7 @@ export async function POST(request: Request) {
 
   try {
     revalidateTag("wordpress-albums", { expire: 0 })
+    revalidateTag("wordpress-artists", { expire: 0 })
     return Response.json(
       await mutateAlbumCatalog(
         body.event as CatalogMutationEvent,

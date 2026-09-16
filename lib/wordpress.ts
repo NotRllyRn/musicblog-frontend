@@ -19,6 +19,7 @@ import type {
 } from "@/app/_catalog-prototype/types"
 
 interface WordPressTerm {
+  acf?: { image?: number | WordPressArtistImage }
   id: number
   name: string
   slug: string
@@ -298,30 +299,42 @@ async function requestArtistTerms() {
 
 async function requestArtistMedia(ids: number[]) {
   const media = new Map<number, WordPressMedia>()
-  for (let start = 0; start < ids.length; start += WORDPRESS_ARTIST_PAGE_SIZE) {
-    const batch = ids.slice(start, start + WORDPRESS_ARTIST_PAGE_SIZE)
-    const url = URL.parse(`${apiRoot()}/media`)
-    if (!url) throw new Error("WordPress API URL is invalid")
+  const batches = Array.from(
+    { length: Math.ceil(ids.length / WORDPRESS_ARTIST_PAGE_SIZE) },
+    (_, index) =>
+      ids.slice(
+        index * WORDPRESS_ARTIST_PAGE_SIZE,
+        (index + 1) * WORDPRESS_ARTIST_PAGE_SIZE
+      )
+  )
+  for (let start = 0; start < batches.length; start += WARMUP_CONCURRENCY) {
+    const responses = await Promise.all(
+      batches.slice(start, start + WARMUP_CONCURRENCY).map(async (batch) => {
+        const url = URL.parse(`${apiRoot()}/media`)
+        if (!url) throw new Error("WordPress API URL is invalid")
 
-    url.searchParams.set("include", batch.join(","))
-    url.searchParams.set("orderby", "include")
-    url.searchParams.set("per_page", String(batch.length))
-    url.searchParams.set(
-      "_fields",
-      "id,alt_text,source_url,media_details.sizes"
+        url.searchParams.set("include", batch.join(","))
+        url.searchParams.set("orderby", "include")
+        url.searchParams.set("per_page", String(batch.length))
+        url.searchParams.set(
+          "_fields",
+          "id,alt_text,source_url,media_details.sizes"
+        )
+        const response = await fetch(url, {
+          cache: "force-cache",
+          headers: requestHeaders(),
+          next: {
+            revalidate: CATALOG_REVALIDATE_SECONDS,
+            tags: ["wordpress-artists"],
+          },
+          signal: AbortSignal.timeout(30_000),
+        })
+        if (!response.ok)
+          throw new Error(`WordPress returned ${response.status}`)
+        return (await response.json()) as WordPressMedia[]
+      })
     )
-    const response = await fetch(url, {
-      cache: "force-cache",
-      headers: requestHeaders(),
-      next: {
-        revalidate: CATALOG_REVALIDATE_SECONDS,
-        tags: ["wordpress-artists"],
-      },
-      signal: AbortSignal.timeout(30_000),
-    })
-    if (!response.ok) throw new Error(`WordPress returned ${response.status}`)
-    for (const item of (await response.json()) as WordPressMedia[])
-      if (item.id) media.set(item.id, item)
+    for (const item of responses.flat()) if (item.id) media.set(item.id, item)
   }
   return media
 }
@@ -340,7 +353,10 @@ function trustedArtistImageUrl(value: unknown) {
   }
 }
 
-async function artistProfiles(posts: WordPressPost[]) {
+async function artistProfiles(
+  posts: WordPressPost[],
+  termsRequest?: Promise<WordPressArtistTerm[]>
+) {
   const usedIds = new Set(
     posts.flatMap((post) =>
       (post._embedded?.["wp:term"]?.flat() ?? []).flatMap((term) =>
@@ -350,7 +366,17 @@ async function artistProfiles(posts: WordPressPost[]) {
   )
   if (!usedIds.size) return []
 
-  const terms = (await requestArtistTerms())
+  const embeddedTerms = new Map<number, WordPressArtistTerm>()
+  for (const post of posts)
+    for (const term of post._embedded?.["wp:term"]?.flat() ?? [])
+      if (term.taxonomy === "artist") embeddedTerms.set(term.id, term)
+
+  const requestedTerms = await (termsRequest ?? requestArtistTerms()).catch(
+    () => []
+  )
+  const terms = (
+    requestedTerms.length ? requestedTerms : [...embeddedTerms.values()]
+  )
     .filter(({ id }) => usedIds.has(id))
     .sort((left, right) => left.id - right.id)
   const mediaIds = [
@@ -360,7 +386,9 @@ async function artistProfiles(posts: WordPressPost[]) {
       )
     ),
   ]
-  const media = await requestArtistMedia(mediaIds)
+  const media = await requestArtistMedia(mediaIds).catch(
+    () => new Map<number, WordPressMedia>()
+  )
 
   return terms.map((term) => {
     const image = term.acf?.image
@@ -655,6 +683,7 @@ function catalogFromPosts(
 
 async function buildCatalogIndex(): Promise<CatalogIndex> {
   const first = await getCatalogPage(1)
+  const artistTerms = requestArtistTerms().catch(() => [])
   const pages = [first.posts]
 
   for (let start = 2; start <= first.totalPages; start += WARMUP_CONCURRENCY) {
@@ -670,7 +699,12 @@ async function buildCatalogIndex(): Promise<CatalogIndex> {
   const posts = pages.flat()
   const builtAt = Date.now()
   return {
-    ...catalogFromPosts(posts, builtAt, await artistProfiles(posts), builtAt),
+    ...catalogFromPosts(
+      posts,
+      builtAt,
+      await artistProfiles(posts, artistTerms),
+      builtAt
+    ),
     total: first.total,
     totalPages: first.totalPages,
   }

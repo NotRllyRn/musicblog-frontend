@@ -46,6 +46,14 @@ browser from a lightweight facet list while album matching remains server-only.
 Date and rating controls are bounded by values that actually exist in the
 catalog. No search or filter makes a query-time WordPress request.
 
+The Artists control slides the vinyl catalog aside and opens a draggable field
+of every artist attached to a catalog release. Artist metadata is prefetched
+after the album interface settles, while the portrait field and its lazy images
+mount only when first opened. Portraits use stable hex-packed positions; hover,
+focus, or tap enlarges one artist and displaces nearby portraits with a single
+distance calculation rather than a continuous physics simulation. Returning to
+Albums restores the existing search, filters, and deck positions unchanged.
+
 Browser requests remain abortable and latest-query-wins; current results remain
 visible while replacements load. Results retain the same finite three, five, or
 seven lane browser and progressively request later pages near a lane boundary.
@@ -81,10 +89,12 @@ artwork source cache is stored under `.next/cache`, while Next Image stores its
 responsive derivatives alongside it. Catalog metadata is retained for 24 hours
 between full reconciliations, including review bodies, WordPress's authoritative
 total, ACF data, and embedded artist/genre terms. Raw metadata remains
-server-only; the browser still receives lightweight album records. Every lane
-reserves its finite length from the total. After hydration, the browser quietly
-loads every remaining metadata page and preloads responsive artwork three at a
-time, while an immediate vinyl shell reserves the layout.
+server-only; the browser still receives lightweight album records plus a
+normalized artist catalog. Numeric SCF artist image IDs are resolved through
+bounded WordPress media batches on the server. Every lane reserves its finite
+length from the total. After hydration, the browser quietly loads every
+remaining metadata page and preloads responsive artwork three at a time, while
+an immediate vinyl shell reserves the layout.
 Review bodies and track lists use the server-local catalog snapshot through the
 `/api/albums/[slug]` endpoint, so opening an album does not query WordPress. A
 300ms desktop hover or the first touch selection starts prefetching from the
