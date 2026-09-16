@@ -1,8 +1,10 @@
 "use client"
 
+import { Button } from "@astryxdesign/core/Button"
 import { Heading } from "@astryxdesign/core/Heading"
 import { Text } from "@astryxdesign/core/Text"
 import { AnimatePresence, LayoutGroup } from "motion/react"
+import dynamic from "next/dynamic"
 import { getImageProps } from "next/image"
 import {
   type SetStateAction,
@@ -28,6 +30,8 @@ import type {
   AlbumPage,
   AlbumPost,
   AlbumSearchFilters,
+  ArtistProfile,
+  CatalogMode,
   DeckCount,
 } from "./types"
 
@@ -41,6 +45,26 @@ interface CatalogBrowserProps {
 const ARTWORK_SIZES =
   "(max-width: 47.99rem) 34vw, (max-width: 69.99rem) 21vw, 14vw"
 const ARTWORK_PRELOAD_CONCURRENCY = 3
+let artistCatalogRequest: Promise<ArtistProfile[]> | null = null
+
+const ArtistField = dynamic(
+  () => import("./artist-field").then(({ ArtistField }) => ArtistField),
+  { ssr: false }
+)
+
+function requestArtistCatalog() {
+  if (artistCatalogRequest) return artistCatalogRequest
+  artistCatalogRequest = fetch("/api/artists")
+    .then((response) => {
+      if (!response.ok) throw new Error("Artists could not load")
+      return response.json() as Promise<ArtistProfile[]>
+    })
+    .catch((error: unknown) => {
+      artistCatalogRequest = null
+      throw error
+    })
+  return artistCatalogRequest
+}
 
 function useArtworkPreloader(albums: AlbumPost[]) {
   const active = useRef(0)
@@ -119,6 +143,11 @@ export function CatalogBrowser({
 }: CatalogBrowserProps) {
   const [albums, setAlbums] = useState(initialPage.albums)
   useArtworkPreloader(albums)
+  const [catalogMode, setCatalogMode] = useState<CatalogMode>("albums")
+  const [artists, setArtists] = useState<ArtistProfile[] | null>(null)
+  const [artistsMounted, setArtistsMounted] = useState(false)
+  const [artistsLoading, setArtistsLoading] = useState(false)
+  const [artistsError, setArtistsError] = useState(false)
   const search = useAlbumSearch(initialQuery, initialFilters)
   const [selectionEpoch, setSelectionEpoch] = useState(0)
   const [opened, setOpened] = useState<{
@@ -162,6 +191,32 @@ export function CatalogBrowser({
       .catch(() => detailRequests.current.delete(album.id))
     return request
   }, [])
+  const loadArtists = useCallback(() => {
+    if (artists) return Promise.resolve(artists)
+    setArtistsError(false)
+    setArtistsLoading(true)
+    return requestArtistCatalog()
+      .then((profiles) => {
+        setArtists(profiles)
+        return profiles
+      })
+      .catch((error: unknown) => {
+        setArtistsError(true)
+        throw error
+      })
+      .finally(() => setArtistsLoading(false))
+  }, [artists])
+
+  useEffect(() => {
+    if (artists) return
+    const prefetch = () => void loadArtists().catch(() => undefined)
+    const idle = window.requestIdleCallback?.(prefetch, { timeout: 2_500 })
+    const timer = idle === undefined ? window.setTimeout(prefetch, 1_500) : null
+    return () => {
+      if (idle !== undefined) window.cancelIdleCallback(idle)
+      if (timer !== null) window.clearTimeout(timer)
+    }
+  }, [artists, loadArtists])
 
   useEffect(() => {
     const reload = () => window.location.reload()
@@ -274,68 +329,115 @@ export function CatalogBrowser({
     window.history.pushState(null, "", url)
   }
 
+  const toggleCatalogMode = () => {
+    if (catalogMode === "artists") {
+      setCatalogMode("albums")
+      return
+    }
+    setArtistsMounted(true)
+    setCatalogMode("artists")
+    void loadArtists().catch(() => undefined)
+  }
+
   return (
     <>
       <LayoutGroup id="album-detail">
-        <main className="variant-shell">
+        <main className="variant-shell" data-catalog-mode={catalogMode}>
           <header className="catalog-header" inert={opened ? true : undefined}>
             <Heading level={1} color="inherit">
               Tim&apos;s Music Blog
             </Heading>
             <Text type="supporting" color="inherit">
-              {initialPage.total} records · hinged by hand
+              {catalogMode === "albums"
+                ? `${initialPage.total} records · hinged by hand`
+                : `${artists?.length ?? "…"} artists · from the archive`}
             </Text>
           </header>
-          <CatalogSearch
-            activeFilterCount={search.activeFilterCount}
-            error={search.error}
-            facets={search.facets}
-            facetsError={search.facetsError}
-            filters={search.filters}
-            isDisabled={opened !== null}
-            isLoadingFacets={search.isLoadingFacets}
-            isSearching={search.isSearching}
-            onChange={setSearchQuery}
-            onClearFilters={() => setSearchFilters(createEmptyAlbumFilters())}
-            onFilterChange={setSearchFilters}
-            onInteract={() => setSelectionEpoch((current) => current + 1)}
-            onLoadFacets={search.loadFacets}
-            query={search.query}
-            resultCount={search.result?.total ?? null}
-          />
-          <RecordField
-            albums={albums}
-            deckCount={deckCount}
-            detailVisible={detailVisible || search.isTransitioning}
-            isHidden={search.result !== null}
-            openedAlbumId={opened?.album.id ?? null}
-            key={`archive:${deckCount}`}
-            onExitInteraction={interruptDetailExit}
-            onNeedMore={loadMore}
-            onOpenAlbum={openAlbum}
-            onPrefetchAlbum={(album) => void requestAlbumDetail(album)}
-            searchQuery={null}
-            searchTransitioning={search.isTransitioning}
-            selectionEpoch={selectionEpoch}
-            total={initialPage.total}
-          />
-          {search.result && (
+          <aside
+            className="catalog-mode-toggle"
+            inert={Boolean(opened) || undefined}
+          >
+            <Button
+              label={catalogMode === "albums" ? "Artists" : "Albums"}
+              onClick={toggleCatalogMode}
+              onFocus={() => void loadArtists().catch(() => undefined)}
+              onPointerEnter={() => void loadArtists().catch(() => undefined)}
+              size="sm"
+              variant="secondary"
+            />
+          </aside>
+          <section
+            aria-hidden={catalogMode !== "albums"}
+            className="catalog-mode-panel catalog-album-panel"
+            data-active={catalogMode === "albums" || undefined}
+            inert={catalogMode !== "albums" || opened ? true : undefined}
+          >
+            <CatalogSearch
+              activeFilterCount={search.activeFilterCount}
+              error={search.error}
+              facets={search.facets}
+              facetsError={search.facetsError}
+              filters={search.filters}
+              isDisabled={opened !== null}
+              isLoadingFacets={search.isLoadingFacets}
+              isSearching={search.isSearching}
+              onChange={setSearchQuery}
+              onClearFilters={() => setSearchFilters(createEmptyAlbumFilters())}
+              onFilterChange={setSearchFilters}
+              onInteract={() => setSelectionEpoch((current) => current + 1)}
+              onLoadFacets={search.loadFacets}
+              query={search.query}
+              resultCount={search.result?.total ?? null}
+            />
             <RecordField
-              albums={search.result.albums}
+              albums={albums}
               deckCount={deckCount}
               detailVisible={detailVisible || search.isTransitioning}
+              isHidden={search.result !== null}
               openedAlbumId={opened?.album.id ?? null}
-              key={`search:${search.result.criteria}:${deckCount}`}
+              key={`archive:${deckCount}`}
               onExitInteraction={interruptDetailExit}
-              onNeedMore={search.loadMore}
+              onNeedMore={loadMore}
               onOpenAlbum={openAlbum}
               onPrefetchAlbum={(album) => void requestAlbumDetail(album)}
-              searchQuery={search.result.query || "Filtered catalog"}
+              searchQuery={null}
               searchTransitioning={search.isTransitioning}
               selectionEpoch={selectionEpoch}
-              total={search.result.total}
+              total={initialPage.total}
             />
-          )}
+            {search.result && (
+              <RecordField
+                albums={search.result.albums}
+                deckCount={deckCount}
+                detailVisible={detailVisible || search.isTransitioning}
+                openedAlbumId={opened?.album.id ?? null}
+                key={`search:${search.result.criteria}:${deckCount}`}
+                onExitInteraction={interruptDetailExit}
+                onNeedMore={search.loadMore}
+                onOpenAlbum={openAlbum}
+                onPrefetchAlbum={(album) => void requestAlbumDetail(album)}
+                searchQuery={search.result.query || "Filtered catalog"}
+                searchTransitioning={search.isTransitioning}
+                selectionEpoch={selectionEpoch}
+                total={search.result.total}
+              />
+            )}
+          </section>
+          <section
+            aria-hidden={catalogMode !== "artists"}
+            className="catalog-mode-panel catalog-artist-panel"
+            data-active={catalogMode === "artists" || undefined}
+            inert={catalogMode !== "artists" || opened ? true : undefined}
+          >
+            {artistsMounted && (
+              <ArtistField
+                artists={artists}
+                hasError={artistsError}
+                isLoading={artistsLoading}
+                onRetry={() => void loadArtists().catch(() => undefined)}
+              />
+            )}
+          </section>
           <AnimatePresence
             onExitComplete={() => {
               if (detailVisibleRef.current) return
