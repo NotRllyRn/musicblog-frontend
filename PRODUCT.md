@@ -84,8 +84,8 @@ dimmed in the background. WordPress is strictly read-only from this frontend.
   rating remains visible as `NA/100`; other missing optional sections are
   omitted.
 - Existing WordPress posts and featured images are the source of truth.
-- An Artists/Albums control swaps the hinged catalog for a free-panning field of
-  equal-size artist portraits without losing album browsing state.
+- An Artists/Albums control opens `/artists`, a free-panning field of equal-size
+  artist portraits, without losing album browsing state.
 - Only artist terms attached to catalog releases appear. Portraits come from the
   artist taxonomy's SCF image field, with initials retained as a missing-image
   fallback.
@@ -94,9 +94,10 @@ dimmed in the background. WordPress is strictly read-only from this frontend.
   ramps down smoothly, then sleeps after settling.
 - The field is one canvas with stable centralized hit testing. Activating a
   portrait pins and enlarges it, avoiding per-artist DOM rerenders and pointer
-  flicker.
-- Dragging pans the field; pointer-centered wheel and keyboard controls zoom
-  from 55% to 180%.
+  flicker. Choosing it opens the album catalog at `/?artist=…`.
+- Dragging pans the field; pinch, pointer-centered wheel, and keyboard controls
+  zoom from 55% to 180%. A first touch previews, a second selects, and camera
+  movement dismisses the preview.
 - Artist metadata prefetches at low priority through its own cached index, while
   only viewport portraits decode after the field's first use.
 - Server startup caches every 100-post WordPress page with bounded concurrency

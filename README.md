@@ -46,15 +46,18 @@ browser from a lightweight facet list while album matching remains server-only.
 Date and rating controls are bounded by values that actually exist in the
 catalog. No search or filter makes a query-time WordPress request.
 
-The Artists control slides the vinyl catalog aside and opens a draggable canvas
-field of every artist attached to a catalog release. Artist metadata is
+The Artists control opens `/artists`, where a draggable canvas shows every
+artist attached to a catalog release. Artist metadata is
 prefetched after the album interface settles, while portraits decode only when
 they enter the viewport. Nodes begin in a deterministic free-floating cluster,
 settle under light gravity and collision forces, then sleep. Centralized hit
 testing keeps hover, focus, and tap enlargement stable without rerendering the
-artist collection. Dragging pans the field, while pointer-centered wheel zoom
-and keyboard zoom stay within readable bounds. Returning to Albums restores the
-existing search, filters, and deck positions unchanged.
+artist collection. Dragging pans the field, while pinch, pointer-centered wheel,
+and keyboard zoom stay within readable bounds. On touch screens, one tap
+previews an artist and a second tap opens `/?artist=…`; dragging or pinching
+dismisses the preview. Mouse and keyboard activation open the filtered album
+catalog immediately. Returning to Albums restores the existing search, filters,
+and deck positions unchanged.
 
 Browser requests remain abortable and latest-query-wins; current results remain
 visible while replacements load. Results retain the same finite three, five, or
