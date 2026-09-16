@@ -38,6 +38,7 @@ import type {
 interface CatalogBrowserProps {
   initialAlbum: AlbumDetail | null
   initialFilters: AlbumSearchFilters
+  initialMode: CatalogMode
   initialPage: AlbumPage
   initialQuery: string
 }
@@ -142,14 +143,17 @@ function useDeckCount() {
 export function CatalogBrowser({
   initialAlbum,
   initialFilters,
+  initialMode,
   initialPage,
   initialQuery,
 }: CatalogBrowserProps) {
   const [albums, setAlbums] = useState(initialPage.albums)
-  const [catalogMode, setCatalogMode] = useState<CatalogMode>("albums")
+  const [catalogMode, setCatalogMode] = useState<CatalogMode>(initialMode)
   useArtworkPreloader(albums, catalogMode === "albums")
   const [artists, setArtists] = useState<ArtistProfile[] | null>(null)
-  const [artistsMounted, setArtistsMounted] = useState(false)
+  const [artistsMounted, setArtistsMounted] = useState(
+    initialMode === "artists"
+  )
   const [artistsLoading, setArtistsLoading] = useState(false)
   const [artistsError, setArtistsError] = useState(false)
   const search = useAlbumSearch(initialQuery, initialFilters)
@@ -214,13 +218,17 @@ export function CatalogBrowser({
   useEffect(() => {
     if (artists) return
     const prefetch = () => void loadArtists().catch(() => undefined)
+    if (catalogMode === "artists") {
+      const timer = window.setTimeout(prefetch)
+      return () => window.clearTimeout(timer)
+    }
     const idle = window.requestIdleCallback?.(prefetch, { timeout: 2_500 })
     const timer = idle === undefined ? window.setTimeout(prefetch, 1_500) : null
     return () => {
       if (idle !== undefined) window.cancelIdleCallback(idle)
       if (timer !== null) window.clearTimeout(timer)
     }
-  }, [artists, loadArtists])
+  }, [artists, catalogMode, loadArtists])
 
   useEffect(() => {
     const reload = () => window.location.reload()
@@ -303,6 +311,7 @@ export function CatalogBrowser({
 
   const searchUrl = (query: string, filters: AlbumSearchFilters) => {
     const url = new URL(window.location.href)
+    url.pathname = "/"
     for (const name of ALBUM_SEARCH_PARAMETER_NAMES)
       url.searchParams.delete(name)
     for (const [name, value] of albumSearchParameters(query, filters))
@@ -328,6 +337,7 @@ export function CatalogBrowser({
     setDetailVisible(false)
     search.setQuery("")
     search.setFilters(filters)
+    setCatalogMode("albums")
     const url = searchUrl("", filters)
     url.searchParams.delete("album")
     window.history.pushState(null, "", url)
@@ -336,10 +346,16 @@ export function CatalogBrowser({
   const toggleCatalogMode = () => {
     if (catalogMode === "artists") {
       setCatalogMode("albums")
+      window.history.pushState(
+        null,
+        "",
+        searchUrl(search.query, search.filters)
+      )
       return
     }
     setArtistsMounted(true)
     setCatalogMode("artists")
+    window.history.pushState(null, "", "/artists")
     void loadArtists().catch(() => undefined)
   }
 
@@ -441,6 +457,7 @@ export function CatalogBrowser({
                 artists={artists}
                 hasError={artistsError}
                 isLoading={artistsLoading}
+                onSelect={(artist) => searchArtist(artist.name)}
                 onRetry={() => void loadArtists().catch(() => undefined)}
               />
             )}

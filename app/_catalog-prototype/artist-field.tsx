@@ -21,6 +21,7 @@ interface ArtistFieldProps {
   hasError: boolean
   isLoading: boolean
   onRetry: () => void
+  onSelect: (artist: ArtistProfile) => void
 }
 
 interface Portrait {

@@ -6,5 +6,5 @@ import {
 export default function Page(props: {
   searchParams: Promise<CatalogPageSearchParams>
 }) {
-  return <CatalogPage initialMode="albums" searchParams={props.searchParams} />
+  return <CatalogPage initialMode="artists" searchParams={props.searchParams} />
 }
