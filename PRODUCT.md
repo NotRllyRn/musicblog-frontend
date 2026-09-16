@@ -91,10 +91,12 @@ dimmed in the background. WordPress is strictly read-only from this frontend.
   fallback.
 - Artist positions form a deterministic free-floating cluster. A bounded,
   spatially indexed simulation applies light center gravity and collisions,
-  then sleeps after settling.
+  ramps down smoothly, then sleeps after settling.
 - The field is one canvas with stable centralized hit testing. Activating a
   portrait pins and enlarges it, avoiding per-artist DOM rerenders and pointer
   flicker.
+- Dragging pans the field; pointer-centered wheel and keyboard controls zoom
+  from 55% to 180%.
 - Artist metadata prefetches at low priority through its own cached index, while
   only viewport portraits decode after the field's first use.
 - Server startup caches every 100-post WordPress page with bounded concurrency

@@ -52,8 +52,9 @@ prefetched after the album interface settles, while portraits decode only when
 they enter the viewport. Nodes begin in a deterministic free-floating cluster,
 settle under light gravity and collision forces, then sleep. Centralized hit
 testing keeps hover, focus, and tap enlargement stable without rerendering the
-artist collection. Returning to Albums restores the existing search, filters,
-and deck positions unchanged.
+artist collection. Dragging pans the field, while pointer-centered wheel zoom
+and keyboard zoom stay within readable bounds. Returning to Albums restores the
+existing search, filters, and deck positions unchanged.
 
 Browser requests remain abortable and latest-query-wins; current results remain
 visible while replacements load. Results retain the same finite three, five, or

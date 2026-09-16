@@ -74,8 +74,10 @@ caches; only IDs, names, slugs, image URLs, and alt text reach the browser.
 
 The field draws deterministic ID-ordered nodes on one high-DPI-capped canvas.
 A spatial grid limits collision checks while light center gravity settles the
-cluster; the animation loop sleeps after a bounded number of frames. Portraits
-load four at a time only within the viewport and use a bounded decoded-image
-cache. One hit-test path, an expanded active boundary, and a pinned active node
-prevent hover oscillation. Reduced-motion mode renders the settled layout
-without physics.
+cluster. Simulation speed ramps up quickly when awakened, decays exponentially,
+and sleeps only after its motion multiplier becomes imperceptible. Dragging pans
+the field, while pointer-centered wheel and keyboard zoom clamp between 55% and
+180%. Portraits load four at a time only within the viewport and use a bounded
+decoded-image cache. One hit-test path, an expanded active boundary, and a
+pinned active node prevent hover oscillation. Reduced-motion mode renders the
+settled layout without physics.
