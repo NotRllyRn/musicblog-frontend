@@ -90,6 +90,14 @@
   box-shadow: var(--shadow-med);
 }
 
+.catalog-mode-toggle[data-catalog-mode="albums"] .astryx-button {
+  border-color: var(--catalog-ink);
+  background: var(--catalog-ink);
+  color: var(--catalog-paper);
+  box-shadow: var(--shadow-high);
+  font-weight: var(--font-weight-semibold);
+}
+
 .catalog-mode-panel {
   position: absolute;
   inset: 0;
@@ -123,6 +131,21 @@
   color: var(--catalog-ink);
 }
 
+.artist-viewport::before {
+  position: absolute;
+  z-index: 2;
+  inset: 0 0 auto;
+  height: clamp(3.5rem, 9dvh, 6rem);
+  background: linear-gradient(
+    to bottom,
+    var(--catalog-paper),
+    color-mix(in oklch, var(--catalog-paper) 72%, transparent) 48%,
+    transparent
+  );
+  content: "";
+  pointer-events: none;
+}
+
 .artist-canvas {
   display: block;
   width: 100%;
@@ -151,6 +174,7 @@
 
 .artist-field-help {
   position: absolute;
+  z-index: 3;
   right: var(--spacing-3);
   bottom: var(--spacing-3);
   max-width: min(22rem, calc(100% - var(--spacing-6)));

@@ -359,14 +359,17 @@ export function CatalogBrowser({
           </header>
           <aside
             className="catalog-mode-toggle"
+            data-catalog-mode={catalogMode}
             inert={Boolean(opened) || undefined}
           >
             <Button
-              label={catalogMode === "albums" ? "Artists" : "Albums"}
+              label={
+                catalogMode === "albums" ? "Explore artists" : "Browse albums"
+              }
               onClick={toggleCatalogMode}
               onFocus={() => void loadArtists().catch(() => undefined)}
               onPointerEnter={() => void loadArtists().catch(() => undefined)}
-              size="sm"
+              size="md"
               variant="secondary"
             />
           </aside>
