@@ -15,9 +15,23 @@ export interface ArtistPhysicsOptions {
   damping?: number
   gap: number
   gravity?: number
+  speed?: number
 }
 
 const GOLDEN_ANGLE = Math.PI * (3 - Math.sqrt(5))
+
+export function approachMotionSpeed(
+  current: number,
+  target: 0 | 1,
+  elapsedSeconds: number
+) {
+  const rate = target > current ? 18 : 2.2
+  const next =
+    current +
+    (target - current) *
+      (1 - Math.exp(-rate * Math.min(elapsedSeconds, 1 / 10)))
+  return target === 0 && next < 0.004 ? 0 : next
+}
 
 export function createArtistNodes(
   artists: ArtistProfile[],
@@ -79,10 +93,17 @@ export function findArtistNode(
 export function stepArtistPhysics(
   nodes: ArtistNode[],
   elapsedSeconds: number,
-  { activeId, damping = 2.8, gap, gravity = 0.035 }: ArtistPhysicsOptions
+  {
+    activeId,
+    damping = 2.8,
+    gap,
+    gravity = 0.035,
+    speed = 1,
+  }: ArtistPhysicsOptions
 ) {
   const elapsed = Math.min(elapsedSeconds, 1 / 30)
-  const drag = Math.exp(-damping * elapsed)
+  const physicsElapsed = elapsed * clamp(speed, 0, 1)
+  const drag = Math.exp(-damping * physicsElapsed)
   let fastest = 0
 
   for (const node of nodes) {
@@ -90,16 +111,19 @@ export function stepArtistPhysics(
     const targetRadius = node.radius * (active ? 1.35 : 1)
     node.renderRadius +=
       (targetRadius - node.renderRadius) * (1 - Math.exp(-12 * elapsed))
+    if (!physicsElapsed) continue
     if (active) {
       node.vx = 0
       node.vy = 0
       continue
     }
-    node.vx = (node.vx - node.x * gravity * elapsed) * drag
-    node.vy = (node.vy - node.y * gravity * elapsed) * drag
-    node.x += node.vx * elapsed
-    node.y += node.vy * elapsed
+    node.vx = (node.vx - node.x * gravity * physicsElapsed) * drag
+    node.vy = (node.vy - node.y * gravity * physicsElapsed) * drag
+    node.x += node.vx * physicsElapsed
+    node.y += node.vy * physicsElapsed
   }
+
+  if (!physicsElapsed || !nodes.length) return fastest
 
   const cellSize =
     Math.max(...nodes.map(({ renderRadius }) => renderRadius)) * 2 + gap
@@ -140,10 +164,11 @@ export function stepArtistPhysics(
           const otherActive = other.artist.id === activeId
           const nodeShare = nodeActive ? 0 : otherActive ? 1 : 0.5
           const otherShare = otherActive ? 0 : nodeActive ? 1 : 0.5
-          node.x -= unitX * overlap * nodeShare
-          node.y -= unitY * overlap * nodeShare
-          other.x += unitX * overlap * otherShare
-          other.y += unitY * overlap * otherShare
+          const correction = overlap * Math.min(1, physicsElapsed * 60)
+          node.x -= unitX * correction * nodeShare
+          node.y -= unitY * correction * nodeShare
+          other.x += unitX * correction * otherShare
+          other.y += unitY * correction * otherShare
         }
   }
 
@@ -151,3 +176,6 @@ export function stepArtistPhysics(
     fastest = Math.max(fastest, Math.hypot(node.vx, node.vy))
   return fastest
 }
+
+const clamp = (value: number, min: number, max: number) =>
+  Math.min(max, Math.max(min, value))

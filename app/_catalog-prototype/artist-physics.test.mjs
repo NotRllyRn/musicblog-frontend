@@ -2,6 +2,7 @@ import assert from "node:assert/strict"
 import test from "node:test"
 
 import {
+  approachMotionSpeed,
   createArtistNodes,
   findArtistNode,
   stepArtistPhysics,
@@ -58,4 +59,28 @@ test("hit testing keeps the active node through a padded exit boundary", () => {
   const active = nodes[0]
   assert.equal(findArtistNode(nodes, 50, 0, active.artist.id), active)
   assert.equal(findArtistNode(nodes, 60, 0, active.artist.id), null)
+})
+
+test("motion ramps up quickly and eases smoothly into sleep", () => {
+  const elapsed = 1 / 60
+  const rampedUp = approachMotionSpeed(0, 1, elapsed)
+  const slowedDown = approachMotionSpeed(1, 0, elapsed)
+  assert.ok(rampedUp > 1 - slowedDown)
+
+  let speed = 1
+  for (let index = 0; index < 300; index += 1)
+    speed = approachMotionSpeed(speed, 0, elapsed)
+  assert.equal(speed, 0)
+})
+
+test("zero simulation speed still animates active radius without moving", () => {
+  const [node] = createArtistNodes(artists(1), 40, 8)
+  const before = { x: node.x, y: node.y }
+  stepArtistPhysics([node], 1 / 60, {
+    activeId: node.artist.id,
+    gap: 8,
+    speed: 0,
+  })
+  assert.deepEqual({ x: node.x, y: node.y }, before)
+  assert.ok(node.renderRadius > node.radius)
 })

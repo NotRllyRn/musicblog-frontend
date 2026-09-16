@@ -8,6 +8,7 @@ import { useEffect, useRef, useState } from "react"
 
 import {
   type ArtistNode,
+  approachMotionSpeed,
   artistWorldRadius,
   createArtistNodes,
   findArtistNode,
@@ -36,12 +37,13 @@ interface ArtistRuntime {
   dpr: number
   dragging: boolean
   frame: number | null
-  framesLeft: number
   height: number
   imageClock: number
   imageQueue: ArtistNode[]
   images: Map<number, Portrait>
   inFlight: number
+  motionSpeed: number
+  motionUntil: number
   nodes: ArtistNode[]
   pointerId: number | null
   pointerStartX: number
@@ -53,6 +55,7 @@ interface ArtistRuntime {
   startCameraY: number
   width: number
   worldRadius: number
+  zoom: number
 }
 
 const DESKTOP_RADIUS = 56
@@ -61,6 +64,9 @@ const NODE_GAP = 10
 const IMAGE_CONCURRENCY = 4
 const IMAGE_CACHE_SIZE = 160
 const FIELD_HELP_ID = "artist-field-help"
+const MIN_ZOOM = 0.55
+const MAX_ZOOM = 1.8
+const ZOOM_STEP = 1.18
 
 const clamp = (value: number, min: number, max: number) =>
   Math.min(max, Math.max(min, value))
@@ -86,14 +92,24 @@ function canvasPoint(
 ) {
   const bounds = canvas.getBoundingClientRect()
   return {
-    x: clientX - bounds.left - runtime.width / 2 - runtime.cameraX,
-    y: clientY - bounds.top - runtime.height / 2 - runtime.cameraY,
+    x:
+      (clientX - bounds.left - runtime.width / 2 - runtime.cameraX) /
+      runtime.zoom,
+    y:
+      (clientY - bounds.top - runtime.height / 2 - runtime.cameraY) /
+      runtime.zoom,
   }
 }
 
 function clampCamera(runtime: ArtistRuntime) {
-  const horizontal = Math.max(0, runtime.worldRadius - runtime.width * 0.25)
-  const vertical = Math.max(0, runtime.worldRadius - runtime.height * 0.25)
+  const horizontal = Math.max(
+    0,
+    runtime.worldRadius * runtime.zoom - runtime.width * 0.25
+  )
+  const vertical = Math.max(
+    0,
+    runtime.worldRadius * runtime.zoom - runtime.height * 0.25
+  )
   runtime.cameraX = clamp(runtime.cameraX, -horizontal, horizontal)
   runtime.cameraY = clamp(runtime.cameraY, -vertical, vertical)
 }
@@ -156,9 +172,9 @@ function drawArtistField(
   const visible = new Set<number>()
 
   for (const node of nodes) {
-    const x = runtime.width / 2 + runtime.cameraX + node.x
-    const y = runtime.height / 2 + runtime.cameraY + node.y
-    const radius = node.renderRadius
+    const x = runtime.width / 2 + runtime.cameraX + node.x * runtime.zoom
+    const y = runtime.height / 2 + runtime.cameraY + node.y * runtime.zoom
+    const radius = node.renderRadius * runtime.zoom
     if (
       x + radius < -radius ||
       x - radius > runtime.width + radius ||
@@ -208,9 +224,18 @@ function drawArtistField(
   }
 
   if (active) {
-    const x = runtime.width / 2 + runtime.cameraX + active.x
-    const y = runtime.height / 2 + runtime.cameraY + active.y
-    drawLabel(context, active, x, y, runtime.width, runtime.height, ink, paper)
+    const x = runtime.width / 2 + runtime.cameraX + active.x * runtime.zoom
+    const y = runtime.height / 2 + runtime.cameraY + active.y * runtime.zoom
+    drawLabel(
+      context,
+      { ...active, renderRadius: active.renderRadius * runtime.zoom },
+      x,
+      y,
+      runtime.width,
+      runtime.height,
+      ink,
+      paper
+    )
   }
 
   if (runtime.images.size > IMAGE_CACHE_SIZE)
@@ -250,12 +275,13 @@ export function ArtistField({
       dpr: 1,
       dragging: false,
       frame: null,
-      framesLeft: 0,
       height: 0,
       imageClock: 0,
       imageQueue: [],
       images: new Map(),
       inFlight: 0,
+      motionSpeed: 0,
+      motionUntil: 0,
       nodes: [],
       pointerId: null,
       pointerStartX: 0,
@@ -267,13 +293,21 @@ export function ArtistField({
       startCameraY: 0,
       width: 0,
       worldRadius: 0,
+      zoom: 1,
     }
     runtime.current = state
 
-    const requestFrame = (frames = 1) => {
-      state.framesLeft = Math.max(state.framesLeft, frames)
+    const requestFrame = () => {
       if (state.frame === null)
         state.frame = requestAnimationFrame((time) => animate(time))
+    }
+
+    const wake = (duration: number) => {
+      state.motionUntil = Math.max(
+        state.motionUntil,
+        performance.now() + duration
+      )
+      requestFrame()
     }
 
     const pumpImages = () => {
@@ -325,14 +359,27 @@ export function ArtistField({
         ? (time - state.previousTime) / 1_000
         : 1 / 60
       state.previousTime = time
-      if (!state.reducedMotion && state.framesLeft > 0)
+      const target = !state.reducedMotion && time < state.motionUntil ? 1 : 0
+      state.motionSpeed = approachMotionSpeed(
+        state.motionSpeed,
+        target,
+        elapsed
+      )
+      if (!state.reducedMotion)
         stepArtistPhysics(state.nodes, elapsed, {
           activeId: state.activeId,
           gap: NODE_GAP,
+          speed: state.motionSpeed,
         })
-      state.framesLeft = Math.max(0, state.framesLeft - 1)
       drawArtistField(element, state, queuePortrait)
-      if (state.framesLeft > 0) requestFrame()
+      const radiiAnimating = state.nodes.some(
+        (node) =>
+          Math.abs(
+            node.renderRadius -
+              node.radius * (node.artist.id === state.activeId ? 1.35 : 1)
+          ) > 0.05
+      )
+      if (target || state.motionSpeed || radiiAnimating) requestFrame()
       else state.previousTime = 0
     }
 
@@ -345,12 +392,32 @@ export function ArtistField({
         for (const candidate of state.nodes)
           candidate.renderRadius =
             candidate.radius * (candidate.artist.id === id ? 1.35 : 1)
-      requestFrame(state.reducedMotion ? 1 : 28)
+      if (state.reducedMotion) requestFrame()
+      else wake(220)
     }
 
     const hitTest = (clientX: number, clientY: number) => {
       const point = canvasPoint(element, state, clientX, clientY)
       return findArtistNode(state.nodes, point.x, point.y, state.activeId)
+    }
+
+    const zoomAt = (
+      clientX: number,
+      clientY: number,
+      requestedZoom: number
+    ) => {
+      const nextZoom = clamp(requestedZoom, MIN_ZOOM, MAX_ZOOM)
+      if (nextZoom === state.zoom) return
+      const bounds = element.getBoundingClientRect()
+      const anchorX = clientX - bounds.left
+      const anchorY = clientY - bounds.top
+      const world = canvasPoint(element, state, clientX, clientY)
+      state.zoom = nextZoom
+      state.cameraX = anchorX - state.width / 2 - world.x * nextZoom
+      state.cameraY = anchorY - state.height / 2 - world.y * nextZoom
+      clampCamera(state)
+      setActive(null)
+      requestFrame()
     }
 
     const onPointerDown = (event: PointerEvent) => {
@@ -395,15 +462,44 @@ export function ArtistField({
         setActive(null)
       }
     }
+    const onWheel = (event: WheelEvent) => {
+      event.preventDefault()
+      zoomAt(
+        event.clientX,
+        event.clientY,
+        state.zoom * Math.exp(-event.deltaY * 0.001)
+      )
+    }
     const onKeyDown = (event: KeyboardEvent) => {
       if (
-        !["ArrowLeft", "ArrowRight", "Home", "End", "Escape"].includes(
-          event.key
-        )
+        ![
+          "ArrowLeft",
+          "ArrowRight",
+          "Home",
+          "End",
+          "Escape",
+          "+",
+          "=",
+          "-",
+          "0",
+        ].includes(event.key)
       )
         return
       event.preventDefault()
       if (event.key === "Escape") return setActive(null)
+      if (["+", "=", "-", "0"].includes(event.key)) {
+        const bounds = element.getBoundingClientRect()
+        const requestedZoom =
+          event.key === "0"
+            ? 1
+            : state.zoom * (event.key === "-" ? 1 / ZOOM_STEP : ZOOM_STEP)
+        zoomAt(
+          bounds.left + state.width / 2,
+          bounds.top + state.height / 2,
+          requestedZoom
+        )
+        return
+      }
       const current = state.nodes.findIndex(
         ({ artist }) => artist.id === state.activeId
       )
@@ -417,14 +513,20 @@ export function ArtistField({
               : (current + 1) % state.nodes.length
       const node = state.nodes[index]
       if (!node) return
-      state.cameraX = -node.x
-      state.cameraY = -node.y
+      state.cameraX = -node.x * state.zoom
+      state.cameraY = -node.y * state.zoom
       clampCamera(state)
       setActive(node)
     }
     const onMotionChange = () => {
       state.reducedMotion = motionPreference.matches
-      requestFrame(state.reducedMotion ? 1 : 120)
+      if (state.reducedMotion) {
+        state.motionSpeed = 0
+        for (const node of state.nodes)
+          node.renderRadius =
+            node.radius * (node.artist.id === state.activeId ? 1.35 : 1)
+        requestFrame()
+      } else wake(700)
     }
     const resize = new ResizeObserver(([entry]) => {
       const { height, width } = entry.contentRect
@@ -444,7 +546,8 @@ export function ArtistField({
         state.images.clear()
         state.imageQueue = []
       }
-      requestFrame(state.reducedMotion ? 1 : 240)
+      if (state.reducedMotion) requestFrame()
+      else wake(1_400)
     })
     const theme = new MutationObserver(() => requestFrame())
 
@@ -453,6 +556,7 @@ export function ArtistField({
     element.addEventListener("pointerleave", onPointerLeave)
     element.addEventListener("pointermove", onPointerMove)
     element.addEventListener("pointerup", onPointerUp)
+    element.addEventListener("wheel", onWheel, { passive: false })
     motionPreference.addEventListener("change", onMotionChange)
     resize.observe(element)
     theme.observe(document.documentElement, {
@@ -468,6 +572,7 @@ export function ArtistField({
       element.removeEventListener("pointerleave", onPointerLeave)
       element.removeEventListener("pointermove", onPointerMove)
       element.removeEventListener("pointerup", onPointerUp)
+      element.removeEventListener("wheel", onWheel)
       motionPreference.removeEventListener("change", onMotionChange)
       resize.disconnect()
       theme.disconnect()
@@ -514,7 +619,8 @@ export function ArtistField({
         color="inherit"
         id={FIELD_HELP_ID}
       >
-        Drag to explore. Hover, tap, or use the arrow keys to inspect an artist.
+        Drag to explore. Scroll or use +/− to zoom. Hover, tap, or use the arrow
+        keys to inspect an artist.
       </Text>
       <Text aria-live="polite" as="span" className="artist-announcement">
         {activeArtist?.name ?? ""}
