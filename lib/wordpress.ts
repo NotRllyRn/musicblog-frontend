@@ -81,9 +81,11 @@ interface SearchDocument {
 
 interface CatalogIndex {
   builtAt: number
+  details: Map<string, AlbumDetail>
   documents: SearchDocument[]
   facets: AlbumFilterFacets
-  pages: WordPressPost[][]
+  pages: AlbumPost[][]
+  posts: WordPressPost[]
   reconciledAt: number
   total: number
   totalPages: number
@@ -162,10 +164,11 @@ async function requestPage(page: number) {
   url.searchParams.set("_embed", "wp:featuredmedia,wp:term")
   url.searchParams.set(
     "_fields",
-    "id,slug,status,password,title,content.protected,acf,_links,_embedded"
+    "id,slug,status,password,title,content,acf,_links,_embedded"
   )
 
   const response = await fetch(url, {
+    cache: "force-cache",
     headers: requestHeaders(),
     next: {
       revalidate: CATALOG_REVALIDATE_SECONDS,
@@ -385,7 +388,7 @@ function catalogFromPosts(
   reconciledAt: number,
   version = Date.now()
 ): CatalogIndex {
-  const pages = Array.from(
+  const postPages = Array.from(
     { length: Math.max(1, Math.ceil(posts.length / WORDPRESS_PAGE_SIZE)) },
     (_, index) =>
       posts.slice(
@@ -397,15 +400,24 @@ function catalogFromPosts(
     const document = toSearchDocument(post, index)
     return document ? [document] : []
   })
+  const details = new Map<string, AlbumDetail>()
+  for (const post of posts) {
+    const detail = toAlbumDetail(post)
+    if (!detail) continue
+    details.set(`id:${detail.id}`, detail)
+    details.set(`slug:${detail.slug}`, detail)
+  }
 
   return {
     builtAt: version,
+    details,
     documents,
     facets: catalogFacets(documents, version),
-    pages,
+    pages: postPages.map(toAlbums),
+    posts,
     reconciledAt,
     total: posts.length,
-    totalPages: Math.max(1, pages.length),
+    totalPages: Math.max(1, postPages.length),
   }
 }
 
@@ -423,18 +435,10 @@ async function buildCatalogIndex(): Promise<CatalogIndex> {
     pages.push(...batch.map(({ posts }) => posts))
   }
 
-  const documents = pages.flat().flatMap((post, index) => {
-    const document = toSearchDocument(post, index)
-    return document ? [document] : []
-  })
-
+  const posts = pages.flat()
   const builtAt = Date.now()
   return {
-    builtAt,
-    documents,
-    facets: catalogFacets(documents, builtAt),
-    pages,
-    reconciledAt: builtAt,
+    ...catalogFromPosts(posts, builtAt, builtAt),
     total: first.total,
     totalPages: first.totalPages,
   }
@@ -469,7 +473,7 @@ function getCatalogIndex() {
 }
 
 export function warmAlbumCatalog() {
-  void getCatalogIndex().catch(() => undefined)
+  return getCatalogIndex()
 }
 
 async function applyCatalogMutation(
@@ -482,7 +486,7 @@ async function applyCatalogMutation(
   const index = catalogCache.readyCatalogIndex
   if (!index) throw new Error("Album catalog is unavailable")
 
-  const posts = index.pages.flat()
+  const posts = [...index.posts]
   const existingIndex = posts.findIndex(({ id }) => id === albumId)
   const post = event === "deleted" ? null : await requestPost(albumId, true)
 
@@ -720,11 +724,12 @@ function toTrack(track: WordPressTrack): AlbumTrack | null {
 
 export async function getAlbumPage(page = 1): Promise<AlbumPage> {
   const index = catalogCache.readyCatalogIndex
-  const indexedPosts = index?.pages[page - 1]
-  if (index && indexedPosts) {
-    if (!catalogIndexIsFresh(index)) warmAlbumCatalog()
+  const indexedAlbums = index?.pages[page - 1]
+  if (index && indexedAlbums) {
+    if (!catalogIndexIsFresh(index))
+      void warmAlbumCatalog().catch(() => undefined)
     return {
-      albums: toAlbums(indexedPosts),
+      albums: indexedAlbums,
       page,
       total: index.total,
       totalPages: index.totalPages,
@@ -732,7 +737,7 @@ export async function getAlbumPage(page = 1): Promise<AlbumPage> {
   }
 
   const response = await getCatalogPage(page)
-  if (page === 1) warmAlbumCatalog()
+  if (page === 1) void warmAlbumCatalog().catch(() => undefined)
 
   return {
     albums: toAlbums(response.posts),
@@ -776,19 +781,7 @@ export async function getAlbumSearchPage(
   }
 }
 
-export async function getAlbumDetail(
-  identifier: number | string
-): Promise<AlbumDetail | null> {
-  if (
-    (typeof identifier === "number" &&
-      (!Number.isInteger(identifier) || identifier < 1)) ||
-    (typeof identifier === "string" && !identifier)
-  )
-    return null
-
-  const post = await requestPost(identifier)
-  if (!post || !isPublicPost(post)) return null
-
+function toAlbumDetail(post: WordPressPost): AlbumDetail | null {
   const album = toAlbum(post)
   if (!album) return null
 
@@ -817,4 +810,19 @@ export async function getAlbumDetail(
     spotifyUrl: trustedExternalUrl(acf.spotify_album_url, "open.spotify.com"),
     lastfmUrl: trustedExternalUrl(acf.lastfm_url, "www.last.fm"),
   }
+}
+
+export async function getAlbumDetail(
+  identifier: number | string
+): Promise<AlbumDetail | null> {
+  if (
+    (typeof identifier === "number" &&
+      (!Number.isInteger(identifier) || identifier < 1)) ||
+    (typeof identifier === "string" && !identifier)
+  )
+    return null
+
+  const index = catalogCache.readyCatalogIndex ?? (await refreshCatalogIndex())
+  const type = typeof identifier === "number" ? "id" : "slug"
+  return index.details.get(`${type}:${identifier}`) ?? null
 }

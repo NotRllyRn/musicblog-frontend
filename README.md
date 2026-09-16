@@ -75,19 +75,18 @@ starts. Starting another catalog scroll dismisses a preview. Reaching the last
 album in every lane reveals the end-of-catalog message. WordPress access is
 server-only and read-only.
 
-The first 100 albums and WordPress's authoritative total are cached for 24 hours
-between full reconciliations and render without waiting for the rest of the
-archive. Server startup then
-warms all remaining 100-post pages, including their ACF data and embedded
-artist/genre terms, with three requests at a time. Raw metadata remains
+Server startup caches every 100-post page for 24 hours between full
+reconciliations, including review bodies,
+WordPress's authoritative total, ACF data, and embedded artist/genre terms, with
+three requests at a time. Raw metadata remains
 server-only; the browser still receives lightweight album records. Every lane
-reserves its finite length from the total, so readers can keep scrolling through
-placeholders while warmup finishes. WordPress's original artwork passes through
-responsive Next Image optimization, and an immediate vinyl shell reserves the
-layout while the initial data hydrates.
-Review bodies and track lists use the `/api/albums/[slug]` endpoint. A
-300ms desktop hover or the first touch selection starts prefetching, while a
-compact loading status remains available when activation wins that race.
+reserves its finite length from the total. WordPress's original artwork passes
+through responsive Next Image optimization, and an immediate vinyl shell
+reserves the layout while the initial data hydrates.
+Review bodies and track lists use the server-local catalog snapshot through the
+`/api/albums/[slug]` endpoint, so opening an album does not query WordPress. A
+300ms desktop hover or the first touch selection starts prefetching from the
+application server, while a compact loading status remains available.
 Allowed editorial HTML is sanitized on the server.
 
 ### Publishing webhook
