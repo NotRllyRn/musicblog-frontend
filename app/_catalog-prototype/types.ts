@@ -7,6 +7,16 @@ export interface AlbumPost {
   imageAlt: string
 }
 
+export interface ArtistProfile {
+  id: number
+  slug: string
+  name: string
+  imageUrl: string | null
+  imageAlt: string
+}
+
+export type CatalogMode = "albums" | "artists"
+
 export interface AlbumTrack {
   title: string
   highlight: boolean

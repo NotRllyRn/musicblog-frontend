@@ -15,16 +15,37 @@ import type {
   AlbumSearchFilters,
   AlbumSearchPage,
   AlbumTrack,
+  ArtistProfile,
 } from "@/app/_catalog-prototype/types"
 
 interface WordPressTerm {
+  id: number
   name: string
+  slug: string
   taxonomy: string
 }
 
 interface WordPressMedia {
+  id?: number
   alt_text?: string
+  media_details?: {
+    sizes?: Record<string, { source_url?: string }>
+  }
   source_url?: string
+}
+
+interface WordPressArtistImage {
+  alt?: string
+  id?: number
+  sizes?: Record<string, string>
+  url?: string
+}
+
+interface WordPressArtistTerm {
+  acf?: { image?: number | WordPressArtistImage }
+  id: number
+  name: string
+  slug: string
 }
 
 interface WordPressTrack {
@@ -84,6 +105,7 @@ interface SearchDocument {
 }
 
 interface CatalogIndex {
+  artists: ArtistProfile[]
   builtAt: number
   details: Map<string, AlbumDetail>
   documents: SearchDocument[]
@@ -113,6 +135,7 @@ export interface CatalogMutationResult {
 
 const CATALOG_REVALIDATE_SECONDS = 86_400
 const WORDPRESS_PAGE_SIZE = 100
+const WORDPRESS_ARTIST_PAGE_SIZE = 100
 const SEARCH_PAGE_SIZE = 50
 const WARMUP_CONCURRENCY = 3
 const ARTWORK_WARMUP_CONCURRENCY = 2
@@ -230,6 +253,135 @@ async function requestPost(identifier: number | string, fresh = false) {
 
   const result = (await response.json()) as WordPressPost | WordPressPost[]
   return Array.isArray(result) ? (result[0] ?? null) : result
+}
+
+async function requestArtistPage(page: number) {
+  const url = URL.parse(`${apiRoot()}/artist`)
+  if (!url) throw new Error("WordPress API URL is invalid")
+
+  url.searchParams.set("page", String(page))
+  url.searchParams.set("per_page", String(WORDPRESS_ARTIST_PAGE_SIZE))
+  url.searchParams.set("acf_format", "standard")
+  url.searchParams.set("_fields", "id,slug,name,acf")
+
+  const response = await fetch(url, {
+    cache: "force-cache",
+    headers: requestHeaders(),
+    next: {
+      revalidate: CATALOG_REVALIDATE_SECONDS,
+      tags: ["wordpress-artists"],
+    },
+    signal: AbortSignal.timeout(30_000),
+  })
+  if (!response.ok) throw new Error(`WordPress returned ${response.status}`)
+
+  return {
+    terms: (await response.json()) as WordPressArtistTerm[],
+    totalPages: Number(response.headers.get("x-wp-totalpages") ?? 1),
+  }
+}
+
+async function requestArtistTerms() {
+  const first = await requestArtistPage(1)
+  const pages = [first.terms]
+  for (let start = 2; start <= first.totalPages; start += WARMUP_CONCURRENCY) {
+    const end = Math.min(first.totalPages, start + WARMUP_CONCURRENCY - 1)
+    const batch = await Promise.all(
+      Array.from({ length: end - start + 1 }, (_, index) =>
+        requestArtistPage(start + index)
+      )
+    )
+    pages.push(...batch.map(({ terms }) => terms))
+  }
+  return pages.flat()
+}
+
+async function requestArtistMedia(ids: number[]) {
+  const media = new Map<number, WordPressMedia>()
+  for (let start = 0; start < ids.length; start += WORDPRESS_ARTIST_PAGE_SIZE) {
+    const batch = ids.slice(start, start + WORDPRESS_ARTIST_PAGE_SIZE)
+    const url = URL.parse(`${apiRoot()}/media`)
+    if (!url) throw new Error("WordPress API URL is invalid")
+
+    url.searchParams.set("include", batch.join(","))
+    url.searchParams.set("orderby", "include")
+    url.searchParams.set("per_page", String(batch.length))
+    url.searchParams.set(
+      "_fields",
+      "id,alt_text,source_url,media_details.sizes"
+    )
+    const response = await fetch(url, {
+      cache: "force-cache",
+      headers: requestHeaders(),
+      next: {
+        revalidate: CATALOG_REVALIDATE_SECONDS,
+        tags: ["wordpress-artists"],
+      },
+      signal: AbortSignal.timeout(30_000),
+    })
+    if (!response.ok) throw new Error(`WordPress returned ${response.status}`)
+    for (const item of (await response.json()) as WordPressMedia[])
+      if (item.id) media.set(item.id, item)
+  }
+  return media
+}
+
+function trustedArtistImageUrl(value: unknown) {
+  if (typeof value !== "string") return null
+  try {
+    const image = new URL(value)
+    const wordpress = new URL(process.env.WORDPRESS_BASE_URL ?? "")
+    return image.origin === wordpress.origin &&
+      image.pathname.startsWith("/wp-content/uploads/")
+      ? image.toString()
+      : null
+  } catch {
+    return null
+  }
+}
+
+async function artistProfiles(posts: WordPressPost[]) {
+  const usedIds = new Set(
+    posts.flatMap((post) =>
+      (post._embedded?.["wp:term"]?.flat() ?? []).flatMap((term) =>
+        term.taxonomy === "artist" ? [term.id] : []
+      )
+    )
+  )
+  if (!usedIds.size) return []
+
+  const terms = (await requestArtistTerms())
+    .filter(({ id }) => usedIds.has(id))
+    .sort((left, right) => left.id - right.id)
+  const mediaIds = [
+    ...new Set(
+      terms.flatMap(({ acf }) =>
+        typeof acf?.image === "number" ? [acf.image] : []
+      )
+    ),
+  ]
+  const media = await requestArtistMedia(mediaIds)
+
+  return terms.map((term) => {
+    const image = term.acf?.image
+    const attachment = typeof image === "number" ? media.get(image) : null
+    const imageUrl = trustedArtistImageUrl(
+      typeof image === "object"
+        ? (image.sizes?.medium ?? image.sizes?.thumbnail ?? image.url)
+        : (attachment?.media_details?.sizes?.medium?.source_url ??
+            attachment?.media_details?.sizes?.thumbnail?.source_url ??
+            attachment?.source_url)
+    )
+    return {
+      id: term.id,
+      slug: term.slug,
+      name: decodeEntities(term.name),
+      imageUrl,
+      imageAlt:
+        (typeof image === "object" ? image.alt : attachment?.alt_text) ||
+        decodeEntities(term.name),
+    }
+  }) satisfies ArtistProfile[]
 }
 
 function termsFor(post: WordPressPost, taxonomy: string) {
@@ -464,6 +616,7 @@ function catalogFacets(documents: SearchDocument[], version: number) {
 function catalogFromPosts(
   posts: WordPressPost[],
   reconciledAt: number,
+  artists: ArtistProfile[],
   version = Date.now()
 ): CatalogIndex {
   const postPages = Array.from(
@@ -487,6 +640,7 @@ function catalogFromPosts(
   }
 
   return {
+    artists,
     builtAt: version,
     details,
     documents,
@@ -516,7 +670,7 @@ async function buildCatalogIndex(): Promise<CatalogIndex> {
   const posts = pages.flat()
   const builtAt = Date.now()
   return {
-    ...catalogFromPosts(posts, builtAt, builtAt),
+    ...catalogFromPosts(posts, builtAt, await artistProfiles(posts), builtAt),
     total: first.total,
     totalPages: first.totalPages,
   }
@@ -597,6 +751,7 @@ async function applyCatalogMutation(
     catalogCache.readyCatalogIndex = catalogFromPosts(
       posts,
       index.reconciledAt,
+      await artistProfiles(posts),
       version
     )
 
@@ -845,6 +1000,10 @@ export async function getAlbumPage(page = 1): Promise<AlbumPage> {
 
 export async function getAlbumFilterFacets() {
   return (await getCatalogIndex()).facets
+}
+
+export async function getArtistCatalog() {
+  return (await getCatalogIndex()).artists
 }
 
 export async function getAlbumSearchPage(
