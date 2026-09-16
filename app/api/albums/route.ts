@@ -7,7 +7,7 @@ export async function GET(request: Request) {
       Number.isInteger(requestedPage) && requestedPage > 0 ? requestedPage : 1
 
     return Response.json(await getAlbumPage(page), {
-      headers: { "Cache-Control": "public, max-age=3600" },
+      headers: { "Cache-Control": "private, no-store" },
     })
   } catch {
     return Response.json({ error: "Albums could not load" }, { status: 502 })

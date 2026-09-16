@@ -86,6 +86,8 @@ dimmed in the background. WordPress is strictly read-only from this frontend.
 - Existing WordPress posts and featured images are the source of truth.
 - Server startup caches every 100-post WordPress page with bounded concurrency
   before accepting traffic.
+- Authenticated publish, update, and delete events update one catalog record at
+  a time; a request-triggered full reconciliation remains as a 24-hour fallback.
 - Warm catalog pages include review bodies, ACF, and embedded artist and genre
   terms, but raw metadata and the complete search index remain server-only.
 - Responsive placeholder sleeves reserve the finite 3D layout while album data
