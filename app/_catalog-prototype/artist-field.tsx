@@ -46,7 +46,13 @@ interface ArtistRuntime {
   motionSpeed: number
   motionUntil: number
   nodes: ArtistNode[]
+  pinchDistance: number
+  pinched: boolean
+  pinchWorldX: number
+  pinchWorldY: number
+  pinchZoom: number
   pointerId: number | null
+  pointers: Map<number, { x: number; y: number }>
   pointerStartX: number
   pointerStartY: number
   previousTime: number
@@ -257,10 +263,16 @@ export function ArtistField({
   hasError,
   isLoading,
   onRetry,
+  onSelect,
 }: ArtistFieldProps) {
   const canvas = useRef<HTMLCanvasElement>(null)
   const runtime = useRef<ArtistRuntime | null>(null)
+  const selectArtist = useRef(onSelect)
   const [activeArtist, setActiveArtist] = useState<ArtistProfile | null>(null)
+
+  useEffect(() => {
+    selectArtist.current = onSelect
+  }, [onSelect])
 
   useEffect(() => {
     if (!artists || !canvas.current) return
@@ -284,7 +296,13 @@ export function ArtistField({
       motionSpeed: 0,
       motionUntil: 0,
       nodes: [],
+      pinchDistance: 1,
+      pinched: false,
+      pinchWorldX: 0,
+      pinchWorldY: 0,
+      pinchZoom: 1,
       pointerId: null,
+      pointers: new Map(),
       pointerStartX: 0,
       pointerStartY: 0,
       previousTime: 0,
@@ -397,9 +415,15 @@ export function ArtistField({
       else wake(220)
     }
 
-    const hitTest = (clientX: number, clientY: number) => {
+    const hitTest = (clientX: number, clientY: number, sticky = true) => {
       const point = canvasPoint(element, state, clientX, clientY)
-      return findArtistNode(state.nodes, point.x, point.y, state.activeId)
+      return findArtistNode(
+        state.nodes,
+        point.x,
+        point.y,
+        sticky ? state.activeId : null,
+        sticky ? 16 : 0
+      )
     }
 
     const zoomAt = (
@@ -422,15 +446,68 @@ export function ArtistField({
     }
 
     const onPointerDown = (event: PointerEvent) => {
+      state.pointers.set(event.pointerId, {
+        x: event.clientX,
+        y: event.clientY,
+      })
+      element.setPointerCapture(event.pointerId)
+      if (state.pointers.size > 1) {
+        const [first, second] = [...state.pointers.values()]
+        const clientX = (first.x + second.x) / 2
+        const clientY = (first.y + second.y) / 2
+        const world = canvasPoint(element, state, clientX, clientY)
+        state.pinchDistance = Math.max(
+          1,
+          Math.hypot(second.x - first.x, second.y - first.y)
+        )
+        state.pinchWorldX = world.x
+        state.pinchWorldY = world.y
+        state.pinchZoom = state.zoom
+        state.pinched = true
+        state.dragging = true
+        element.dataset.dragging = "true"
+        setActive(null)
+        return
+      }
       state.pointerId = event.pointerId
       state.pointerStartX = event.clientX
       state.pointerStartY = event.clientY
       state.startCameraX = state.cameraX
       state.startCameraY = state.cameraY
       state.dragging = false
-      element.setPointerCapture(event.pointerId)
     }
     const onPointerMove = (event: PointerEvent) => {
+      if (state.pointers.has(event.pointerId))
+        state.pointers.set(event.pointerId, {
+          x: event.clientX,
+          y: event.clientY,
+        })
+      if (state.pinched && state.pointers.size > 1) {
+        const [first, second] = [...state.pointers.values()]
+        const clientX = (first.x + second.x) / 2
+        const clientY = (first.y + second.y) / 2
+        const bounds = element.getBoundingClientRect()
+        state.zoom = clamp(
+          (state.pinchZoom *
+            Math.hypot(second.x - first.x, second.y - first.y)) /
+            state.pinchDistance,
+          MIN_ZOOM,
+          MAX_ZOOM
+        )
+        state.cameraX =
+          clientX -
+          bounds.left -
+          state.width / 2 -
+          state.pinchWorldX * state.zoom
+        state.cameraY =
+          clientY -
+          bounds.top -
+          state.height / 2 -
+          state.pinchWorldY * state.zoom
+        clampCamera(state)
+        requestFrame()
+        return
+      }
       if (state.pointerId === event.pointerId) {
         const dx = event.clientX - state.pointerStartX
         const dy = event.clientY - state.pointerStartY
@@ -445,20 +522,55 @@ export function ArtistField({
           return
         }
       }
+      if (event.pointerType !== "mouse") return
       const node = hitTest(event.clientX, event.clientY)
       element.toggleAttribute("data-hovered", Boolean(node))
       setActive(node)
     }
     const onPointerUp = (event: PointerEvent) => {
-      if (state.pointerId !== event.pointerId) return
-      if (!state.dragging) setActive(hitTest(event.clientX, event.clientY))
+      if (!state.pointers.has(event.pointerId)) return
+      const dragged = state.dragging
+      state.pointers.delete(event.pointerId)
+      if (element.hasPointerCapture(event.pointerId))
+        element.releasePointerCapture(event.pointerId)
+      if (state.pointers.size) {
+        const [pointerId, pointer] = [...state.pointers.entries()][0]
+        state.pointerId = pointerId
+        state.pointerStartX = pointer.x
+        state.pointerStartY = pointer.y
+        state.startCameraX = state.cameraX
+        state.startCameraY = state.cameraY
+        state.dragging = false
+        return
+      }
       state.pointerId = null
       state.dragging = false
       delete element.dataset.dragging
-      element.releasePointerCapture(event.pointerId)
+      if (state.pinched) {
+        state.pinched = false
+        return
+      }
+      if (dragged) return
+      const node = hitTest(event.clientX, event.clientY, false)
+      if (event.pointerType === "mouse") {
+        if (node) selectArtist.current(node.artist)
+        else setActive(null)
+      } else if (node?.artist.id === state.activeId)
+        selectArtist.current(node.artist)
+      else setActive(node)
     }
-    const onPointerLeave = () => {
-      if (state.pointerId === null) {
+    const onPointerCancel = (event: PointerEvent) => {
+      state.pointers.delete(event.pointerId)
+      if (!state.pointers.size) {
+        state.pointerId = null
+        state.dragging = false
+        state.pinched = false
+        delete element.dataset.dragging
+        setActive(null)
+      }
+    }
+    const onPointerLeave = (event: PointerEvent) => {
+      if (event.pointerType === "mouse" && state.pointerId === null) {
         element.removeAttribute("data-hovered")
         setActive(null)
       }
@@ -483,11 +595,20 @@ export function ArtistField({
           "=",
           "-",
           "0",
+          "Enter",
+          " ",
         ].includes(event.key)
       )
         return
       event.preventDefault()
       if (event.key === "Escape") return setActive(null)
+      if (event.key === "Enter" || event.key === " ") {
+        const active = state.nodes.find(
+          ({ artist }) => artist.id === state.activeId
+        )
+        if (active) selectArtist.current(active.artist)
+        return
+      }
       if (["+", "=", "-", "0"].includes(event.key)) {
         const bounds = element.getBoundingClientRect()
         const requestedZoom =
@@ -554,6 +675,7 @@ export function ArtistField({
 
     element.addEventListener("keydown", onKeyDown)
     element.addEventListener("pointerdown", onPointerDown)
+    element.addEventListener("pointercancel", onPointerCancel)
     element.addEventListener("pointerleave", onPointerLeave)
     element.addEventListener("pointermove", onPointerMove)
     element.addEventListener("pointerup", onPointerUp)
@@ -570,6 +692,7 @@ export function ArtistField({
       if (state.frame !== null) cancelAnimationFrame(state.frame)
       element.removeEventListener("keydown", onKeyDown)
       element.removeEventListener("pointerdown", onPointerDown)
+      element.removeEventListener("pointercancel", onPointerCancel)
       element.removeEventListener("pointerleave", onPointerLeave)
       element.removeEventListener("pointermove", onPointerMove)
       element.removeEventListener("pointerup", onPointerUp)
@@ -603,6 +726,7 @@ export function ArtistField({
     >
       <canvas
         aria-describedby={FIELD_HELP_ID}
+        aria-keyshortcuts="ArrowLeft ArrowRight Home End Enter Space + - 0"
         aria-label={
           activeArtist
             ? `Selected artist: ${activeArtist.name}`
@@ -620,8 +744,8 @@ export function ArtistField({
         color="inherit"
         id={FIELD_HELP_ID}
       >
-        Drag to explore. Scroll or use +/− to zoom. Hover, tap, or use the arrow
-        keys to inspect an artist.
+        Drag to explore. Pinch, scroll, or use +/− to zoom. Tap once to preview
+        an artist and again to filter their albums.
       </Text>
       <Text aria-live="polite" as="span" className="artist-announcement">
         {activeArtist?.name ?? ""}
