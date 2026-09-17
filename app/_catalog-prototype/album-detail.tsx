@@ -63,12 +63,19 @@ export function AlbumDetailOverlay({
   }
 
   const share = async () => {
+    const url = new URL("/", window.location.origin)
+    url.searchParams.set("album", album.slug)
     const data = {
       title: `${album.title} — ${album.artist}`,
-      url: window.location.href,
+      url: url.href,
     }
-    if (navigator.share) await navigator.share(data)
-    else await navigator.clipboard.writeText(data.url)
+    try {
+      if (navigator.share) await navigator.share(data)
+      else await navigator.clipboard.writeText(data.url)
+    } catch (error) {
+      if (error instanceof Error && error.name === "AbortError") return
+      throw error
+    }
   }
 
   const searchArtist = (artist: string) => {
@@ -151,16 +158,6 @@ export function AlbumDetailOverlay({
           Close album details
         </Button>
       </VisuallyHidden>
-      <Button
-        className="album-detail-share"
-        clickAction={share}
-        data-detail-content
-        label="Share album"
-        size="sm"
-        variant="secondary"
-      >
-        Share
-      </Button>
       <section
         className="album-detail-content"
         data-compact={isCompact || undefined}
@@ -208,7 +205,11 @@ export function AlbumDetailOverlay({
             initial={reduceMotion ? undefined : { opacity: 0, y: "1.5rem" }}
             transition={sceneTransition}
           >
-            <AlbumDetailLayouts detail={detail} onSearchArtist={searchArtist} />
+            <AlbumDetailLayouts
+              detail={detail}
+              onSearchArtist={searchArtist}
+              onShare={share}
+            />
           </motion.section>
         ) : (
           <article className="album-detail-placeholder" data-detail-content>
