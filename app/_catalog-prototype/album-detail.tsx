@@ -16,6 +16,7 @@ import {
 
 import { useAlbumCoverTilt } from "./album-cover-tilt"
 import { AlbumDetailLayouts } from "./album-detail-layouts"
+import { albumSharePath } from "./album-share"
 import type { AlbumDetail, AlbumPost } from "./types"
 
 interface AlbumDetailOverlayProps {
@@ -63,11 +64,9 @@ export function AlbumDetailOverlay({
   }
 
   const share = async () => {
-    const url = new URL("/", window.location.origin)
-    url.searchParams.set("album", album.slug)
     const data = {
       title: `${album.title} — ${album.artist}`,
-      url: url.href,
+      url: new URL(albumSharePath(album), window.location.origin).href,
     }
     try {
       if (navigator.share) await navigator.share(data)

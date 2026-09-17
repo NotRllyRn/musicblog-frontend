@@ -6,7 +6,7 @@ import "./_catalog-prototype/catalog-prototype.css"
 import { AstryxProvider } from "./astryx-provider"
 
 export const metadata: Metadata = {
-  metadataBase: new URL(process.env.SITE_URL ?? "https://music.tanningcat.com"),
+  metadataBase: new URL(process.env.SITE_URL ?? "https://music.callita.day"),
   title: "Tim's Music Blog",
   description: "A tactile catalog of album reviews.",
 }

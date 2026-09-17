@@ -2,8 +2,28 @@ import {
   CatalogPage,
   type CatalogPageSearchParams,
 } from "@/app/_catalog-prototype/catalog-page"
+import {
+  albumShareImagePath,
+  albumSharePath,
+} from "@/app/_catalog-prototype/album-share"
 import { getAlbumDetail } from "@/lib/wordpress"
 import type { Metadata } from "next"
+import { headers } from "next/headers"
+
+async function siteUrl() {
+  if (process.env.SITE_URL) return new URL(process.env.SITE_URL)
+
+  const requestHeaders = await headers()
+  const host = (
+    requestHeaders.get("x-forwarded-host") ?? requestHeaders.get("host")
+  )
+    ?.split(",")[0]
+    .trim()
+  const protocol = (requestHeaders.get("x-forwarded-proto") ?? "https")
+    .split(",")[0]
+    .trim()
+  return new URL(`${protocol}://${host ?? "music.callita.day"}`)
+}
 
 export async function generateMetadata(props: {
   searchParams: Promise<CatalogPageSearchParams>
@@ -17,24 +37,37 @@ export async function generateMetadata(props: {
 
   const title = `${album.title} — ${album.artist}`
   const description = `Read Tim's review of ${album.title} by ${album.artist}.`
-  const url = `/?album=${encodeURIComponent(album.slug)}`
+  const origin = await siteUrl()
+  const url = new URL(albumSharePath(album), origin)
+  const image = new URL(albumShareImagePath(album), origin)
 
   return {
     title,
     description,
-    alternates: { canonical: url },
+    alternates: {
+      canonical: new URL(`/?album=${encodeURIComponent(album.slug)}`, origin),
+    },
     openGraph: {
       type: "article",
       title,
       description,
       url,
-      images: [{ url: album.imageUrl, alt: album.imageAlt }],
+      siteName: "Tim's Music Blog",
+      images: [
+        {
+          url: image,
+          width: 1200,
+          height: 1200,
+          type: "image/png",
+          alt: album.imageAlt,
+        },
+      ],
     },
     twitter: {
       card: "summary_large_image",
       title,
       description,
-      images: [album.imageUrl],
+      images: [{ url: image, alt: album.imageAlt }],
     },
   }
 }
