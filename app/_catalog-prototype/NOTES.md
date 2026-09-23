@@ -61,7 +61,7 @@ compositing pass at 4K.
 
 ## Artists view
 
-Artists are a second mode inside the catalog shell, not a route. The album panel
+Artists are an alternate mode inside the catalog shell. The album panel
 stays mounted and inert while it slides left, preserving search, filters, and
 every deck position. Artist metadata prefetches through `/api/artists`; the
 portrait canvas bundle mounts only on first use.
@@ -81,3 +81,12 @@ the field, while pointer-centered wheel and keyboard zoom clamp between 55% and
 decoded-image cache. One hit-test path, an expanded active boundary, and a
 pinned active node prevent hover oscillation. Reduced-motion mode renders the
 settled layout without physics.
+
+## Genres view
+
+`/genres` shares the artist field's camera, hit testing, spatial collision grid,
+and sleep behavior. It draws taxonomy names instead of portraits, assigns stable
+colors from theme tokens, and maps album usage linearly to bubble area within
+bounded radii. Genre usage is aggregated from the existing search documents and
+travels with `/api/albums/filters`, so no extra WordPress request or data cache
+is needed. Selecting a genre applies the existing exact-match album filter.

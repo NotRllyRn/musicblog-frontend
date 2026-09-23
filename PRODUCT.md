@@ -100,6 +100,9 @@ dimmed in the background. WordPress is strictly read-only from this frontend.
   movement dismisses the preview.
 - Artist metadata prefetches at low priority through its own cached index, while
   only viewport portraits decode after the field's first use.
+- `/genres` presents the same draggable field with translucent colored text
+  bubbles whose area reflects each genre's album count. Counts come from the
+  existing catalog index and selecting a bubble applies the normal genre filter.
 - Server startup caches every 100-post WordPress page with bounded concurrency
   before accepting traffic.
 - Authenticated publish, update, and delete events update one catalog record at
@@ -123,7 +126,8 @@ dimmed in the background. WordPress is strictly read-only from this frontend.
 The product is a personal music blog rooted in vinyl collecting, record shops,
 and older cover-flow music players. Keep the implementation minimal and let the
 selected hinged interaction remain the primary album browsing model; the artist
-field is a focused alternate view rather than a second catalog application.
+and genre fields are focused alternate views rather than separate catalog
+applications.
 
 ## Evidence on Hand
 

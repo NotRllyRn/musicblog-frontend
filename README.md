@@ -46,8 +46,8 @@ browser from a lightweight facet list while album matching remains server-only.
 Date and rating controls are bounded by values that actually exist in the
 catalog. No search or filter makes a query-time WordPress request.
 
-The Artists control opens `/artists`, where a draggable canvas shows every
-artist attached to a catalog release. Artist metadata is
+The catalog view control opens `/artists` or `/genres`. The artist view uses a
+draggable canvas showing every artist attached to a catalog release. Artist metadata is
 prefetched after the album interface settles, while portraits decode only when
 they enter the viewport. Nodes begin in a deterministic free-floating cluster,
 settle under light gravity and collision forces, then sleep. Centralized hit
@@ -58,6 +58,12 @@ previews an artist and a second tap opens `/?artist=…`; dragging or pinching
 dismisses the preview. Mouse and keyboard activation open the filtered album
 catalog immediately. Returning to Albums restores the existing search, filters,
 and deck positions unchanged.
+
+The genre view reuses that canvas interaction with translucent, token-colored
+text bubbles. Bubble area scales with the number of indexed albums carrying the
+genre, and selecting one opens the existing filtered album catalog. Counts are
+derived in one pass while the server-local search index is built, so the view
+adds no WordPress requests and shares the filter-facet browser request.
 
 Browser requests remain abortable and latest-query-wins; current results remain
 visible while replacements load. Results retain the same finite three, five, or
