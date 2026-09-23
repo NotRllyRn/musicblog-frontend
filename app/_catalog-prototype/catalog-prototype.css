@@ -179,19 +179,6 @@
   pointer-events: none;
 }
 
-.artist-viewport[data-kind="genres"] .artist-field-help {
-  right: 50%;
-  padding: var(--spacing-2) var(--spacing-3);
-  border: var(--border-width) solid var(--color-border);
-  background: color-mix(in oklch, var(--catalog-paper) 78%, transparent);
-  box-shadow: var(--shadow-med);
-  letter-spacing: 0.04em;
-  opacity: 0.9;
-  text-align: center;
-  text-transform: uppercase;
-  transform: translateX(50%);
-}
-
 .artist-announcement {
   position: absolute !important;
   width: var(--border-width) !important;
@@ -1493,18 +1480,6 @@ body:has(.deck-record[data-hovered="true"]) .theme-toggle {
 
   .artist-viewport {
     inset-block-start: 3.75rem;
-  }
-
-  .artist-viewport[data-kind="genres"] .artist-field-help {
-    right: var(--spacing-2);
-    bottom: calc(env(safe-area-inset-bottom) + var(--spacing-12));
-    left: var(--spacing-2);
-    max-width: none;
-    transform: none;
-  }
-
-  body:has(.variant-shell[data-catalog-mode="genres"]) .theme-toggle {
-    inset: var(--spacing-2) var(--spacing-2) auto auto;
   }
 
   .catalog-search {

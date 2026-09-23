@@ -917,7 +917,6 @@ function BubbleField({
       aria-busy={isLoading}
       aria-label={`Browse ${profiles.length} ${kind}`}
       className="artist-viewport"
-      data-kind={kind}
     >
       <canvas
         aria-describedby={helpId}
