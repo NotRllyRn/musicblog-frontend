@@ -394,14 +394,14 @@ export function CatalogBrowser({
         <main className="variant-shell" data-catalog-mode={catalogMode}>
           <header className="catalog-header" inert={opened ? true : undefined}>
             <Heading level={1} color="inherit">
-              Tim&apos;s Music Blog
+              {catalogMode === "genres" ? "Genre Atlas" : "Tim's Music Blog"}
             </Heading>
             <Text type="supporting" color="inherit">
               {catalogMode === "albums"
                 ? `${initialPage.total} records · hinged by hand`
                 : catalogMode === "artists"
                   ? `${artists?.length ?? "…"} artists · from the archive`
-                  : `${search.facets?.genreProfiles.length ?? "…"} genres · sized by album count`}
+                  : `${search.facets?.genreProfiles.length ?? "…"} genres · bigger means more albums`}
             </Text>
           </header>
           <aside

@@ -200,14 +200,16 @@ function drawGenre(
   y: number,
   radius: number,
   fill: string,
-  ink: string
+  ink: string,
+  active: boolean
 ) {
   const words = profile.name.split(/(?<=[-])|\s+/u)
   const split = words.length > 1 ? Math.ceil(words.length / 2) : words.length
   const lines = [words.slice(0, split).join(" "), words.slice(split).join(" ")]
     .filter(Boolean)
     .slice(0, 2)
-  let fontSize = Math.min(22, radius * 0.34)
+  const showsCount = radius >= 58
+  let fontSize = Math.min(28, radius * 0.34)
   context.font = `700 ${fontSize}px system-ui, sans-serif`
   while (
     fontSize > 10 &&
@@ -218,16 +220,53 @@ function drawGenre(
   }
 
   context.fillStyle = fill
-  context.globalAlpha = 0.72
+  context.globalAlpha = 0.76
+  context.shadowBlur = active ? Math.min(36, radius * 0.28) : 0
+  context.shadowColor = fill
   context.fill()
+  context.shadowBlur = 0
+
+  context.save()
+  context.clip()
+  context.beginPath()
+  context.ellipse(
+    x - radius * 0.22,
+    y - radius * 0.38,
+    radius * 0.68,
+    radius * 0.3,
+    -0.2,
+    0,
+    Math.PI * 2
+  )
+  context.fillStyle = ink
+  context.globalAlpha = 0.08
+  context.fill()
+  context.restore()
+
   context.globalAlpha = 1
   context.fillStyle = ink
   context.textAlign = "center"
   context.textBaseline = "middle"
   const lineHeight = fontSize * 1.05
+  const nameCenter = y - (showsCount ? fontSize * 0.32 : 0)
   lines.forEach((line, index) =>
-    context.fillText(line, x, y + (index - (lines.length - 1) / 2) * lineHeight)
+    context.fillText(
+      line,
+      x,
+      nameCenter + (index - (lines.length - 1) / 2) * lineHeight
+    )
   )
+  if (showsCount) {
+    const countSize = Math.min(12, Math.max(9, radius * 0.1))
+    context.font = `650 ${countSize}px system-ui, sans-serif`
+    context.globalAlpha = 0.64
+    context.fillText(
+      `${profile.count} album${profile.count === 1 ? "" : "s"}`,
+      x,
+      nameCenter + (lines.length * lineHeight) / 2 + countSize * 0.9
+    )
+    context.globalAlpha = 1
+  }
 }
 
 function drawBubbleField(
@@ -268,13 +307,23 @@ function drawBubbleField(
     context.save()
     context.beginPath()
     context.arc(x, y, radius, 0, Math.PI * 2)
+    let bubbleColor = ink
     if (isGenre(node.profile)) {
-      const color = style.getPropertyValue(
+      bubbleColor = style.getPropertyValue(
         GENRE_COLOR_TOKENS[
           genreColorIndex(node.profile.id, GENRE_COLOR_TOKENS.length)
         ]
       )
-      drawGenre(context, node.profile, x, y, radius, color, ink)
+      drawGenre(
+        context,
+        node.profile,
+        x,
+        y,
+        radius,
+        bubbleColor,
+        ink,
+        node === active
+      )
     } else {
       context.fillStyle = paper
       context.globalAlpha = 0.88
@@ -305,10 +354,26 @@ function drawBubbleField(
     context.save()
     context.beginPath()
     context.arc(x, y, radius, 0, Math.PI * 2)
-    context.strokeStyle = ink
-    context.globalAlpha = node === active ? 0.8 : 0.24
-    context.lineWidth = node === active ? 3 : 1.5
+    context.strokeStyle = node === active ? ink : bubbleColor
+    context.globalAlpha = node === active ? 0.9 : 0.52
+    context.lineWidth = node === active ? 4 : 1.5
     context.stroke()
+    if (isGenre(node.profile)) {
+      context.beginPath()
+      context.arc(x, y, radius - 3, Math.PI * 1.12, Math.PI * 1.82)
+      context.strokeStyle = ink
+      context.globalAlpha = 0.18
+      context.lineWidth = 1.5
+      context.stroke()
+      if (node === active) {
+        context.beginPath()
+        context.arc(x, y, radius + 7, 0, Math.PI * 2)
+        context.strokeStyle = bubbleColor
+        context.globalAlpha = 0.32
+        context.lineWidth = 2
+        context.stroke()
+      }
+    }
     context.restore()
   }
 
@@ -852,6 +917,7 @@ function BubbleField({
       aria-busy={isLoading}
       aria-label={`Browse ${profiles.length} ${kind}`}
       className="artist-viewport"
+      data-kind={kind}
     >
       <canvas
         aria-describedby={helpId}
@@ -868,8 +934,14 @@ function BubbleField({
         Browse {profiles.length} {kind}.
       </canvas>
       <Text as="p" className="artist-field-help" color="inherit" id={helpId}>
-        Drag to explore. Pinch, scroll, or use +/− to zoom. Tap once to preview
-        a {kind.slice(0, -1)} and again to filter its albums.
+        {kind === "genres" ? (
+          <>Size shows album count · drag to explore · tap twice to open</>
+        ) : (
+          <>
+            Drag to explore. Pinch, scroll, or use +/− to zoom. Tap once to
+            preview an artist and again to filter their albums.
+          </>
+        )}
       </Text>
       <Text aria-live="polite" as="span" className="artist-announcement">
         {activeProfile
