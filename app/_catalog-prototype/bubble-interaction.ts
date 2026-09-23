@@ -1,8 +1,8 @@
-export const MIN_ARTIST_ZOOM = 0.55
-export const MAX_ARTIST_ZOOM = 1.8
+export const MIN_BUBBLE_ZOOM = 0.55
+export const MAX_BUBBLE_ZOOM = 1.8
 
-export function clampArtistZoom(zoom: number) {
-  return Math.min(MAX_ARTIST_ZOOM, Math.max(MIN_ARTIST_ZOOM, zoom))
+export function clampBubbleZoom(zoom: number) {
+  return Math.min(MAX_BUBBLE_ZOOM, Math.max(MIN_BUBBLE_ZOOM, zoom))
 }
 
 interface PinchCameraOptions {
@@ -32,7 +32,7 @@ export function pinchCamera({
   top,
   width,
 }: PinchCameraOptions) {
-  const zoom = clampArtistZoom(
+  const zoom = clampBubbleZoom(
     (startZoom * distance) / Math.max(1, startDistance)
   )
   return {
@@ -42,9 +42,9 @@ export function pinchCamera({
   }
 }
 
-export function artistTapAction(
-  activeId: number | null,
-  tappedId: number | null
+export function bubbleTapAction(
+  activeId: number | string | null,
+  tappedId: number | string | null
 ) {
   if (tappedId === null) return "clear"
   return tappedId === activeId ? "select" : "preview"

@@ -83,19 +83,11 @@
   right: var(--catalog-gutter);
 }
 
-.catalog-mode-toggle .astryx-button {
+.catalog-mode-toggle .astryx-segmented-control {
   border-radius: var(--radius-full);
   background: color-mix(in oklch, var(--catalog-paper) 92%, transparent);
   color: var(--catalog-ink);
   box-shadow: var(--shadow-med);
-}
-
-.catalog-mode-toggle[data-catalog-mode="albums"] .astryx-button {
-  border-color: var(--catalog-ink);
-  background: var(--catalog-ink);
-  color: var(--catalog-paper);
-  box-shadow: var(--shadow-high);
-  font-weight: var(--font-weight-semibold);
 }
 
 .catalog-mode-panel {
@@ -119,7 +111,8 @@
   transform: translate3d(-105%, 0, 0);
 }
 
-.catalog-artist-panel {
+.catalog-artist-panel,
+.catalog-genre-panel {
   z-index: 6;
   transform: translate3d(105%, 0, 0);
 }

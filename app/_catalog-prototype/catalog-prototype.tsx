@@ -1,7 +1,10 @@
 "use client"
 
-import { Button } from "@astryxdesign/core/Button"
 import { Heading } from "@astryxdesign/core/Heading"
+import {
+  SegmentedControl,
+  SegmentedControlItem,
+} from "@astryxdesign/core/SegmentedControl"
 import { Text } from "@astryxdesign/core/Text"
 import { AnimatePresence, LayoutGroup } from "motion/react"
 import dynamic from "next/dynamic"
@@ -50,6 +53,10 @@ let artistCatalogRequest: Promise<ArtistProfile[]> | null = null
 
 const ArtistField = dynamic(
   () => import("./artist-field").then(({ ArtistField }) => ArtistField),
+  { ssr: false }
+)
+const GenreField = dynamic(
+  () => import("./artist-field").then(({ GenreField }) => GenreField),
   { ssr: false }
 )
 
@@ -154,9 +161,11 @@ export function CatalogBrowser({
   const [artistsMounted, setArtistsMounted] = useState(
     initialMode === "artists"
   )
+  const [genresMounted, setGenresMounted] = useState(initialMode === "genres")
   const [artistsLoading, setArtistsLoading] = useState(false)
   const [artistsError, setArtistsError] = useState(false)
   const search = useAlbumSearch(initialQuery, initialFilters)
+  const loadFacets = search.loadFacets
   const [selectionEpoch, setSelectionEpoch] = useState(0)
   const [opened, setOpened] = useState<{
     album: AlbumPost
@@ -229,6 +238,11 @@ export function CatalogBrowser({
       if (timer !== null) window.clearTimeout(timer)
     }
   }, [artists, catalogMode, loadArtists])
+
+  useEffect(() => {
+    if (catalogMode !== "genres") return
+    void loadFacets().catch(() => undefined)
+  }, [catalogMode, loadFacets])
 
   useEffect(() => {
     const reload = () => window.location.reload()
@@ -343,8 +357,17 @@ export function CatalogBrowser({
     window.history.pushState(null, "", url)
   }
 
-  const toggleCatalogMode = () => {
-    if (catalogMode === "artists") {
+  const searchGenre = (genre: string) => {
+    const filters = { ...createEmptyAlbumFilters(), genres: [genre] }
+    search.setQuery("")
+    search.setFilters(filters)
+    setCatalogMode("albums")
+    window.history.pushState(null, "", searchUrl("", filters))
+  }
+
+  const selectCatalogMode = (mode: CatalogMode) => {
+    if (mode === catalogMode) return
+    if (mode === "albums") {
       setCatalogMode("albums")
       window.history.pushState(
         null,
@@ -353,10 +376,16 @@ export function CatalogBrowser({
       )
       return
     }
-    setArtistsMounted(true)
-    setCatalogMode("artists")
-    window.history.pushState(null, "", "/artists")
-    void loadArtists().catch(() => undefined)
+    setCatalogMode(mode)
+    if (mode === "artists") {
+      setArtistsMounted(true)
+      window.history.pushState(null, "", "/artists")
+      void loadArtists().catch(() => undefined)
+    } else {
+      setGenresMounted(true)
+      window.history.pushState(null, "", "/genres")
+      void loadFacets().catch(() => undefined)
+    }
   }
 
   return (
@@ -370,7 +399,9 @@ export function CatalogBrowser({
             <Text type="supporting" color="inherit">
               {catalogMode === "albums"
                 ? `${initialPage.total} records · hinged by hand`
-                : `${artists?.length ?? "…"} artists · from the archive`}
+                : catalogMode === "artists"
+                  ? `${artists?.length ?? "…"} artists · from the archive`
+                  : `${search.facets?.genreProfiles.length ?? "…"} genres · sized by album count`}
             </Text>
           </header>
           <aside
@@ -378,16 +409,16 @@ export function CatalogBrowser({
             data-catalog-mode={catalogMode}
             inert={Boolean(opened) || undefined}
           >
-            <Button
-              label={
-                catalogMode === "albums" ? "Explore artists" : "Browse albums"
-              }
-              onClick={toggleCatalogMode}
-              onFocus={() => void loadArtists().catch(() => undefined)}
-              onPointerEnter={() => void loadArtists().catch(() => undefined)}
+            <SegmentedControl
+              label="Catalog view"
+              onChange={(mode) => selectCatalogMode(mode as CatalogMode)}
               size="md"
-              variant="secondary"
-            />
+              value={catalogMode}
+            >
+              <SegmentedControlItem label="Albums" value="albums" />
+              <SegmentedControlItem label="Artists" value="artists" />
+              <SegmentedControlItem label="Genres" value="genres" />
+            </SegmentedControl>
           </aside>
           <section
             aria-hidden={catalogMode !== "albums"}
@@ -408,7 +439,7 @@ export function CatalogBrowser({
               onClearFilters={() => setSearchFilters(createEmptyAlbumFilters())}
               onFilterChange={setSearchFilters}
               onInteract={() => setSelectionEpoch((current) => current + 1)}
-              onLoadFacets={search.loadFacets}
+              onLoadFacets={loadFacets}
               query={search.query}
               resultCount={search.result?.total ?? null}
             />
@@ -443,6 +474,22 @@ export function CatalogBrowser({
                 searchTransitioning={search.isTransitioning}
                 selectionEpoch={selectionEpoch}
                 total={search.result.total}
+              />
+            )}
+          </section>
+          <section
+            aria-hidden={catalogMode !== "genres"}
+            className="catalog-mode-panel catalog-genre-panel"
+            data-active={catalogMode === "genres" || undefined}
+            inert={catalogMode !== "genres" || opened ? true : undefined}
+          >
+            {genresMounted && (
+              <GenreField
+                genres={search.facets?.genreProfiles ?? null}
+                hasError={search.facetsError}
+                isLoading={search.isLoadingFacets}
+                onRetry={() => void loadFacets().catch(() => undefined)}
+                onSelect={(genre) => searchGenre(genre.name)}
               />
             )}
           </section>

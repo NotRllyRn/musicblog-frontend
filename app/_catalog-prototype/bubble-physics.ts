@@ -1,7 +1,11 @@
-import type { ArtistProfile } from "./types"
+export type BubbleId = number | string
 
-export interface ArtistNode {
-  artist: ArtistProfile
+export interface BubbleProfile {
+  id: BubbleId
+}
+
+export interface BubbleNode<Profile extends BubbleProfile = BubbleProfile> {
+  profile: Profile
   radius: number
   renderRadius: number
   vx: number
@@ -10,8 +14,8 @@ export interface ArtistNode {
   y: number
 }
 
-export interface ArtistPhysicsOptions {
-  activeId: number | null
+export interface BubblePhysicsOptions {
+  activeId: BubbleId | null
   damping?: number
   gap: number
   gravity?: number
@@ -33,52 +37,72 @@ export function approachMotionSpeed(
   return target === 0 && next < 0.004 ? 0 : next
 }
 
-export function createArtistNodes(
-  artists: ArtistProfile[],
-  radius: number,
+function numericId(id: BubbleId) {
+  if (typeof id === "number") return id
+  let hash = 0
+  for (const character of id) hash = (hash * 31 + character.charCodeAt(0)) | 0
+  return Math.abs(hash)
+}
+
+export function createBubbleNodes<Profile extends BubbleProfile>(
+  profiles: Profile[],
+  radius: number | ((profile: Profile) => number),
   gap: number
 ) {
-  const spacing = (radius * 2 + gap) / Math.sqrt(Math.PI)
-  return [...artists]
-    .sort((left, right) => left.id - right.id)
-    .map((artist, index) => {
+  const radii = profiles.map((profile) =>
+    typeof radius === "number" ? radius : radius(profile)
+  )
+  const spacing = Math.sqrt(
+    radii.reduce((total, value) => total + (value * 2 + gap) ** 2, 0) /
+      Math.max(1, radii.length) /
+      Math.PI
+  )
+  return [...profiles]
+    .sort((left, right) =>
+      typeof left.id === "number" && typeof right.id === "number"
+        ? left.id - right.id
+        : String(left.id).localeCompare(String(right.id))
+    )
+    .map((profile, index) => {
       const angle = index * GOLDEN_ANGLE
       const distance = spacing * Math.sqrt(index)
-      const drift = 8 + (artist.id % 7)
+      const id = numericId(profile.id)
+      const nodeRadius = typeof radius === "number" ? radius : radius(profile)
+      const drift = 8 + (id % 7)
       return {
-        artist,
-        radius,
-        renderRadius: radius,
+        profile,
+        radius: nodeRadius,
+        renderRadius: nodeRadius,
         vx: -Math.sin(angle) * drift,
         vy: Math.cos(angle) * drift,
         x: Math.cos(angle) * distance,
         y: Math.sin(angle) * distance,
-      } satisfies ArtistNode
+      } satisfies BubbleNode<Profile>
     })
 }
 
-export function artistWorldRadius(nodes: ArtistNode[], padding: number) {
+export function bubbleWorldRadius(nodes: BubbleNode[], padding: number) {
   return Math.max(
     padding,
     ...nodes.map((node) => Math.hypot(node.x, node.y) + node.radius + padding)
   )
 }
 
-export function findArtistNode(
-  nodes: ArtistNode[],
+export function findBubbleNode<Profile extends BubbleProfile>(
+  nodes: BubbleNode<Profile>[],
   x: number,
   y: number,
-  activeId: number | null,
+  activeId: BubbleId | null,
   exitPadding = 16
 ) {
-  const active = nodes.find(({ artist }) => artist.id === activeId)
+  const active = nodes.find(({ profile }) => profile.id === activeId)
   if (
     active &&
     Math.hypot(x - active.x, y - active.y) <= active.renderRadius + exitPadding
   )
     return active
 
-  let nearest: ArtistNode | null = null
+  let nearest: BubbleNode<Profile> | null = null
   let nearestDistance = Number.POSITIVE_INFINITY
   for (const node of nodes) {
     const distance = Math.hypot(x - node.x, y - node.y)
@@ -90,8 +114,8 @@ export function findArtistNode(
   return nearest
 }
 
-export function stepArtistPhysics(
-  nodes: ArtistNode[],
+export function stepBubblePhysics(
+  nodes: BubbleNode[],
   elapsedSeconds: number,
   {
     activeId,
@@ -99,7 +123,7 @@ export function stepArtistPhysics(
     gap,
     gravity = 0.035,
     speed = 1,
-  }: ArtistPhysicsOptions
+  }: BubblePhysicsOptions
 ) {
   const elapsed = Math.min(elapsedSeconds, 1 / 30)
   const physicsElapsed = elapsed * clamp(speed, 0, 1)
@@ -107,7 +131,7 @@ export function stepArtistPhysics(
   let fastest = 0
 
   for (const node of nodes) {
-    const active = node.artist.id === activeId
+    const active = node.profile.id === activeId
     const targetRadius = node.radius * (active ? 1.35 : 1)
     node.renderRadius +=
       (targetRadius - node.renderRadius) * (1 - Math.exp(-12 * elapsed))
@@ -152,7 +176,9 @@ export function stepArtistPhysics(
           if (distance >= separation) continue
           if (!distance) {
             const angle =
-              ((node.artist.id + other.artist.id) % 360) * (Math.PI / 180)
+              ((numericId(node.profile.id) + numericId(other.profile.id)) %
+                360) *
+              (Math.PI / 180)
             dx = Math.cos(angle)
             dy = Math.sin(angle)
             distance = 1
@@ -160,8 +186,8 @@ export function stepArtistPhysics(
           const overlap = separation - distance
           const unitX = dx / distance
           const unitY = dy / distance
-          const nodeActive = node.artist.id === activeId
-          const otherActive = other.artist.id === activeId
+          const nodeActive = node.profile.id === activeId
+          const otherActive = other.profile.id === activeId
           const nodeShare = nodeActive ? 0 : otherActive ? 1 : 0.5
           const otherShare = otherActive ? 0 : nodeActive ? 1 : 0.5
           const correction = overlap * Math.min(1, physicsElapsed * 60)

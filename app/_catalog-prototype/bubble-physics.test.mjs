@@ -3,10 +3,10 @@ import test from "node:test"
 
 import {
   approachMotionSpeed,
-  createArtistNodes,
-  findArtistNode,
-  stepArtistPhysics,
-} from "./artist-physics.ts"
+  createBubbleNodes,
+  findBubbleNode,
+  stepBubblePhysics,
+} from "./bubble-physics.ts"
 
 const artists = (count) =>
   Array.from({ length: count }, (_, index) => ({
@@ -19,46 +19,46 @@ const artists = (count) =>
 
 test("creates a deterministic free-floating field", () => {
   assert.deepEqual(
-    createArtistNodes(artists(20), 40, 8),
-    createArtistNodes(artists(20).reverse(), 40, 8)
+    createBubbleNodes(artists(20), 40, 8),
+    createBubbleNodes(artists(20).reverse(), 40, 8)
   )
 })
 
 test("gravity draws an isolated node toward the center", () => {
-  const [node] = createArtistNodes(artists(2), 1, 0).slice(1)
+  const [node] = createBubbleNodes(artists(2), 1, 0).slice(1)
   node.x = 100
   node.y = 0
   node.vx = 0
   node.vy = 0
   const before = node.x
   for (let index = 0; index < 30; index += 1)
-    stepArtistPhysics([node], 1 / 60, { activeId: null, gap: 0 })
+    stepBubblePhysics([node], 1 / 60, { activeId: null, gap: 0 })
   assert.ok(node.x < before)
 })
 
 test("an active node stays pinned while it grows", () => {
-  const [node] = createArtistNodes(artists(1), 40, 8)
-  stepArtistPhysics([node], 1 / 30, { activeId: node.artist.id, gap: 8 })
+  const [node] = createBubbleNodes(artists(1), 40, 8)
+  stepBubblePhysics([node], 1 / 30, { activeId: node.profile.id, gap: 8 })
   assert.equal(node.x, 0)
   assert.equal(node.y, 0)
   assert.ok(node.renderRadius > node.radius)
 })
 
 test("collision resolution separates overlapping nodes", () => {
-  const nodes = createArtistNodes(artists(2), 40, 8)
+  const nodes = createBubbleNodes(artists(2), 40, 8)
   nodes[1].x = 1
   nodes[1].y = 0
-  stepArtistPhysics(nodes, 1 / 60, { activeId: null, gap: 8, gravity: 0 })
+  stepBubblePhysics(nodes, 1 / 60, { activeId: null, gap: 8, gravity: 0 })
   assert.ok(
     Math.hypot(nodes[1].x - nodes[0].x, nodes[1].y - nodes[0].y) >= 87.9
   )
 })
 
 test("hit testing keeps the active node through a padded exit boundary", () => {
-  const nodes = createArtistNodes(artists(2), 40, 8)
+  const nodes = createBubbleNodes(artists(2), 40, 8)
   const active = nodes[0]
-  assert.equal(findArtistNode(nodes, 50, 0, active.artist.id), active)
-  assert.equal(findArtistNode(nodes, 60, 0, active.artist.id), null)
+  assert.equal(findBubbleNode(nodes, 50, 0, active.profile.id), active)
+  assert.equal(findBubbleNode(nodes, 60, 0, active.profile.id), null)
 })
 
 test("motion ramps up quickly and eases smoothly into sleep", () => {
@@ -74,10 +74,10 @@ test("motion ramps up quickly and eases smoothly into sleep", () => {
 })
 
 test("zero simulation speed still animates active radius without moving", () => {
-  const [node] = createArtistNodes(artists(1), 40, 8)
+  const [node] = createBubbleNodes(artists(1), 40, 8)
   const before = { x: node.x, y: node.y }
-  stepArtistPhysics([node], 1 / 60, {
-    activeId: node.artist.id,
+  stepBubblePhysics([node], 1 / 60, {
+    activeId: node.profile.id,
     gap: 8,
     speed: 0,
   })

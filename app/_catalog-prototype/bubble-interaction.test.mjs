@@ -2,14 +2,14 @@ import assert from "node:assert/strict"
 import test from "node:test"
 
 import {
-  artistTapAction,
-  clampArtistZoom,
+  bubbleTapAction,
+  clampBubbleZoom,
   pinchCamera,
-} from "./artist-interaction.ts"
+} from "./bubble-interaction.ts"
 
-test("artist zoom stays within its bounds", () => {
-  assert.equal(clampArtistZoom(0), 0.55)
-  assert.equal(clampArtistZoom(3), 1.8)
+test("bubble zoom stays within its bounds", () => {
+  assert.equal(clampBubbleZoom(0), 0.55)
+  assert.equal(clampBubbleZoom(3), 1.8)
 })
 
 test("pinch zoom keeps its midpoint anchored", () => {
@@ -33,8 +33,8 @@ test("pinch zoom keeps its midpoint anchored", () => {
 })
 
 test("touch taps preview, select, or clear an artist", () => {
-  assert.equal(artistTapAction(null, 1), "preview")
-  assert.equal(artistTapAction(1, 2), "preview")
-  assert.equal(artistTapAction(1, 1), "select")
-  assert.equal(artistTapAction(1, null), "clear")
+  assert.equal(bubbleTapAction(null, 1), "preview")
+  assert.equal(bubbleTapAction(1, 2), "preview")
+  assert.equal(bubbleTapAction(1, 1), "select")
+  assert.equal(bubbleTapAction(1, null), "clear")
 })

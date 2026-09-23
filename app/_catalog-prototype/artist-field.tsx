@@ -7,19 +7,21 @@ import { getImageProps } from "next/image"
 import { useEffect, useRef, useState } from "react"
 
 import {
-  type ArtistNode,
+  type BubbleId,
+  type BubbleNode,
   approachMotionSpeed,
-  artistWorldRadius,
-  createArtistNodes,
-  findArtistNode,
-  stepArtistPhysics,
-} from "./artist-physics"
+  bubbleWorldRadius,
+  createBubbleNodes,
+  findBubbleNode,
+  stepBubblePhysics,
+} from "./bubble-physics"
 import {
-  artistTapAction,
-  clampArtistZoom,
+  bubbleTapAction,
+  clampBubbleZoom,
   pinchCamera,
-} from "./artist-interaction"
-import type { ArtistProfile } from "./types"
+} from "./bubble-interaction"
+import { genreColorIndex, genreRadius } from "./genre-bubbles"
+import type { ArtistProfile, GenreProfile } from "./types"
 
 interface ArtistFieldProps {
   artists: ArtistProfile[] | null
@@ -29,14 +31,24 @@ interface ArtistFieldProps {
   onSelect: (artist: ArtistProfile) => void
 }
 
+interface GenreFieldProps {
+  genres: GenreProfile[] | null
+  hasError: boolean
+  isLoading: boolean
+  onRetry: () => void
+  onSelect: (genre: GenreProfile) => void
+}
+
+type CatalogProfile = ArtistProfile | GenreProfile
+
 interface Portrait {
   image?: HTMLImageElement
   lastUsed: number
   status: "failed" | "loading" | "queued" | "ready"
 }
 
-interface ArtistRuntime {
-  activeId: number | null
+interface BubbleRuntime {
+  activeId: BubbleId | null
   cameraX: number
   cameraY: number
   destroyed: boolean
@@ -45,12 +57,12 @@ interface ArtistRuntime {
   frame: number | null
   height: number
   imageClock: number
-  imageQueue: ArtistNode[]
-  images: Map<number, Portrait>
+  imageQueue: BubbleNode<CatalogProfile>[]
+  images: Map<BubbleId, Portrait>
   inFlight: number
   motionSpeed: number
   motionUntil: number
-  nodes: ArtistNode[]
+  nodes: BubbleNode<CatalogProfile>[]
   pinchDistance: number
   pinched: boolean
   pinchWorldX: number
@@ -72,10 +84,11 @@ interface ArtistRuntime {
 
 const DESKTOP_RADIUS = 56
 const MOBILE_RADIUS = 41
+const DESKTOP_GENRE_RADIUS = { minimum: 42, maximum: 104 }
+const MOBILE_GENRE_RADIUS = { minimum: 34, maximum: 72 }
 const NODE_GAP = 10
 const IMAGE_CONCURRENCY = 4
 const IMAGE_CACHE_SIZE = 160
-const FIELD_HELP_ID = "artist-field-help"
 const ZOOM_STEP = 1.18
 
 const clamp = (value: number, min: number, max: number) =>
@@ -94,9 +107,17 @@ function initials(name: string) {
   ).toLocaleUpperCase()
 }
 
+function isArtist(profile: CatalogProfile): profile is ArtistProfile {
+  return "imageUrl" in profile
+}
+
+function isGenre(profile: CatalogProfile): profile is GenreProfile {
+  return "count" in profile
+}
+
 function canvasPoint(
   canvas: HTMLCanvasElement,
-  runtime: ArtistRuntime,
+  runtime: BubbleRuntime,
   clientX: number,
   clientY: number
 ) {
@@ -111,7 +132,7 @@ function canvasPoint(
   }
 }
 
-function clampCamera(runtime: ArtistRuntime) {
+function clampCamera(runtime: BubbleRuntime) {
   const horizontal = Math.max(
     0,
     runtime.worldRadius * runtime.zoom - runtime.width * 0.25
@@ -126,7 +147,7 @@ function clampCamera(runtime: ArtistRuntime) {
 
 function drawLabel(
   context: CanvasRenderingContext2D,
-  node: ArtistNode,
+  node: BubbleNode<CatalogProfile>,
   x: number,
   y: number,
   width: number,
@@ -136,7 +157,7 @@ function drawLabel(
 ) {
   const fontSize = 13
   context.font = `600 ${fontSize}px system-ui, sans-serif`
-  let label = node.artist.name
+  let label = `${node.profile.name}${isGenre(node.profile) ? ` · ${node.profile.count} album${node.profile.count === 1 ? "" : "s"}` : ""}`
   while (label.length > 12 && context.measureText(label).width > 210)
     label = `${label.slice(0, -2).trim()}…`
   const labelWidth = context.measureText(label).width + 20
@@ -160,10 +181,59 @@ function drawLabel(
   context.fillText(label, labelX + labelWidth / 2, labelY + labelHeight / 2)
 }
 
-function drawArtistField(
+const GENRE_COLOR_TOKENS = [
+  "--color-border-blue",
+  "--color-border-cyan",
+  "--color-border-green",
+  "--color-border-orange",
+  "--color-border-pink",
+  "--color-border-purple",
+  "--color-border-red",
+  "--color-border-teal",
+  "--color-border-yellow",
+]
+
+function drawGenre(
+  context: CanvasRenderingContext2D,
+  profile: GenreProfile,
+  x: number,
+  y: number,
+  radius: number,
+  fill: string,
+  ink: string
+) {
+  const words = profile.name.split(/(?<=[-])|\s+/u)
+  const split = words.length > 1 ? Math.ceil(words.length / 2) : words.length
+  const lines = [words.slice(0, split).join(" "), words.slice(split).join(" ")]
+    .filter(Boolean)
+    .slice(0, 2)
+  let fontSize = Math.min(22, radius * 0.34)
+  context.font = `700 ${fontSize}px system-ui, sans-serif`
+  while (
+    fontSize > 10 &&
+    lines.some((line) => context.measureText(line).width > radius * 1.55)
+  ) {
+    fontSize -= 1
+    context.font = `700 ${fontSize}px system-ui, sans-serif`
+  }
+
+  context.fillStyle = fill
+  context.globalAlpha = 0.72
+  context.fill()
+  context.globalAlpha = 1
+  context.fillStyle = ink
+  context.textAlign = "center"
+  context.textBaseline = "middle"
+  const lineHeight = fontSize * 1.05
+  lines.forEach((line, index) =>
+    context.fillText(line, x, y + (index - (lines.length - 1) / 2) * lineHeight)
+  )
+}
+
+function drawBubbleField(
   canvas: HTMLCanvasElement,
-  runtime: ArtistRuntime,
-  queuePortrait: (node: ArtistNode) => void
+  runtime: BubbleRuntime,
+  queuePortrait: (node: BubbleNode<CatalogProfile>) => void
 ) {
   const context = canvas.getContext("2d")
   if (!context || !runtime.width || !runtime.height) return
@@ -174,12 +244,12 @@ function drawArtistField(
   const ink = style.color
   const paper = style.borderTopColor
   const active = runtime.nodes.find(
-    ({ artist }) => artist.id === runtime.activeId
+    ({ profile }) => profile.id === runtime.activeId
   )
   const nodes = active
     ? [...runtime.nodes.filter((node) => node !== active), active]
     : runtime.nodes
-  const visible = new Set<number>()
+  const visible = new Set<BubbleId>()
 
   for (const node of nodes) {
     const x = runtime.width / 2 + runtime.cameraX + node.x * runtime.zoom
@@ -193,33 +263,42 @@ function drawArtistField(
     )
       continue
 
-    visible.add(node.artist.id)
+    visible.add(node.profile.id)
     queuePortrait(node)
     context.save()
     context.beginPath()
     context.arc(x, y, radius, 0, Math.PI * 2)
-    context.fillStyle = paper
-    context.globalAlpha = 0.88
-    context.fill()
-    context.clip()
-    const portrait = runtime.images.get(node.artist.id)
-    if (portrait?.status === "ready" && portrait.image) {
-      portrait.lastUsed = ++runtime.imageClock
-      context.globalAlpha = 1
-      context.drawImage(
-        portrait.image,
-        x - radius,
-        y - radius,
-        radius * 2,
-        radius * 2
+    if (isGenre(node.profile)) {
+      const color = style.getPropertyValue(
+        GENRE_COLOR_TOKENS[
+          genreColorIndex(node.profile.id, GENRE_COLOR_TOKENS.length)
+        ]
       )
+      drawGenre(context, node.profile, x, y, radius, color, ink)
     } else {
-      context.globalAlpha = 1
-      context.fillStyle = ink
-      context.font = `700 ${Math.round(radius * 0.52)}px system-ui, sans-serif`
-      context.textAlign = "center"
-      context.textBaseline = "middle"
-      context.fillText(initials(node.artist.name), x, y + 1)
+      context.fillStyle = paper
+      context.globalAlpha = 0.88
+      context.fill()
+      context.clip()
+      const portrait = runtime.images.get(node.profile.id)
+      if (portrait?.status === "ready" && portrait.image) {
+        portrait.lastUsed = ++runtime.imageClock
+        context.globalAlpha = 1
+        context.drawImage(
+          portrait.image,
+          x - radius,
+          y - radius,
+          radius * 2,
+          radius * 2
+        )
+      } else {
+        context.globalAlpha = 1
+        context.fillStyle = ink
+        context.font = `700 ${Math.round(radius * 0.52)}px system-ui, sans-serif`
+        context.textAlign = "center"
+        context.textBaseline = "middle"
+        context.fillText(initials(node.profile.name), x, y + 1)
+      }
     }
     context.restore()
 
@@ -261,29 +340,40 @@ function drawArtistField(
       runtime.images.delete(id)
 }
 
-export function ArtistField({
-  artists,
+function BubbleField({
+  profiles,
+  kind,
   hasError,
   isLoading,
   onRetry,
   onSelect,
-}: ArtistFieldProps) {
+}: {
+  profiles: CatalogProfile[] | null
+  kind: "artists" | "genres"
+  hasError: boolean
+  isLoading: boolean
+  onRetry: () => void
+  onSelect: (profile: CatalogProfile) => void
+}) {
+  const helpId = `${kind}-field-help`
   const canvas = useRef<HTMLCanvasElement>(null)
-  const runtime = useRef<ArtistRuntime | null>(null)
-  const selectArtist = useRef(onSelect)
-  const [activeArtist, setActiveArtist] = useState<ArtistProfile | null>(null)
+  const runtime = useRef<BubbleRuntime | null>(null)
+  const selectProfile = useRef(onSelect)
+  const [activeProfile, setActiveProfile] = useState<CatalogProfile | null>(
+    null
+  )
 
   useEffect(() => {
-    selectArtist.current = onSelect
+    selectProfile.current = onSelect
   }, [onSelect])
 
   useEffect(() => {
-    if (!artists || !canvas.current) return
+    if (!profiles || !canvas.current) return
     const element = canvas.current
     const motionPreference = window.matchMedia(
       "(prefers-reduced-motion: reduce)"
     )
-    const state: ArtistRuntime = {
+    const state: BubbleRuntime = {
       activeId: null,
       cameraX: 0,
       cameraY: 0,
@@ -335,8 +425,8 @@ export function ArtistField({
     const pumpImages = () => {
       while (state.inFlight < IMAGE_CONCURRENCY && state.imageQueue.length) {
         const node = state.imageQueue.shift()
-        if (!node?.artist.imageUrl) continue
-        const portrait = state.images.get(node.artist.id)
+        if (!node || !isArtist(node.profile) || !node.profile.imageUrl) continue
+        const portrait = state.images.get(node.profile.id)
         if (!portrait || portrait.status !== "queued") continue
         portrait.status = "loading"
         state.inFlight += 1
@@ -355,7 +445,7 @@ export function ArtistField({
           image.src = getImageProps({
             alt: "",
             height: 256,
-            src: node.artist.imageUrl,
+            src: node.profile.imageUrl,
             width: 256,
           }).props.src
         } catch {
@@ -364,9 +454,14 @@ export function ArtistField({
       }
     }
 
-    const queuePortrait = (node: ArtistNode) => {
-      if (!node.artist.imageUrl || state.images.has(node.artist.id)) return
-      state.images.set(node.artist.id, {
+    const queuePortrait = (node: BubbleNode<CatalogProfile>) => {
+      if (
+        !isArtist(node.profile) ||
+        !node.profile.imageUrl ||
+        state.images.has(node.profile.id)
+      )
+        return
+      state.images.set(node.profile.id, {
         lastUsed: ++state.imageClock,
         status: "queued",
       })
@@ -388,39 +483,39 @@ export function ArtistField({
         elapsed
       )
       if (!state.reducedMotion)
-        stepArtistPhysics(state.nodes, elapsed, {
+        stepBubblePhysics(state.nodes, elapsed, {
           activeId: state.activeId,
           gap: NODE_GAP,
           speed: state.motionSpeed,
         })
-      drawArtistField(element, state, queuePortrait)
+      drawBubbleField(element, state, queuePortrait)
       const radiiAnimating = state.nodes.some(
         (node) =>
           Math.abs(
             node.renderRadius -
-              node.radius * (node.artist.id === state.activeId ? 1.35 : 1)
+              node.radius * (node.profile.id === state.activeId ? 1.35 : 1)
           ) > 0.05
       )
       if (target || state.motionSpeed || radiiAnimating) requestFrame()
       else state.previousTime = 0
     }
 
-    const setActive = (node: ArtistNode | null) => {
-      const id = node?.artist.id ?? null
+    const setActive = (node: BubbleNode<CatalogProfile> | null) => {
+      const id = node?.profile.id ?? null
       if (state.activeId === id) return
       state.activeId = id
-      setActiveArtist(node?.artist ?? null)
+      setActiveProfile(node?.profile ?? null)
       if (state.reducedMotion)
         for (const candidate of state.nodes)
           candidate.renderRadius =
-            candidate.radius * (candidate.artist.id === id ? 1.35 : 1)
+            candidate.radius * (candidate.profile.id === id ? 1.35 : 1)
       if (state.reducedMotion) requestFrame()
       else wake(220)
     }
 
     const hitTest = (clientX: number, clientY: number, sticky = true) => {
       const point = canvasPoint(element, state, clientX, clientY)
-      return findArtistNode(
+      return findBubbleNode(
         state.nodes,
         point.x,
         point.y,
@@ -434,7 +529,7 @@ export function ArtistField({
       clientY: number,
       requestedZoom: number
     ) => {
-      const nextZoom = clampArtistZoom(requestedZoom)
+      const nextZoom = clampBubbleZoom(requestedZoom)
       if (nextZoom === state.zoom) return
       const bounds = element.getBoundingClientRect()
       const anchorX = clientX - bounds.left
@@ -555,11 +650,11 @@ export function ArtistField({
       if (dragged) return
       const node = hitTest(event.clientX, event.clientY, false)
       if (event.pointerType === "mouse") {
-        if (node) selectArtist.current(node.artist)
+        if (node) selectProfile.current(node.profile)
         else setActive(null)
       } else {
-        const action = artistTapAction(state.activeId, node?.artist.id ?? null)
-        if (action === "select" && node) selectArtist.current(node.artist)
+        const action = bubbleTapAction(state.activeId, node?.profile.id ?? null)
+        if (action === "select" && node) selectProfile.current(node.profile)
         else setActive(action === "preview" ? node : null)
       }
     }
@@ -616,9 +711,9 @@ export function ArtistField({
       if (event.key === "Escape") return setActive(null)
       if (event.key === "Enter" || event.key === " ") {
         const active = state.nodes.find(
-          ({ artist }) => artist.id === state.activeId
+          ({ profile }) => profile.id === state.activeId
         )
-        if (active) selectArtist.current(active.artist)
+        if (active) selectProfile.current(active.profile)
         return
       }
       if (["+", "=", "-", "0"].includes(event.key)) {
@@ -635,7 +730,7 @@ export function ArtistField({
         return
       }
       const current = state.nodes.findIndex(
-        ({ artist }) => artist.id === state.activeId
+        ({ profile }) => profile.id === state.activeId
       )
       const index =
         event.key === "Home"
@@ -658,7 +753,7 @@ export function ArtistField({
         state.motionSpeed = 0
         for (const node of state.nodes)
           node.renderRadius =
-            node.radius * (node.artist.id === state.activeId ? 1.35 : 1)
+            node.radius * (node.profile.id === state.activeId ? 1.35 : 1)
         requestFrame()
       } else wake(700)
     }
@@ -673,8 +768,28 @@ export function ArtistField({
       element.height = Math.round(height * dpr)
       if (radius !== state.radius) {
         state.radius = radius
-        state.nodes = createArtistNodes(artists, radius, NODE_GAP)
-        state.worldRadius = artistWorldRadius(state.nodes, radius * 2)
+        const maximumCount = Math.max(
+          ...profiles.map((profile) => (isGenre(profile) ? profile.count : 1))
+        )
+        const genreRadii =
+          width <= 768 ? MOBILE_GENRE_RADIUS : DESKTOP_GENRE_RADIUS
+        state.nodes = createBubbleNodes(
+          profiles,
+          (profile) =>
+            isGenre(profile)
+              ? genreRadius(
+                  profile.count,
+                  maximumCount,
+                  genreRadii.minimum,
+                  genreRadii.maximum
+                )
+              : radius,
+          NODE_GAP
+        )
+        state.worldRadius = bubbleWorldRadius(
+          state.nodes,
+          Math.max(radius, genreRadii.maximum) * 2
+        )
         state.cameraX = 0
         state.cameraY = 0
         state.images.clear()
@@ -714,18 +829,20 @@ export function ArtistField({
       theme.disconnect()
       runtime.current = null
     }
-  }, [artists])
+  }, [profiles])
 
-  if (!artists)
+  if (!profiles)
     return (
       <section className="artist-status" aria-live="polite">
         {hasError ? (
           <>
-            <Text color="inherit">Artists could not load.</Text>
+            <Text color="inherit">
+              {kind === "artists" ? "Artists" : "Genres"} could not load.
+            </Text>
             <Button label="Try again" onClick={onRetry} size="sm" />
           </>
         ) : (
-          <Spinner label="Preparing artists" shade="inherit" size="md" />
+          <Spinner label={`Preparing ${kind}`} shade="inherit" size="md" />
         )}
       </section>
     )
@@ -733,35 +850,58 @@ export function ArtistField({
   return (
     <section
       aria-busy={isLoading}
-      aria-label={`Browse ${artists.length} artists`}
+      aria-label={`Browse ${profiles.length} ${kind}`}
       className="artist-viewport"
     >
       <canvas
-        aria-describedby={FIELD_HELP_ID}
+        aria-describedby={helpId}
         aria-keyshortcuts="ArrowLeft ArrowRight Home End Enter Space + - 0"
         aria-label={
-          activeArtist
-            ? `Selected artist: ${activeArtist.name}`
-            : `${artists.length} artist portraits`
+          activeProfile
+            ? `Selected ${kind.slice(0, -1)}: ${activeProfile.name}`
+            : `${profiles.length} ${kind}`
         }
         className="artist-canvas"
         ref={canvas}
         tabIndex={0}
       >
-        Browse {artists.length} artists.
+        Browse {profiles.length} {kind}.
       </canvas>
-      <Text
-        as="p"
-        className="artist-field-help"
-        color="inherit"
-        id={FIELD_HELP_ID}
-      >
+      <Text as="p" className="artist-field-help" color="inherit" id={helpId}>
         Drag to explore. Pinch, scroll, or use +/− to zoom. Tap once to preview
-        an artist and again to filter their albums.
+        a {kind.slice(0, -1)} and again to filter its albums.
       </Text>
       <Text aria-live="polite" as="span" className="artist-announcement">
-        {activeArtist?.name ?? ""}
+        {activeProfile
+          ? `${activeProfile.name}${isGenre(activeProfile) ? `, ${activeProfile.count} albums` : ""}`
+          : ""}
       </Text>
     </section>
+  )
+}
+
+export function ArtistField(props: ArtistFieldProps) {
+  return (
+    <BubbleField
+      hasError={props.hasError}
+      isLoading={props.isLoading}
+      kind="artists"
+      onRetry={props.onRetry}
+      onSelect={(profile) => props.onSelect(profile as ArtistProfile)}
+      profiles={props.artists}
+    />
+  )
+}
+
+export function GenreField(props: GenreFieldProps) {
+  return (
+    <BubbleField
+      hasError={props.hasError}
+      isLoading={props.isLoading}
+      kind="genres"
+      onRetry={props.onRetry}
+      onSelect={(profile) => props.onSelect(profile as GenreProfile)}
+      profiles={props.genres}
+    />
   )
 }
