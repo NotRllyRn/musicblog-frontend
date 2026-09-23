@@ -16,6 +16,7 @@ import type {
   AlbumSearchPage,
   AlbumTrack,
   ArtistProfile,
+  GenreProfile,
 } from "@/app/_catalog-prototype/types"
 
 interface WordPressTerm {
@@ -655,6 +656,20 @@ function facetLabels(
   )
 }
 
+function genreProfiles(documents: SearchDocument[]) {
+  const profiles = new Map<string, GenreProfile>()
+  for (const document of documents)
+    for (const [index, name] of document.genreLabels.entries()) {
+      const id = document.genreKeys[index]
+      const current = profiles.get(id)
+      if (current) current.count += 1
+      else profiles.set(id, { count: 1, id, name })
+    }
+  return [...profiles.values()].sort((left, right) =>
+    left.name.localeCompare(right.name, undefined, { sensitivity: "base" })
+  )
+}
+
 function dateBounds(
   documents: SearchDocument[],
   key: "listenedAt" | "releaseDate"
@@ -673,6 +688,7 @@ function catalogFacets(documents: SearchDocument[], version: number) {
   return {
     artists: facetLabels(documents, "artistLabels"),
     genres: facetLabels(documents, "genreLabels"),
+    genreProfiles: genreProfiles(documents),
     listenedDate: dateBounds(documents, "listenedAt"),
     rating: ratings.length
       ? { min: ratings[0], max: ratings.at(-1) ?? ratings[0] }

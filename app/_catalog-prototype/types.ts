@@ -15,7 +15,13 @@ export interface ArtistProfile {
   imageAlt: string
 }
 
-export type CatalogMode = "albums" | "artists"
+export interface GenreProfile {
+  count: number
+  id: string
+  name: string
+}
+
+export type CatalogMode = "albums" | "artists" | "genres"
 
 export interface AlbumTrack {
   title: string
@@ -74,6 +80,7 @@ export interface AlbumSearchFilters {
 export interface AlbumFilterFacets {
   artists: string[]
   genres: string[]
+  genreProfiles: GenreProfile[]
   listenedDate: AlbumDateBounds
   rating: { min: number; max: number } | null
   releaseDate: AlbumDateBounds
