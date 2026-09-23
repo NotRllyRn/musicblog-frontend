@@ -6,9 +6,7 @@ export function genreRadius(
 ) {
   if (maximumCount <= 1) return minimumRadius
   const usage = (count - 1) / (maximumCount - 1)
-  return Math.sqrt(
-    minimumRadius ** 2 + usage * (maximumRadius ** 2 - minimumRadius ** 2)
-  )
+  return minimumRadius + Math.sqrt(usage) * (maximumRadius - minimumRadius)
 }
 
 export function genreColorIndex(id: string, colorCount: number) {

@@ -60,10 +60,10 @@ catalog immediately. Returning to Albums restores the existing search, filters,
 and deck positions unchanged.
 
 The genre view reuses that canvas interaction with translucent, token-colored
-text bubbles. Bubble area scales with the number of indexed albums carrying the
-genre, and selecting one opens the existing filtered album catalog. Counts are
-derived in one pass while the server-local search index is built, so the view
-adds no WordPress requests and shares the filter-facet browser request.
+text bubbles. Bubble radius scales strongly with the number of indexed albums
+carrying the genre, and selecting one opens the existing filtered album catalog.
+Counts are derived in one pass while the server-local search index is built, so
+the view adds no WordPress requests and shares the filter-facet browser request.
 
 Browser requests remain abortable and latest-query-wins; current results remain
 visible while replacements load. Results retain the same finite three, five, or

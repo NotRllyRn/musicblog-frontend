@@ -101,8 +101,9 @@ dimmed in the background. WordPress is strictly read-only from this frontend.
 - Artist metadata prefetches at low priority through its own cached index, while
   only viewport portraits decode after the field's first use.
 - `/genres` presents the same draggable field with translucent colored text
-  bubbles whose area reflects each genre's album count. Counts come from the
-  existing catalog index and selecting a bubble applies the normal genre filter.
+  bubbles whose strongly contrasted radius reflects each genre's album count.
+  Counts come from the existing catalog index and selecting a bubble applies the
+  normal genre filter.
 - Server startup caches every 100-post WordPress page with bounded concurrency
   before accepting traffic.
 - Authenticated publish, update, and delete events update one catalog record at

@@ -84,8 +84,8 @@ interface BubbleRuntime {
 
 const DESKTOP_RADIUS = 56
 const MOBILE_RADIUS = 41
-const DESKTOP_GENRE_RADIUS = { minimum: 42, maximum: 104 }
-const MOBILE_GENRE_RADIUS = { minimum: 34, maximum: 72 }
+const DESKTOP_GENRE_RADIUS = { minimum: 42, maximum: 180 }
+const MOBILE_GENRE_RADIUS = { minimum: 34, maximum: 120 }
 const NODE_GAP = 10
 const IMAGE_CONCURRENCY = 4
 const IMAGE_CACHE_SIZE = 160

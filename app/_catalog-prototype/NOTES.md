@@ -86,7 +86,8 @@ settled layout without physics.
 
 `/genres` shares the artist field's camera, hit testing, spatial collision grid,
 and sleep behavior. It draws taxonomy names instead of portraits, assigns stable
-colors from theme tokens, and maps album usage linearly to bubble area within
-bounded radii. Genre usage is aggregated from the existing search documents and
-travels with `/api/albums/filters`, so no extra WordPress request or data cache
-is needed. Selecting a genre applies the existing exact-match album filter.
+colors from theme tokens, and maps album usage to a strongly contrasted bubble
+radius within responsive bounds. Genre usage is aggregated from the existing
+search documents and travels with `/api/albums/filters`, so no extra WordPress
+request or data cache is needed. Selecting a genre applies the existing
+exact-match album filter.
